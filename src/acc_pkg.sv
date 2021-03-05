@@ -16,22 +16,22 @@ package acc_pkg;
   // TODO: put in cf_math_pkg or something? Is there a SV-function that does
   // this?
   //
-  function automatic int max (input int a, b);
-    return a>b ? a : b;
+  function automatic int max(int a, int b);
+    return a > b ? a : b;
   endfunction
 
   // Max value in array arr, up to element n-1
-  function automatic int maxn (input int arr[], n);
-    return n==0 ? 0 : n==1 ? arr[0] : max(arr[n-1], maxn(arr, n-1));
+  function automatic int maxn(int arr[], int n);
+    return n == 0 ? 0 : (n == 1 ? arr[0] : max(arr[n-1], maxn(arr, n - 1)));
   endfunction
 
-  function automatic int sum (input int a, b);
-    return a+b;
+  function automatic int sum(int a, int b);
+    return a + b;
   endfunction
 
   // Sum of array entries up to element n-1.
-  function automatic int sumn (input int arr[], n);
-    return n==0 ? 0 : n==1 ? arr[0] : sum(arr[n-1], sumn(arr, n-1));
+  function automatic int sumn(int arr[], int n);
+    return n == 0 ? 0 : (n == 1 ? arr[0] : sum(arr[n-1], sumn(arr, n - 1)));
   endfunction
 
   /////////////////////////
@@ -40,9 +40,9 @@ package acc_pkg;
 
   // Response type
   typedef struct packed {
-    logic          p_accept;
-    logic [1:0]    p_writeback;
-    logic [2:0]    p_use_rs;
+    logic       p_accept;
+    logic [1:0] p_writeback;
+    logic [2:0] p_use_rs;
   } acc_prd_rsp_t;
 
   // Request type
@@ -50,13 +50,11 @@ package acc_pkg;
     logic [31:0] q_instr_data;
   } acc_prd_req_t;
 
-
   // Internal instruction metadata
   typedef struct packed {
-    logic [31:0]   instr_data;
-    logic [31:0]   instr_mask;
-    acc_prd_rsp_t      prd_rsp;
+    logic [31:0]  instr_data;
+    logic [31:0]  instr_mask;
+    acc_prd_rsp_t prd_rsp;
   } acc_offl_instr_t;
-
 
 endpackage
