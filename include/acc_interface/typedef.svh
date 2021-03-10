@@ -8,14 +8,14 @@
 `ifndef ACC_C_TYPEDEF_SVH_
 `define ACC_C_TYPEDEF_SVH_
 
-`define ACC_C_TYPEDEF_REQ_CHAN_T(__req_chan_t, __addr_t, __data_t, __id_t) \
-  typedef struct packed {                                                  \
-    __addr_t             addr;                                             \
-    __data_t             data_arga;                                        \
-    __data_t             data_argb;                                        \
-    __data_t             data_argc;                                        \
-    logic [31:0]         data_op;                                          \
-    __id_t               id;                                               \
+`define ACC_C_TYPEDEF_REQ_CHAN_T(__req_chan_t, __addr_t, __data_t) \
+  typedef struct packed {                                          \
+    __addr_t     addr;                                             \
+    __data_t     data_arga;                                        \
+    __data_t     data_argb;                                        \
+    __data_t     data_argc;                                        \
+    logic [31:0] data_op;                                          \
+    logic [31:0] hart_id;                                          \
   } __req_chan_t;
 
 `define ACC_C_TYPEDEF_REQ_T(__req_t, __req_chan_t) \
@@ -25,14 +25,14 @@
     logic        p_ready;                          \
   } __req_t;
 
-`define ACC_C_TYPEDEF_RSP_CHAN_T(__rsp_chan_t, __data_t, __id_t ) \
-  typedef struct packed {                                         \
-    __data_t    data0;                                            \
-    __data_t    data1;                                            \
-    logic       error;                                            \
-    logic       dual_writeback;                                   \
-    __id_t      id;                                               \
-    logic [4:0] rd;                                               \
+`define ACC_C_TYPEDEF_RSP_CHAN_T(__rsp_chan_t, __data_t) \
+  typedef struct packed {                                \
+    __data_t     data0;                                  \
+    __data_t     data1;                                  \
+    logic        error;                                  \
+    logic        dual_writeback;                         \
+    logic [31:0] hart_id;                                \
+    logic [4:0]  rd;                                     \
   } __rsp_chan_t;
 
 `define ACC_C_TYPEDEF_RSP_T(__rsp_t, __rsp_chan_t) \
@@ -42,10 +42,10 @@
     logic        q_ready;                          \
   } __rsp_t;
 
-`define ACC_C_TYPEDEF_ALL(__name, __addr_t, __data_t, __id_t )                \
-  `ACC_C_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t, __addr_t, __data_t, __id_t ) \
-  `ACC_C_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __data_t, __id_t )           \
-  `ACC_C_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t )                  \
+`define ACC_C_TYPEDEF_ALL(__name, __addr_t, __data_t)                \
+  `ACC_C_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t, __addr_t, __data_t) \
+  `ACC_C_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __data_t)           \
+  `ACC_C_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t )         \
   `ACC_C_TYPEDEF_RSP_T(__name``_rsp_t,  __name``_rsp_chan_t )
 
 `endif // ACC_C_TYPEDEF_SVH_
@@ -85,7 +85,7 @@
     logic [1:0] writeback;                     \
   } __ack_chan_t;
 
-`define ACC_X_TYPEDEF_RSP_CHAN_T(__rsp_chan_t, __data_t, __id_t) \
+`define ACC_X_TYPEDEF_RSP_CHAN_T(__rsp_chan_t, __data_t) \
   typedef struct packed {                                        \
     __data_t    data0;                                           \
     __data_t    data1;                                           \
@@ -94,11 +94,11 @@
     logic [4:0] rd;                                              \
   } __rsp_chan_t;
 
-`define ACC_X_TYPEDEF_ALL(__name, __data_t, __id_t)                \
-  `ACC_X_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t, __data_t)         \
-  `ACC_X_TYPEDEF_ACK_CHAN_T(__name``_ack_chan_t)                   \
-  `ACC_X_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __data_t, __id_t) \
-  `ACC_X_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t)        \
+`define ACC_X_TYPEDEF_ALL(__name, __data_t)                 \
+  `ACC_X_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t, __data_t)  \
+  `ACC_X_TYPEDEF_ACK_CHAN_T(__name``_ack_chan_t)            \
+  `ACC_X_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __data_t)  \
+  `ACC_X_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t) \
   `ACC_X_TYPEDEF_RSP_T( __name``_rsp_t, __name``_ack_chan_t, __name``_rsp_chan_t)
 
 `endif // ACC_X_TYPEDEF_SVH_

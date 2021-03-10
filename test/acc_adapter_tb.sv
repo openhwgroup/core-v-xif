@@ -9,9 +9,10 @@
 
 module acc_adapter_tb #(
   parameter int unsigned DataWidth       = 32,
-  parameter int unsigned NumHier         = 3,
-  parameter int unsigned NumRsp[NumHier] = '{4,2,2},
-  parameter int unsigned NumRspTot       = sumn(NumRsp, NumHier),
+  parameter int          NumHier         = 3,
+  parameter int          NumRsp[NumHier] = '{4,2,2},
+  parameter int          NumRspTot       = sumn(NumRsp, NumHier),
+  parameter int          HartId          = 32'hcafecafe,
   // TB Params
   parameter int unsigned NrRandomTransactions = 1000
 );
@@ -35,25 +36,23 @@ module acc_adapter_tb #(
   initial begin
     rst_n = 0;
     repeat (3) begin
-      #(ClkPeriod/2) clk = 0;
-      #(ClkPeriod/2) clk = 1;
+      #(ClkPeriod / 2) clk = 0;
+      #(ClkPeriod / 2) clk = 1;
     end
     rst_n = 1;
     forever begin
-      #(ClkPeriod/2) clk = 0;
-      #(ClkPeriod/2) clk = 1;
+      #(ClkPeriod / 2) clk = 0;
+      #(ClkPeriod / 2) clk = 1;
     end
   end
 
-  typedef acc_test::c_req_t # (
+  typedef acc_test::c_req_t #(
     .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth ),
-    .IdWidth   ( 1         )
+    .DataWidth ( DataWidth )
   ) tb_c_req_t;
 
-  typedef acc_test::c_rsp_t # (
-    .DataWidth ( DataWidth ),
-    .IdWidth   ( 1         )
+  typedef acc_test::c_rsp_t #(
+    .DataWidth ( DataWidth )
   ) tb_c_rsp_t;
 
   typedef acc_test::x_req_t #(
@@ -61,7 +60,7 @@ module acc_adapter_tb #(
   ) tb_x_req_t;
 
   typedef acc_test::x_rsp_t #(
-    .DataWidth (DataWidth)
+    .DataWidth ( DataWidth )
   ) tb_x_rsp_t;
 
   typedef acc_test::prd_req_t tb_prd_req_t;
@@ -74,32 +73,34 @@ module acc_adapter_tb #(
 
   ACC_X_BUS_DV #(
     .DataWidth ( DataWidth )
-  ) x_master_dv ( clk );
+  ) x_master_dv (
+    clk
+  );
 
   // From / to interconnect
   ACC_C_BUS #(
     .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth ),
-    .IdWidth   ( 1         )
+    .DataWidth ( DataWidth )
   ) c_slave ();
 
   ACC_C_BUS_DV #(
     .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth ),
-    .IdWidth   ( 1         )
-  ) c_slave_dv ( clk );
+    .DataWidth ( DataWidth )
+  ) c_slave_dv (
+    clk
+  );
 
   // From / to predecoders
-  ACC_PRD_BUS prd_master [NumRspTot] ();
+  ACC_PRD_BUS prd_master[NumRspTot] ();
 
-  ACC_PRD_BUS_DV prd_master_dv [NumRspTot] ( clk );
+  ACC_PRD_BUS_DV prd_master_dv[NumRspTot] (clk);
 
   // Interface assignments
   `ACC_C_ASSIGN(c_slave_dv, c_slave)
 
   `ACC_X_ASSIGN(x_master, x_master_dv)
 
-  for (genvar i=0; i<NumRspTot; i++) begin : gen_predecoder_intf_assign
+  for (genvar i = 0; i < NumRspTot; i++) begin : gen_predecoder_intf_assign
     `ACC_PRD_ASSIGN(prd_master_dv[i], prd_master[i])
   end
 
@@ -110,7 +111,7 @@ module acc_adapter_tb #(
     // Acc bus interface paramaters;
     .DataWidth ( DataWidth ),
     .AddrWidth ( AddrWidth ),
-    .IdWidth   ( 1         ),
+    .NumReq    ( 1         ),
     // Stimuli application and test time
     .TA ( ApplTime ),
     .TT ( TestTime )
@@ -141,7 +142,7 @@ module acc_adapter_tb #(
   end
 
   acc_prd_monitor_t acc_prd_monitor[NumRspTot];
-  for (genvar i=0; i<NumRspTot; i++) begin : gen_predecoder_monitor
+  for (genvar i = 0; i < NumRspTot; i++) begin : gen_predecoder_monitor
     initial begin
       acc_prd_monitor[i] = new(prd_master_dv[i]);
       @(posedge rst_n);
@@ -162,7 +163,7 @@ module acc_adapter_tb #(
   typedef acc_test::rand_c_slave#(
     .AddrWidth ( AddrWidth ),
     .DataWidth ( DataWidth ),
-    .IdWidth   ( 1         ),
+    .NumReq    ( 1         ),
     .TA        ( ApplTime  ),
     .TT        ( TestTime  )
   ) rand_c_slave_t;
@@ -195,21 +196,23 @@ module acc_adapter_tb #(
   end
 
   // Request generation checker
-  let check_req(x_req, prd_rsp, c_req) =
-    acc_test::adp_check_req #(
-      .acc_c_req_t   ( tb_c_req_t   ),
-      .acc_x_req_t   ( tb_x_req_t   ),
-      .acc_prd_rsp_t ( tb_prd_rsp_t )
-    )::do_check(x_req, prd_rsp, c_req);
+  let check_req(x_req, prd_rsp, c_req) = acc_test::adp_check_req#(
+    .acc_c_req_t   ( tb_c_req_t   ),
+    .acc_x_req_t   ( tb_x_req_t   ),
+    .acc_prd_rsp_t ( tb_prd_rsp_t )
+  )::do_check(
+    x_req, prd_rsp, c_req
+  );
 
   // Response checker
   // TODO: MARK0
-  let check_rsp(c_rsp, x_rsp) =
-    acc_test::compare_c_x_rsp #(
+  let check_rsp(c_rsp, x_rsp) = acc_test::compare_c_x_rsp#(
       .c_rsp_t(tb_c_rsp_t),
       //.x_rsp_t(tb_x_rsp_t)
       .x_rsp_t(acc_test::x_rsp_t#(32))
-    )::do_compare(c_rsp, x_rsp);
+  )::do_compare(
+      c_rsp, x_rsp
+  );
 
   // Scoreboard
   // Request Path
@@ -242,13 +245,13 @@ module acc_adapter_tb #(
         automatic tb_prd_req_t prd_req;
         automatic int prd_id, i;
         // Wait for a request at the interconnect output
-        acc_c_slv_monitor.req_mbx[0].get(c_req);
+        acc_c_slv_monitor.req_mbx_cnt.get(c_req, HartId);
 
         // get predecoder ID
         // level-specific address
         prd_id = c_req.addr[AccAddrWidth-1:0];
         i = 0;
-        while ( i != c_req.addr[AddrWidth-1:AccAddrWidth]) begin
+        while (i != c_req.addr[AddrWidth-1:AccAddrWidth]) begin
           // for each level add number of attached Responders
           prd_id += NumRsp[i];
           i++;
@@ -274,7 +277,7 @@ module acc_adapter_tb #(
         // Wait for rejected request
         acc_x_mst_monitor.req_mbx_rejected.get(x_req);
         // Check if any predecoder wanted to accept this request.
-        for (int i = 0; i< NumRspTot; i++) begin
+        for (int i = 0; i < NumRspTot; i++) begin
           automatic tb_prd_req_t prd_req;
           if (acc_prd_monitor[i].req_mbx.try_peek(prd_req)) begin
             // Instruction data is `randc`
@@ -291,7 +294,7 @@ module acc_adapter_tb #(
       forever begin
 
         // automatic tb_x_rsp_t x_rsp;
-        automatic  acc_test::x_rsp_t#(32) x_rsp;
+        automatic acc_test::x_rsp_t #(32) x_rsp;
         // Seems to be necessary here to explicitly refer to the class from
         // acc_test.
         // TODO: Why doesn't it work with typedef?! Same problem: MARK0
@@ -302,7 +305,7 @@ module acc_adapter_tb #(
         // Wait for response at X master interface
         acc_x_mst_monitor.rsp_mbx.get(x_rsp);
         // ASSERT: There X response == C response
-        assert(acc_c_slv_monitor.rsp_mbx[0].try_get(c_rsp)) else
+        assert(acc_c_slv_monitor.rsp_mbx_cnt.try_get(c_rsp, HartId)) else
           $error("X Master response without corresponding C slave response");
         assert(check_rsp(c_rsp, x_rsp)) else
           $error("X Master response does not match C slave response");
@@ -316,14 +319,14 @@ module acc_adapter_tb #(
 
   final begin
     // Request path:
-    for (int i=0; i<NumRspTot; i++) begin
-      assert(acc_prd_monitor[i].req_mbx.num() == 0);
+    for (int i = 0; i < NumRspTot; i++) begin
+      assert (acc_prd_monitor[i].req_mbx.num() == 0);
     end
     assert(acc_x_mst_monitor.req_mbx.num() == 0);
     assert(acc_x_mst_monitor.req_mbx_rejected.num() == 0);
-    assert(acc_c_slv_monitor.req_mbx[0].num() == 0);
+    assert(acc_c_slv_monitor.req_mbx_cnt.empty());
     // Response path:
-    assert(acc_c_slv_monitor.rsp_mbx[0].num() == 0);
+    assert(acc_c_slv_monitor.rsp_mbx_cnt.empty());
     assert(acc_x_mst_monitor.rsp_mbx.num() == 0);
     $display("Checked for non-empty mailboxes");
   end
@@ -334,11 +337,12 @@ module acc_adapter_tb #(
     .NumHier   ( NumHier   ),
     .NumRsp    ( NumRsp    )
   ) dut (
-    .clk_i       ( clk        ),
-    .rst_ni      ( rst_n      ),
-    .acc_x_mst   ( x_master   ),
-    .acc_c_slv   ( c_slave    ),
-    .acc_prd_mst ( prd_master )
+    .clk_i       ( clk          ),
+    .rst_ni      ( rst_n        ),
+    .hart_id_i   ( HartId       ),
+    .acc_x_mst   ( x_master     ),
+    .acc_c_slv   ( c_slave      ),
+    .acc_prd_mst ( prd_master   )
   );
 
 endmodule

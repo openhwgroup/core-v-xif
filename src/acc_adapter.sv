@@ -25,6 +25,8 @@ module acc_adapter #(
     input clk_i,
     input rst_ni,
 
+    input logic [31:0] hart_id_i,
+
     input  acc_x_req_t acc_x_req_i,
     output acc_x_rsp_t acc_x_rsp_o,
 
@@ -77,9 +79,9 @@ module acc_adapter #(
   logic [    NumRspTot-1:0]                   predecoder_accept_onehot;
   logic [      NumHier-1:0][   MaxNumRsp-1:0] predecoder_accept_lvl;
 
-  logic                 acc_c_req_fifo_ready;
-  logic                 acc_c_req_fifo_valid;
-  acc_c_req_chan_t      acc_c_req_fifo_req;
+  logic            acc_c_req_fifo_ready;
+  logic            acc_c_req_fifo_valid;
+  acc_c_req_chan_t acc_c_req_fifo_req;
 
   for (genvar i = 0; i < NumRspTot; i++) begin : gen_acc_predecoder_sig_assign
     assign predecoder_accept_onehot[i]   = acc_prd_rsp_i[i].p_accept;
@@ -119,7 +121,7 @@ module acc_adapter #(
   // ...
   //
   for (genvar i = 0; i < NumHier; i++) begin : gen_acc_addr
-    localparam SumNumRsp = sumn(NumRsp, i);
+    localparam int unsigned SumNumRsp = sumn(NumRsp, i);
     logic [NumRspTot-1:0] shift_predecoder_accept;
 
     assign shift_predecoder_accept = predecoder_accept_onehot >> SumNumRsp;
@@ -159,7 +161,8 @@ module acc_adapter #(
     end
   end
 
-  assign acc_c_req_fifo_req.addr = {hier_addr, addr_lsb};
+  assign acc_c_req_fifo_req.addr    = {hier_addr, addr_lsb};
+  assign acc_c_req_fifo_req.hart_id = hart_id_i;
 
   // Operands
   always_comb begin
@@ -179,7 +182,6 @@ module acc_adapter #(
 
   // Instruction Data
   assign acc_c_req_fifo_req.data_op = instr_rdata_id;
-  assign acc_c_req_fifo_req.id      = 1'b0;
 
   //////////////////
   // Flow Control //
@@ -203,8 +205,6 @@ module acc_adapter #(
   assign acc_x_rsp_o.p.error          = acc_c_rsp_i.p.error;
   assign acc_x_rsp_o.p.rd             = acc_c_rsp_i.p.rd;
   assign acc_x_rsp_o.p.dual_writeback = acc_c_rsp_i.p.dual_writeback;
-  assign acc_x_rsp_o.p_valid          = acc_c_rsp_i.p_valid;
-  assign acc_c_req_o.p_ready          = acc_x_req_i.p_ready;
   assign acc_x_rsp_o.p_valid          = acc_c_rsp_i.p_valid;
   assign acc_c_req_o.p_ready          = acc_x_req_i.p_ready;
 
@@ -246,20 +246,25 @@ module acc_adapter #(
   assert property (@(posedge clk_i)
       (acc_x_req_i.q_valid && acc_x_rsp_o.q_ready && acc_x_rsp_o.k.accept) |-> sources_valid) else
       $error("accepted offload request with invalid source registers");
-  `endif
+  assert property (@(posedge clk_i) (acc_c_rsp_i.p_valid && acc_c_req_o.p_ready)
+                                    |-> acc_c_rsp_i.p.hart_id == hart_id_i ) else
+      $error("Response routing error");
+`endif
   // pragma translate_on
 
 endmodule
 
 module acc_adapter_intf #(
-    parameter int unsigned DataWidth          = 32,
-    parameter int unsigned NumHier            = 3,
-    parameter int unsigned NumRsp   [NumHier] = '{4, 2, 2},
+    parameter int DataWidth          = 32,
+    parameter int NumHier            = 3,
+    parameter int NumRsp   [NumHier] = '{4, 2, 2},
     // Dependent parameter DO NOT OVERRIDE
-    parameter int unsigned NumRspTot          = acc_pkg::sumn(NumRsp, NumHier)
+    parameter int NumRspTot          = acc_pkg::sumn(NumRsp, NumHier)
 ) (
     input clk_i,
     input rst_ni,
+
+    input logic [31:0] hart_id_i,
 
     ACC_X_BUS   acc_x_mst,
     ACC_C_BUS   acc_c_slv,
@@ -267,17 +272,17 @@ module acc_adapter_intf #(
 );
   import acc_pkg::*;
 
-  localparam MaxNumRsp = maxn(NumRsp, NumHier);
-  localparam HierAddrWidth = cf_math_pkg::idx_width(NumHier);
-  localparam AccAddrWidth = cf_math_pkg::idx_width(MaxNumRsp);
-  localparam AddrWidth = HierAddrWidth + AccAddrWidth;
+  localparam int unsigned MaxNumRsp = maxn(NumRsp, NumHier);
+  localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
+  localparam int unsigned AccAddrWidth = cf_math_pkg::idx_width(MaxNumRsp);
+  localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
 
   typedef logic [AddrWidth-1:0] addr_t;
   typedef logic [DataWidth-1:0] data_t;
   typedef logic [4:0]           id_t;
 
-  `ACC_X_TYPEDEF_ALL(acc_x, data_t, id_t)
-  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t, id_t)
+  `ACC_X_TYPEDEF_ALL(acc_x, data_t)
+  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t)
 
   acc_prd_req_t [NumRspTot-1:0] acc_prd_req;
   acc_prd_rsp_t [NumRspTot-1:0] acc_prd_rsp;
@@ -299,6 +304,7 @@ module acc_adapter_intf #(
   ) acc_adapter_i (
       .clk_i         ( clk_i       ),
       .rst_ni        ( rst_ni      ),
+      .hart_id_i     ( hart_id_i   ),
       .acc_x_req_i   ( acc_x_req   ),
       .acc_x_rsp_o   ( acc_x_rsp   ),
       .acc_c_req_o   ( acc_c_req   ),

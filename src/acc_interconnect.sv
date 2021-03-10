@@ -25,28 +25,14 @@ module acc_interconnect #(
     // Insert Pipeline register into response path
     parameter bit          RegisterRsp   = 0,
 
-    // Due to different widths of the ID field at the request master and slave
-    // side, we need separate struct typedefs.
-    // Ports connecting to the accelerator adapter, or lower level
-    // interconnects (master acc_c_slv ports_ feature Id signal width 1 (==1'b0).
-    // Ports connecting to the accelerator units feature id signal width
-    // 1+idx(NumRsp).
-    // Std Request Type : IdWidth = 1
+    // C Request Type
     parameter type acc_c_req_t          = logic,
-    // Std Request Payload Type
+    // C Request Payload Type
     parameter type acc_c_req_chan_t     = logic,
-    // Std Response Type.
+    // C Response Type.
     parameter type acc_c_rsp_t          = logic,
-    // Std Response Payload Type.
-    parameter type acc_c_rsp_chan_t     = logic,
-    // Extended Request Type.
-    parameter type acc_c_ext_req_t      = logic,
-    // Extended Request Payload Type
-    parameter type acc_c_ext_req_chan_t = logic,
-    // Extended Response Type
-    parameter type acc_c_ext_rsp_t      = logic,
-    // Extended Response Payload Type
-    parameter type acc_c_ext_rsp_chan_t = logic
+    // C Response Payload Type.
+    parameter type acc_c_rsp_chan_t     = logic
 ) (
     input clk_i,
     input rst_ni,
@@ -60,12 +46,11 @@ module acc_interconnect #(
     input  acc_c_rsp_t [NumReq-1:0] acc_c_mst_next_rsp_i,
 
     // From / To responding entity
-    output acc_c_ext_req_t [NumRsp-1:0] acc_c_mst_req_o,
-    input  acc_c_ext_rsp_t [NumRsp-1:0] acc_c_mst_rsp_i
+    output acc_c_req_t [NumRsp-1:0] acc_c_mst_req_o,
+    input  acc_c_rsp_t [NumRsp-1:0] acc_c_mst_rsp_i
 );
 
   localparam int unsigned IdxWidth = cf_math_pkg::idx_width(NumReq);
-  localparam int unsigned ExtIdWidth = 1 + IdxWidth;
   localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
 
   // Local xbar select signal width
@@ -87,9 +72,6 @@ module acc_interconnect #(
   logic [NumRsp-1:0]            slv_req_q_valid;
   logic [NumRsp-1:0]            slv_req_p_ready;
 
-  logic [NumRsp-1:0][IdxWidth-1:0] sender_id;    // assigned by crossbar.
-  logic [NumRsp-1:0][IdxWidth-1:0] receiver_id;  // assigned by crossbar.
-
   // Slave response: cross-bar in
   acc_c_rsp_chan_t [NumRsp-1:0] slv_rsp_p_chan;
   logic [NumRsp-1:0]            slv_rsp_p_valid;
@@ -99,7 +81,9 @@ module acc_interconnect #(
   logic [NumReq-1:0]            mst_rsp_p_valid;
   logic [NumReq-1:0]            mst_rsp_q_ready;
 
+  logic [NumRsp-1:0][IdxWidth-1:0] rsp_idx;
 
+  // Generate request routing signals
   for (genvar i = 0; i < NumReq; i++) begin : gen_mst_req_assignment
     assign mst_req_q_chan[i]  = acc_c_slv_req_i[i].q;
     // Xbar Address
@@ -109,18 +93,24 @@ module acc_interconnect #(
   end
 
   for (genvar i = 0; i < NumRsp; i++) begin : gen_slv_req_assignment
-    // Extend ID signal at slave side
-    `ACC_C_ASSIGN_Q_SIGNALS(assign, acc_c_mst_req_o[i].q, slv_req_q_chan[i], "id", {
-                            sender_id[i], 1'b0})
-
+    `ACC_C_ASSIGN_Q_SIGNALS(assign, acc_c_mst_req_o[i].q, slv_req_q_chan[i])
     assign acc_c_mst_req_o[i].q_valid = slv_req_q_valid[i];
     assign acc_c_mst_req_o[i].p_ready = slv_req_p_ready[i];
   end
 
   for (genvar i = 0; i < NumRsp; i++) begin : gen_mst_rsp_assignment
     // Discard upper bits of ID signal after xbar traversal.
-    `ACC_C_ASSIGN_P_SIGNALS(assign, slv_rsp_p_chan[i], acc_c_mst_rsp_i[i].p, "id", 1'b0)
-    assign receiver_id[i]     = acc_c_mst_rsp_i[i].p.id[ExtIdWidth-1:1];
+    `ACC_C_ASSIGN_P_SIGNALS(assign, slv_rsp_p_chan[i], acc_c_mst_rsp_i[i].p)
+    // Generate response routing signal
+    // Hart_id signals are generally hard wired at synthesis time. This
+    // logic reduces to a simple lookup table.
+    always_comb begin
+      rsp_idx[i] = '0;
+      for (int j = 0; j < NumReq; j++) begin
+        rsp_idx[i] |= (acc_c_mst_rsp_i[i].p.hart_id == acc_c_slv_req_i[j].q.hart_id) ?
+          IdxWidth'(unsigned'(j)) : '0;
+      end
+    end
     assign slv_rsp_p_valid[i] = acc_c_mst_rsp_i[i].p_valid;
     assign slv_rsp_q_ready[i] = acc_c_mst_rsp_i[i].q_ready;
   end
@@ -173,7 +163,7 @@ module acc_interconnect #(
       .valid_i ( mst_req_q_valid ),
       .ready_o ( mst_rsp_q_ready ),
       .data_o  ( slv_req_q_chan  ),
-      .idx_o   ( sender_id       ),
+      .idx_o   ( /* unused */    ),
       .valid_o ( slv_req_q_valid ),
       .ready_i ( slv_rsp_q_ready )
   );
@@ -191,11 +181,11 @@ module acc_interconnect #(
       .flush_i ( 1'b0            ),
       .rr_i    ( '0              ),
       .data_i  ( slv_rsp_p_chan  ),
-      .sel_i   ( receiver_id     ),
+      .sel_i   ( rsp_idx         ),
       .valid_i ( slv_rsp_p_valid ),
       .ready_o ( slv_req_p_ready ),
       .data_o  ( mst_rsp_p_chan  ),
-      .idx_o   (                 ),
+      .idx_o   ( /* unused */    ),
       .valid_o ( mst_rsp_p_valid ),
       .ready_i ( mst_req_p_ready )
   );
@@ -254,19 +244,14 @@ module acc_interconnect_intf #(
     ACC_C_BUS acc_c_mst     [NumRsp]
 );
 
-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(NumReq);
-  localparam int unsigned ExtIdWidth = 1 + IdxWidth;
   localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
 
   typedef logic [DataWidth-1:0]  data_t;
   typedef logic [AddrWidth-1:0]  addr_t;
-  typedef logic                  in_id_t;
-  typedef logic [ExtIdWidth-1:0] ext_id_t;
 
   // This generates some unused typedefs. still cleaner than invoking macros
   // separately.
-  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t, in_id_t)
-  `ACC_C_TYPEDEF_ALL(acc_c_ext, addr_t, data_t, ext_id_t)
+  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t)
 
   acc_c_req_t [NumReq-1:0] acc_c_slv_req;
   acc_c_rsp_t [NumReq-1:0] acc_c_slv_rsp;
@@ -274,26 +259,22 @@ module acc_interconnect_intf #(
   acc_c_req_t [NumReq-1:0] acc_c_mst_next_req;
   acc_c_rsp_t [NumReq-1:0] acc_c_mst_next_rsp;
 
-  acc_c_ext_req_t [NumRsp-1:0] acc_c_mst_req;
-  acc_c_ext_rsp_t [NumRsp-1:0] acc_c_mst_rsp;
+  acc_c_req_t [NumRsp-1:0] acc_c_mst_req;
+  acc_c_rsp_t [NumRsp-1:0] acc_c_mst_rsp;
 
   acc_interconnect #(
-      .DataWidth            ( DataWidth            ),
-      .HierAddrWidth        ( HierAddrWidth        ),
-      .AccAddrWidth         ( AccAddrWidth         ),
-      .HierLevel            ( HierLevel            ),
-      .NumReq               ( NumReq               ),
-      .NumRsp               ( NumRsp               ),
-      .RegisterReq          ( RegisterReq          ),
-      .RegisterRsp          ( RegisterRsp          ),
-      .acc_c_req_t          ( acc_c_req_t          ),
-      .acc_c_req_chan_t     ( acc_c_req_chan_t     ),
-      .acc_c_rsp_t          ( acc_c_rsp_t          ),
-      .acc_c_rsp_chan_t     ( acc_c_rsp_chan_t     ),
-      .acc_c_ext_req_t      ( acc_c_ext_req_t      ),
-      .acc_c_ext_req_chan_t ( acc_c_ext_req_chan_t ),
-      .acc_c_ext_rsp_t      ( acc_c_ext_rsp_t      ),
-      .acc_c_ext_rsp_chan_t ( acc_c_ext_rsp_chan_t )
+      .DataWidth        ( DataWidth        ),
+      .HierAddrWidth    ( HierAddrWidth    ),
+      .AccAddrWidth     ( AccAddrWidth     ),
+      .HierLevel        ( HierLevel        ),
+      .NumReq           ( NumReq           ),
+      .NumRsp           ( NumRsp           ),
+      .RegisterReq      ( RegisterReq      ),
+      .RegisterRsp      ( RegisterRsp      ),
+      .acc_c_req_t      ( acc_c_req_t      ),
+      .acc_c_req_chan_t ( acc_c_req_chan_t ),
+      .acc_c_rsp_t      ( acc_c_rsp_t      ),
+      .acc_c_rsp_chan_t ( acc_c_rsp_chan_t )
   ) acc_interconnect_i (
       .clk_i                ( clk_i              ),
       .rst_ni               ( rst_ni             ),

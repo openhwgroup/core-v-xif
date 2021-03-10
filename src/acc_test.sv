@@ -14,24 +14,18 @@ package acc_test;
 
   class c_req_t #(
     parameter int AddrWidth = -1,
-    parameter int DataWidth = -1,
-    parameter int IdWidth   = -1
+    parameter int DataWidth = -1
   );
     rand logic [AddrWidth-1:0] addr;
     rand logic [DataWidth-1:0] data_arga;
     rand logic [DataWidth-1:0] data_argb;
     rand logic [DataWidth-1:0] data_argc;
     rand logic [31:0]          data_op;
-    rand logic [IdWidth-1:0]   id;
-
-    constraint id_lsb_c {
-      id[0] == 1'b0;
-    };
+    rand logic [31:0]          hart_id;
 
     typedef c_req_t # (
       .AddrWidth ( AddrWidth ),
-      .DataWidth ( DataWidth ),
-      .IdWidth   ( IdWidth   )
+      .DataWidth ( DataWidth )
     ) int_c_req_t;
 
     function do_compare (int_c_req_t req);
@@ -39,7 +33,8 @@ package acc_test;
              data_arga == req.data_arga &&
              data_argb == req.data_argb &&
              data_argc == req.data_argc &&
-             data_op   == req.data_op;
+             data_op   == req.data_op   &&
+             hart_id   == req.hart_id;
     endfunction
 
     task display;
@@ -49,52 +44,34 @@ package acc_test;
               "c_req.data_arga: %x\n",  data_arga,
               "c_req.data_argb: %x\n",  data_argb,
               "c_req.data_argc: %x\n",  data_argc,
-              "c_req.id: %x\n",         id,
+              "c_req.hart_id: %x\n",    hart_id,
               "\n"
             );
     endtask
   endclass
 
-  // Compare C requests of different parameterizations.
-  // different parametrizations
-  class compare_c_req #(
-    parameter type mst_c_req_t = logic,
-    parameter type slv_c_req_t = logic
-  );
-    static function do_compare(mst_c_req_t mst_req, slv_c_req_t slv_req);
-      return mst_req.addr      == slv_req.addr      &&
-             mst_req.data_arga == slv_req.data_arga &&
-             mst_req.data_argb == slv_req.data_argb &&
-             mst_req.data_argc == slv_req.data_argc &&
-             mst_req.data_op   == slv_req.data_op;
-    endfunction
-  endclass
-
-
   class c_rsp_t #(
-    parameter int DataWidth = -1,
-    parameter int IdWidth   = -1
+    parameter int DataWidth = -1
   );
     rand logic [DataWidth-1:0] data0;
     rand logic [DataWidth-1:0] data1;
     rand logic                 dual_writeback;
     rand logic                 error;
-    logic [4:0]                rd; // not random!
-    logic [IdWidth-1:0]        id;
+    logic [4:0]                rd;
+    logic [31:0]               hart_id;
 
     typedef c_rsp_t # (
-      .DataWidth    ( DataWidth ),
-      .IdWidth      ( IdWidth   )
+      .DataWidth    ( DataWidth )
     ) int_c_rsp_t;
 
     task display;
       $display(
-              "c_rsp.data0: %x\n",          data0,
-              "c_rsp.data1: %x\n",          data1,
-              "c_rsp.dual_writeback: %x\n", dual_writeback,
-              "c_rsp.error %x\n",           error,
-              "c_rsp.rd: %x\n",             rd,
-              "c_rsp.id: %x\n",             id,
+              "c_rsp.data0: %x\n",           data0,
+              "c_rsp.data1: %x\n",           data1,
+              "c_rsp.dual_writeback: %x\n",  dual_writeback,
+              "c_rsp.error %x\n",            error,
+              "c_rsp.rd: %x\n",              rd,
+              "c_rsp.hart_id: %x\n",         hart_id,
               "\n"
             );
     endtask
@@ -104,58 +81,48 @@ package acc_test;
              data1          == rsp.data1          &
              dual_writeback == rsp.dual_writeback &
              error          == rsp.error          &
-             rd             == rsp.rd;
-    endfunction
-  endclass
-
-
-  // Compare rsps of different parameterizations.
-  class compare_c_rsp #(
-    parameter type mst_c_rsp_t = logic,
-    parameter type slv_c_rsp_t = logic
-  );
-    static function do_compare(mst_c_rsp_t mst_rsp, slv_c_rsp_t slv_rsp);
-      return mst_rsp.data0          == slv_rsp.data0          &
-             mst_rsp.data1          == slv_rsp.data1          &
-             mst_rsp.dual_writeback == slv_rsp.dual_writeback &
-             mst_rsp.error          == slv_rsp.error          &
-             mst_rsp.rd             == slv_rsp.rd;
+             rd             == rsp.rd             &
+             hart_id        == rsp.hart_id;
     endfunction
   endclass
 
   class acc_c_driver #(
     parameter int AddrWidth = -1,
     parameter int DataWidth = -1,
-    parameter int IdWidth   = -1,
     parameter time TA       = 0, // stimuli application time
     parameter time TT       = 0  // stimuli test time
   );
 
     typedef c_req_t #(
       .DataWidth ( DataWidth ),
-      .AddrWidth ( AddrWidth ),
-      .IdWidth   ( IdWidth   )
+      .AddrWidth ( AddrWidth )
     ) int_c_req_t;
 
     typedef c_rsp_t #(
-      .DataWidth ( DataWidth ),
-      .IdWidth   ( IdWidth   )
+      .DataWidth ( DataWidth )
     ) int_c_rsp_t;
 
     virtual ACC_C_BUS_DV # (
       .DataWidth ( DataWidth ),
-      .AddrWidth ( AddrWidth ),
-      .IdWidth   ( IdWidth   )
+      .AddrWidth ( AddrWidth )
     ) bus;
 
+    logic [31:0] hart_id;
+    bit const_hart_id;
+
+    // Initialiation variable hart_id:
+    // hart_id == -1 -> variable request hart id
+    // hart_id >=  0 -> hart id hardwired.
     function new(
       virtual ACC_C_BUS_DV #(
         .DataWidth ( DataWidth ),
-        .AddrWidth ( AddrWidth ),
-        .IdWidth   ( IdWidth   )
-      ) bus
+        .AddrWidth ( AddrWidth )
+      ) bus,
+      int hart_id = -1
     );
-      this.bus=bus;
+      this.bus = bus;
+      this.const_hart_id = ( hart_id >= 0 );
+      this.hart_id = 32'(unsigned'(hart_id));
     endfunction
 
     task reset_master;
@@ -164,7 +131,7 @@ package acc_test;
       bus.q_data_arga <= '0;
       bus.q_data_argb <= '0;
       bus.q_data_argc <= '0;
-      bus.q_id        <= '0;
+      bus.q_hart_id   <= const_hart_id ? hart_id : '0;
       bus.q_valid     <= '0;
       bus.p_ready     <= '0;
     endtask
@@ -173,7 +140,7 @@ package acc_test;
       bus.p_data0          <= '0;
       bus.p_data1          <= '0;
       bus.p_dual_writeback <= '0;
-      bus.p_id             <= '0;
+      bus.p_hart_id        <= '0;
       bus.p_rd             <= '0;
       bus.p_error          <= '0;
       bus.p_valid          <= '0;
@@ -190,12 +157,16 @@ package acc_test;
 
     // Send a request.
     task send_req (input int_c_req_t req);
+      if (const_hart_id) begin
+        assert(req.hart_id == hart_id) else
+          $error("req.hart_id = %0x, sender.hart_id = %0x", req.hart_id, hart_id);
+      end
       bus.q_addr      <= #TA req.addr;
       bus.q_data_op   <= #TA req.data_op;
       bus.q_data_arga <= #TA req.data_arga;
       bus.q_data_argb <= #TA req.data_argb;
       bus.q_data_argc <= #TA req.data_argc;
-      bus.q_id        <= #TA req.id;
+      bus.q_hart_id   <= #TA req.hart_id;
       bus.q_valid     <= #TA 1;
       cycle_start();
       while (bus.q_ready != 1) begin cycle_end(); cycle_start(); end
@@ -205,7 +176,7 @@ package acc_test;
       bus.q_data_arga <= #TA '0;
       bus.q_data_argb <= #TA '0;
       bus.q_data_argc <= #TA '0;
-      bus.q_id        <= #TA '0;
+      bus.q_hart_id   <= #TA const_hart_id ? hart_id : '0;
       bus.q_valid     <= #TA  0;
     endtask
 
@@ -214,7 +185,7 @@ package acc_test;
       bus.p_data0          <= #TA rsp.data0;
       bus.p_data1          <= #TA rsp.data1;
       bus.p_dual_writeback <= #TA rsp.dual_writeback;
-      bus.p_id             <= #TA rsp.id;
+      bus.p_hart_id        <= #TA rsp.hart_id;
       bus.p_rd             <= #TA rsp.rd;
       bus.p_error          <= #TA rsp.error;
       bus.p_valid          <= #TA 1;
@@ -224,7 +195,7 @@ package acc_test;
       bus.p_data0          <= #TA '0;
       bus.p_data1          <= #TA '0;
       bus.p_dual_writeback <= #TA '0;
-      bus.p_id             <= #TA '0;
+      bus.p_hart_id        <= #TA '0;
       bus.p_rd             <= #TA '0;
       bus.p_error          <= #TA '0;
       bus.p_valid          <= #TA 0;
@@ -241,7 +212,7 @@ package acc_test;
       req.data_arga = bus.q_data_arga;
       req.data_argb = bus.q_data_argb;
       req.data_argc = bus.q_data_argc;
-      req.id        = bus.q_id;
+      req.hart_id   = bus.q_hart_id;
       cycle_end();
       bus.q_ready <= #TA 0;
     endtask
@@ -256,7 +227,7 @@ package acc_test;
       rsp.data1          = bus.p_data1;
       rsp.dual_writeback = bus.p_dual_writeback;
       rsp.error          = bus.p_error;
-      rsp.id             = bus.p_id;
+      rsp.hart_id        = bus.p_hart_id;
       rsp.rd             = bus.p_rd;
       cycle_end();
       bus.p_ready <= #TA 0;
@@ -272,7 +243,7 @@ package acc_test;
       req.data_arga = bus.q_data_arga;
       req.data_argb = bus.q_data_argb;
       req.data_argc = bus.q_data_argc;
-      req.id        = bus.q_id;
+      req.hart_id   = bus.q_hart_id;
       cycle_end();
     endtask
 
@@ -285,7 +256,7 @@ package acc_test;
       rsp.data1          = bus.p_data1;
       rsp.dual_writeback = bus.p_dual_writeback;
       rsp.error          = bus.p_error;
-      rsp.id             = bus.p_id;
+      rsp.hart_id        = bus.p_hart_id;
       rsp.rd             = bus.p_rd;
       cycle_end();
     endtask
@@ -295,45 +266,39 @@ package acc_test;
   // Super classes for random acc drivers
   virtual class rand_c #(
     // Acc interface parameters
-    parameter int DataWidth    = -1,
-    parameter int AddrWidth    = -1,
-    parameter int IdWidth      = -1,
-
+    parameter int DataWidth = -1,
+    parameter int AddrWidth = -1,
     // Stimuli application and test time
     parameter time TA = 0ps,
     parameter time TT = 0ps
   );
 
     typedef c_req_t #(
-      .AddrWidth    ( AddrWidth    ),
-      .DataWidth    ( DataWidth    ),
-      .IdWidth      ( IdWidth      )
+      .AddrWidth ( AddrWidth ),
+      .DataWidth ( DataWidth )
     ) int_c_req_t;
 
     typedef c_rsp_t #(
-      .DataWidth    ( DataWidth  ),
-      .IdWidth      ( IdWidth    )
+      .DataWidth    ( DataWidth )
     ) int_c_rsp_t;
 
     typedef acc_test::acc_c_driver #(
-      // Acc interface parameters
-      .AddrWidth    ( AddrWidth    ),
-      .DataWidth    ( DataWidth    ),
-      .IdWidth      ( IdWidth      ),
-      // Stimuli application and test time
-      .TA(TA),
-      .TT(TT)
+      .AddrWidth ( AddrWidth ),
+      .DataWidth ( DataWidth ),
+      .TA        ( TA        ),
+      .TT        ( TT        )
     ) acc_c_driver_t;
 
     acc_c_driver_t drv;
 
     function new(
       virtual ACC_C_BUS_DV #(
-        .DataWidth    ( DataWidth    ),
-        .AddrWidth    ( AddrWidth    ),
-        .IdWidth      ( IdWidth      )
-      ) bus );
-      this.drv = new (bus);
+        .DataWidth ( DataWidth ),
+        .AddrWidth ( AddrWidth )
+      ) bus,
+      int hart_id = -1
+    );
+      this.drv = new (bus, hart_id);
     endfunction
 
     task automatic rand_wait(input int unsigned min, input int unsigned max);
@@ -351,13 +316,19 @@ package acc_test;
 
   endclass
 
+  class rand_hart_id;
+    rand int hart_id;
+    constraint positive_hart_id_c {
+      hart_id >= 0;
+    }
+  endclass
+
   // Generate random requests as a master device.
   class rand_c_master #(
     // Acc interface parameters
     parameter int DataWidth       = -1,
     parameter int AccAddrWidth    = -1,
     parameter int AddrWidth       = -1,
-    parameter int IdWidth         = -1,
     parameter int NumHier         = -1,
     parameter int HierLevel       = -1,
     parameter int NumRsp[NumHier] = '{-1},
@@ -369,13 +340,10 @@ package acc_test;
     parameter int unsigned RSP_MIN_WAIT_CYCLES = 1,
     parameter int unsigned RSP_MAX_WAIT_CYCLES = 20
   ) extends rand_c #(
-      // Acc interface parameters
       .DataWidth ( DataWidth ),
       .AddrWidth ( AddrWidth ),
-      .IdWidth   ( IdWidth   ),
-      // Stimuli application and test time
-      .TA ( TA ),
-      .TT ( TT )
+      .TA        ( TA        ),
+      .TT        ( TT        )
     );
 
     int unsigned cnt = 0;
@@ -390,10 +358,11 @@ package acc_test;
     function new (
       virtual ACC_C_BUS_DV #(
         .DataWidth ( DataWidth ),
-        .AddrWidth ( AddrWidth ),
-        .IdWidth   ( IdWidth   )
-      ) bus );
-      super.new(bus);
+        .AddrWidth ( AddrWidth )
+      ) bus,
+      int hart_id
+    );
+      super.new(bus, hart_id);
     endfunction
 
     task run(input int n);
@@ -415,6 +384,7 @@ package acc_test;
             addr[AccAddrWidth-1:0]         inside {[0:NumRsp[addr[AddrWidth-1:AccAddrWidth]]-1]};
           }
         );
+        if (drv.const_hart_id) req.hart_id = drv.hart_id;
         rand_wait(REQ_MIN_WAIT_CYCLES, REQ_MAX_WAIT_CYCLES);
         this.drv.send_req(req);
       end
@@ -432,29 +402,159 @@ package acc_test;
     endtask
   endclass
 
+  // The slave modules do not know the hart_ids connected to it.
+  // Therefore we cannot directly index into the mailbox array.
+  // know the exact hart ids connected to it.
+  // This class facilitates automatic mapping of hart_ids to corresponding
+  // mailboxes.
+  class mailbox_container #(
+    parameter int  NumMbx = -1,
+    parameter type msg_t  = logic,
+    parameter type idx_t  = logic
+  );
+    mailbox mbx[NumMbx];
+    int unsigned mbx_pointer[idx_t];
+    int unsigned idx_pointer[logic[cf_math_pkg::idx_width(NumMbx)-1:0]];
+    int unsigned mbx_next = 0;
+
+    // This event is triggered once a mailbox is assigned a hart_id.
+    // `get` functions waiting for specific hart_id mailboxes must wait for
+    // this assignement to happen.
+    event e_mbx_assigned [logic[31:0]];
+
+    function new;
+      foreach (mbx[ii]) mbx[ii] = new;
+    endfunction
+
+    function automatic event new_event();
+      event e;
+      return e;
+    endfunction
+
+    task put(input msg_t msg, input idx_t idx);
+      if (!mbx_pointer.exists(idx)) begin
+        if(!e_mbx_assigned.exists(idx)) begin
+          this.e_mbx_assigned[idx] = new_event();
+        end
+        assert(mbx_next <= NumMbx);
+        mbx_pointer[idx] = mbx_next;
+        idx_pointer[mbx_next] = idx;
+        -> e_mbx_assigned[idx];
+        mbx_next++;
+      end
+      mbx[mbx_pointer[idx]].put(msg);
+    endtask
+
+    function automatic int num(idx_t idx);
+      if (!mbx_pointer.exists(idx)) begin
+        return 0;
+      end else begin
+        return mbx[mbx_pointer[idx]].num();
+      end
+    endfunction
+
+    function automatic int num_direct(int i);
+      assert(i < NumMbx);
+      return mbx[i].num();
+    endfunction
+
+    task get(output msg_t msg, input idx_t idx);
+      if (!mbx_pointer.exists(idx)) begin
+        if(!e_mbx_assigned.exists(idx)) begin
+          this.e_mbx_assigned[idx] = new_event();
+        end
+        @(e_mbx_assigned[idx]);
+        assert(mbx_pointer.exists(idx));
+      end
+      mbx[mbx_pointer[idx]].get(msg);
+    endtask
+
+    task get_direct(output msg_t msg, input int i);
+      assert(i < NumMbx);
+      mbx[i].get(msg);
+    endtask
+
+    task peek(output msg_t msg, input idx_t idx);
+      if (!mbx_pointer.exists(idx)) begin
+        @(e_mbx_assigned[idx]);
+        assert(mbx_pointer.exists(idx));
+      end
+      msg=new;
+      mbx[mbx_pointer[idx]].peek(msg);
+    endtask
+
+    task peek_direct(output msg_t msg, input int i);
+      assert(i < NumMbx);
+      mbx[i].peek(msg);
+    endtask
+    function try_get(output msg_t msg, input idx_t idx);
+      if (!mbx_pointer.exists(idx)) begin
+        return 0;
+      end
+      return mbx[mbx_pointer[idx]].try_get(msg);
+    endfunction
+
+    // try_get message from random mailbox, if any.
+    function automatic bit try_get_random(output msg_t msg);
+      automatic int mbx_id[NumMbx];
+      automatic bit msg_found = 1'b0;
+      for (int i = 0; i < NumMbx; i++) begin
+        mbx_id[i] = i;
+      end
+      mbx_id.shuffle();
+      for (int i = 0; i < NumMbx; i++) begin
+        if(idx_pointer.exists(mbx_id[i])) begin
+          msg_found |= try_get(msg, idx_pointer[mbx_id[i]]);
+        end
+        if (msg_found) break;
+      end
+      return msg_found;
+    endfunction
+
+    function automatic bit empty();
+      automatic bit result = 1;
+      for (int i = 0; i < NumMbx; i++) begin
+        result &= (mbx[i].num() == 0);
+      end
+      return result;
+    endfunction
+
+  endclass
+
   class rand_c_slave #(
     // Acc interface parameters
     parameter int AddrWidth    = -1,
     parameter int DataWidth    = -1,
-    parameter int IdWidth      = -1,
+    parameter int NumReq       = -1,
     // Stimuli application and test time
-    parameter time  TA = 0ps,
-    parameter time  TT = 0ps,
     parameter int unsigned REQ_MIN_WAIT_CYCLES = 0,
     parameter int unsigned REQ_MAX_WAIT_CYCLES = 10,
     parameter int unsigned RSP_MIN_WAIT_CYCLES = 0,
-    parameter int unsigned RSP_MAX_WAIT_CYCLES = 10
+    parameter int unsigned RSP_MAX_WAIT_CYCLES = 10,
+    parameter time TA = 0ps,
+    parameter time TT = 0ps
   ) extends rand_c #(
-      // Acc interface parameters
       .AddrWidth ( AddrWidth ),
       .DataWidth ( DataWidth ),
-      .IdWidth   ( IdWidth   ),
-      // Stimuli application and test time
-      .TA(TA),
-      .TT(TT)
+      .TA        ( TA        ),
+      .TT        ( TT        )
     );
 
-    mailbox req_mbx[2**IdWidth];
+    mailbox_container #(
+        .NumMbx ( NumReq      ),
+        .msg_t  ( int_c_req_t ),
+        .idx_t  ( logic[31:0] )
+      ) req_mbx_cnt;
+
+    /// Constructor.
+    function new (
+      virtual ACC_C_BUS_DV #(
+        .DataWidth ( DataWidth ),
+        .AddrWidth ( AddrWidth )
+      ) bus);
+      super.new(bus);
+      req_mbx_cnt = new;
+    endfunction
 
     /// Reset the driver.
     task reset();
@@ -468,53 +568,28 @@ package acc_test;
       join
     endtask
 
-    /// Constructor.
-    function new (
-      virtual ACC_C_BUS_DV #(
-        .DataWidth    ( DataWidth    ),
-        .AddrWidth    ( AddrWidth    ),
-        .IdWidth      ( IdWidth      )
-      ) bus);
-      super.new(bus);
-      foreach(this.req_mbx[ii]) req_mbx[ii] = new();
-    endfunction
-
     task recv_requests();
       forever begin
         automatic int_c_req_t req;
         rand_wait(REQ_MIN_WAIT_CYCLES, REQ_MAX_WAIT_CYCLES);
         this.drv.recv_req(req);
-        req_mbx[req.id >> 1].put(req);
+        req_mbx_cnt.put(req, req.hart_id);
       end
     endtask
 
+    // Generate and send random response.
+    // The order in which requests from different origins are served is randomized
     task send_responses();
       forever begin
         automatic int_c_rsp_t rsp = new;
         automatic int_c_req_t req;
-        // generate random sequence of requesters.
-        automatic int req_id[2**IdWidth];
-        automatic bit req_found = 1'b0;
-        // randomly pick a request
-        for (int i =0; i<2**IdWidth; i++) begin
-          req_id[i] = i;
-        end
-        req_id.shuffle();
-        for (int i=0; i<2**IdWidth; i++) begin
-          automatic int r_id = req_id[i];
-          if (req_mbx[r_id].num() != 0) begin
-            req_mbx[r_id].get(req);
-            req_found = 1'b1;
-            break;
-          end
-        end
+        automatic bit req_found;
+        // get request from random requester mailbox.
+        req_found = req_mbx_cnt.try_get_random(req);
         if (req_found==1'b1) begin
-          // generate and send random response.
           assert(rsp.randomize());
-          // get Id + Rd from corresponding request.
-          rsp.id = req.id;
+          rsp.hart_id = req.hart_id;
           rsp.rd = req.data_op[11:7];
-          // send response back to requester.
           @(posedge this.drv.bus.clk_i);
           rand_wait(RSP_MIN_WAIT_CYCLES, RSP_MAX_WAIT_CYCLES);
           this.drv.send_rsp(rsp);
@@ -527,51 +602,56 @@ package acc_test;
 
   class acc_c_slv_monitor #(
     // Acc interface parameters
-    parameter int DataWidth    = -1,
-    parameter int AddrWidth    = -1,
-    parameter int IdWidth      = -1,
+    parameter int DataWidth = -1,
+    parameter int AddrWidth = -1,
+    parameter int NumReq    = -1,
     // Stimuli application and test time
     parameter time  TA = 0ps,
     parameter time  TT = 0ps
   ) extends rand_c #(
-        .DataWidth    ( DataWidth    ),
-        .AddrWidth    ( AddrWidth    ),
-        .IdWidth      ( IdWidth      ),
-        .TA           ( TA           ),
-        .TT           ( TT           )
+        .DataWidth ( DataWidth ),
+        .AddrWidth ( AddrWidth ),
+        .TA        ( TA        ),
+        .TT        ( TT        )
   );
 
-    mailbox req_mbx[IdWidth**2];
-    mailbox rsp_mbx[IdWidth**2];
+    mailbox_container #(
+        .NumMbx ( NumReq      ),
+        .msg_t  ( int_c_req_t ),
+        .idx_t  ( logic[31:0] )
+      ) req_mbx_cnt;
+
+    mailbox_container #(
+        .NumMbx ( NumReq      ),
+        .msg_t  ( int_c_rsp_t ),
+        .idx_t  ( logic[31:0] )
+      ) rsp_mbx_cnt;
 
     // Constructor.
     function new (
       virtual ACC_C_BUS_DV #(
-        .DataWidth    ( DataWidth    ),
-        .AddrWidth    ( AddrWidth    ),
-        .IdWidth      ( IdWidth      )
+        .DataWidth ( DataWidth ),
+        .AddrWidth ( AddrWidth )
       ) bus);
       super.new(bus);
-      foreach (this.req_mbx[ii]) req_mbx[ii] = new();
-      foreach (this.rsp_mbx[ii]) rsp_mbx[ii] = new();
-
+      req_mbx_cnt = new;
+      rsp_mbx_cnt = new;
     endfunction
 
     // Slave Monitor.
-    // For each master maintain a separate mailbox.
     task monitor;
       fork
         forever begin
           automatic int_c_req_t req;
           this.drv.mon_req(req);
           // put in req mbox corresponding to the requester
-          req_mbx[req.id].put(req);
+          req_mbx_cnt.put(req, req.hart_id);
         end
         forever begin
           automatic int_c_rsp_t rsp;
           this.drv.mon_rsp(rsp);
           // put in req mbox corresponding to the requester
-          rsp_mbx[rsp.id].put(rsp);
+          rsp_mbx_cnt.put(rsp, rsp.hart_id);
         end
       join
     endtask
@@ -582,7 +662,6 @@ package acc_test;
     parameter int DataWidth    = -1,
     parameter int AddrWidth    = -1,
     parameter int AccAddrWidth = -1,
-    parameter int IdWidth      = -1,
     parameter int HierLevel    = -1,
     // Stimuli application and test time
     parameter time  TA = 0ps,
@@ -590,12 +669,11 @@ package acc_test;
   ) extends rand_c #(
         .DataWidth ( DataWidth ),
         .AddrWidth ( AddrWidth ),
-        .IdWidth   ( IdWidth   ),
         .TA        ( TA        ),
         .TT        ( TT        )
     );
 
-    mailbox req_mbx [AccAddrWidth**2];
+    mailbox req_mbx[AccAddrWidth**2];
     mailbox req_mbx_fwd = new;
     mailbox rsp_mbx = new;
 
@@ -603,8 +681,7 @@ package acc_test;
     function new (
       virtual ACC_C_BUS_DV #(
         .DataWidth ( DataWidth ),
-        .AddrWidth ( AddrWidth ),
-        .IdWidth   ( IdWidth   )
+        .AddrWidth ( AddrWidth )
       ) bus);
       super.new(bus);
       foreach (this.req_mbx[ii]) req_mbx[ii] = new;
@@ -617,7 +694,6 @@ package acc_test;
         forever begin
           automatic int_c_req_t req;
           this.drv.mon_req(req);
-          //req.display();
           // Check if request addresses this level
           if (req.addr[AddrWidth-1:AccAddrWidth] == HierLevel) begin
             // put in req mbox corresponding to the responder
@@ -680,7 +756,7 @@ package acc_test;
 
 
   class x_rsp_t #(
-    parameter DataWidth = -1
+    parameter int DataWidth = -1
   );
     // RSP Channel
     rand logic [DataWidth-1:0] data0;
@@ -802,7 +878,7 @@ package acc_test;
         cycle_start();
       end
       cycle_end();
-      bus.q_valid      <= #TA '0;
+      bus.q_valid  <= #TA '0;
       req.writeback = bus.k_writeback;
       req.accept    = bus.k_accept;
     endtask
@@ -846,7 +922,7 @@ package acc_test;
     endtask
 
     // Receive a response.
-    task recv_rsp (output int_x_rsp_t rsp);
+    task recv_rsp(output int_x_rsp_t rsp);
       bus.p_ready <= #TA 1;
       cycle_start();
       while (bus.p_valid != 1) begin cycle_end(); cycle_start(); end
@@ -1210,15 +1286,14 @@ package acc_test;
       this.drv = new(bus);
     endfunction
 
-
   endclass
 
  // Collectively driving all predecoders. Easier to coordinate one-hot accept
  // signal for adapter testbench.
  class rand_prd_slave_collective #(
-    parameter NumRspTot = -1,
-    parameter time TA   = 0ps,
-    parameter time TT   = 0ps
+    parameter int NumRspTot = -1,
+    parameter time TA       = 0ps,
+    parameter time TT       = 0ps
   );
 
     typedef acc_test::acc_prd_driver #(
@@ -1230,7 +1305,7 @@ package acc_test;
 
     virtual ACC_PRD_BUS_DV bus [NumRspTot];
 
-    function new ( virtual ACC_PRD_BUS_DV bus [NumRspTot] );
+    function new (virtual ACC_PRD_BUS_DV bus[NumRspTot]);
       foreach(this.drv[ii]) this.drv[ii] = new(bus[ii]);
     endfunction
 
@@ -1254,7 +1329,6 @@ package acc_test;
           }
         );
         for (int i=0; i<NumRspTot; i++) begin
-
           prd_rsp[i] = new;
           assert(
             prd_rsp[i].randomize with {
@@ -1266,7 +1340,6 @@ package acc_test;
         for (int i=0; i<NumRspTot; i++) begin
           fork
             automatic int ii=i;
-            //$display("Time: %0t, Fork: %0d", $time, ii);
             this.drv[ii].send_rsp(prd_rsp[ii]);
           join_none
         end
@@ -1307,8 +1380,8 @@ package acc_test;
   endclass
 
   class adp_check_req #(
-    parameter type acc_c_req_t = logic,
-    parameter type acc_x_req_t = logic,
+    parameter type acc_c_req_t   = logic,
+    parameter type acc_x_req_t   = logic,
     parameter type acc_prd_rsp_t = logic
   );
 
@@ -1320,7 +1393,6 @@ package acc_test;
       return (c_req.data_arga == (prd_rsp.use_rs[0] ? x_req.rs1 : '0)) &&
              (c_req.data_argb == (prd_rsp.use_rs[1] ? x_req.rs2 : '0)) &&
              (c_req.data_argc == (prd_rsp.use_rs[2] ? x_req.rs3 : '0)) &&
-             (c_req.id        == 1'b0)                                 &&
              (c_req.data_op   == x_req.instr_data);
 
     endfunction
