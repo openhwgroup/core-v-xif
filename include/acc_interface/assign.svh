@@ -36,21 +36,18 @@
 //
 // Usage Example: `ACC_C_C_ASSIGN(slv, mst) `ACC_C_C_ASSIGN_Q(dst, src, aw)
 // `ACC_C_ASSIGN_P(dst, src)
-`define ACC_C_ASSIGN_Q_CHAN(__opt_as, dst, src, __sep_dst, __sep_src) \
-  __opt_as dst.q``__sep_dst``addr      = src.q``__sep_src``addr;      \
-  __opt_as dst.q``__sep_dst``data_op   = src.q``__sep_src``data_op;   \
-  __opt_as dst.q``__sep_dst``data_arga = src.q``__sep_src``data_arga; \
-  __opt_as dst.q``__sep_dst``data_argb = src.q``__sep_src``data_argb; \
-  __opt_as dst.q``__sep_dst``data_argc = src.q``__sep_src``data_argc; \
-  __opt_as dst.q``__sep_dst``hart_id   = src.q``__sep_src``hart_id;
+`define ACC_C_ASSIGN_Q_CHAN(__opt_as, dst, src, __sep_dst, __sep_src)   \
+  __opt_as dst.q``__sep_dst``addr       = src.q``__sep_src``addr;       \
+  __opt_as dst.q``__sep_dst``instr_data = src.q``__sep_src``instr_data; \
+  __opt_as dst.q``__sep_dst``rs         = src.q``__sep_src``rs;         \
+  __opt_as dst.q``__sep_dst``hart_id    = src.q``__sep_src``hart_id;
 
-`define ACC_C_ASSIGN_P_CHAN(__opt_as, dst, src, __sep_dst, __sep_src)           \
-  __opt_as dst.p``__sep_dst``data0          = src.p``__sep_src``data0;          \
-  __opt_as dst.p``__sep_dst``data1          = src.p``__sep_src``data1;          \
-  __opt_as dst.p``__sep_dst``error          = src.p``__sep_src``error;          \
-  __opt_as dst.p``__sep_dst``dual_writeback = src.p``__sep_src``dual_writeback; \
-  __opt_as dst.p``__sep_dst``hart_id        = src.p``__sep_src``hart_id;        \
-  __opt_as dst.p``__sep_dst``rd             = src.p``__sep_src``rd;
+`define ACC_C_ASSIGN_P_CHAN(__opt_as, dst, src, __sep_dst, __sep_src) \
+  __opt_as dst.p``__sep_dst``data    = src.p``__sep_src``data;        \
+  __opt_as dst.p``__sep_dst``error   = src.p``__sep_src``error;       \
+  __opt_as dst.p``__sep_dst``dualwb  = src.p``__sep_src``dualwb;      \
+  __opt_as dst.p``__sep_dst``hart_id = src.p``__sep_src``hart_id;     \
+  __opt_as dst.p``__sep_dst``rd      = src.p``__sep_src``rd;
 
 `define ACC_C_ASSIGN(slv, mst)                 \
   `ACC_C_ASSIGN_Q_CHAN(assign, slv, mst, _, _) \
@@ -64,21 +61,18 @@
 //
 // Usage example: `ACC_C_ASSIGN_Q_SIGNALS(assign, slv_req_o.q, slv_req_q_chan, "id", sender_id);
 `define ACC_C_ASSIGN_Q_SIGNALS(__opt_as, dst, src,  ovr_name = "none", ovr_sig = '0) \
-  __opt_as dst.addr      = ``ovr_name`` == "addr" ? ovr_sig : src.addr;              \
-  __opt_as dst.data_op   = ``ovr_name`` == "data_op" ? ovr_sig : src.data_op;        \
-  __opt_as dst.data_arga = ``ovr_name`` == "data_arga" ? ovr_sig : src.data_arga;    \
-  __opt_as dst.data_argb = ``ovr_name`` == "data_argb" ? ovr_sig : src.data_argb;    \
-  __opt_as dst.data_argc = ``ovr_name`` == "data_argc" ? ovr_sig : src.data_argc;    \
-  __opt_as dst.hart_id   = ``ovr_name`` == "hart_id" ? ovr_sig : src.hart_id;
+  __opt_as dst.addr       = ``ovr_name`` == "addr"       ? ovr_sig : src.addr;       \
+  __opt_as dst.instr_data = ``ovr_name`` == "instr_data" ? ovr_sig : src.instr_data; \
+  __opt_as dst.rs         = ``ovr_name`` == "rs"         ? ovr_sig : src.rs;         \
+  __opt_as dst.hart_id    = ``ovr_name`` == "hart_id"    ? ovr_sig : src.hart_id;
 
   // Assign P_channel signals with override.
-`define ACC_C_ASSIGN_P_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0)                 \
-  __opt_as dst.data0          = ``ovr_name`` == "data0" ? ovr_sig : src.data0;                   \
-  __opt_as dst.data1          = ``ovr_name`` == "data1" ? ovr_sig : src.data1;                   \
-  __opt_as dst.dual_writeback = ``ovr_name`` == "dual_writeback" ? ovr_sig : src.dual_writeback; \
-  __opt_as dst.error          = ``ovr_name`` == "error" ? ovr_sig : src.error;                   \
-  __opt_as dst.hart_id        = ``ovr_name`` == "hart_id" ? ovr_sig : src.hart_id;               \
-  __opt_as dst.rd             = ``ovr_name`` == "rd" ? ovr_sig : src.rd;
+`define ACC_C_ASSIGN_P_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0) \
+  __opt_as dst.data    = ``ovr_name`` == "data"    ? ovr_sig : src.data;         \
+  __opt_as dst.dualwb  = ``ovr_name`` == "dualwb"  ? ovr_sig : src.dualwb;       \
+  __opt_as dst.error   = ``ovr_name`` == "error"   ? ovr_sig : src.error;        \
+  __opt_as dst.hart_id = ``ovr_name`` == "hart_id" ? ovr_sig : src.hart_id;      \
+  __opt_as dst.rd      = ``ovr_name`` == "rd"      ? ovr_sig : src.rd;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -142,9 +136,7 @@
 
 `define ACC_X_ASSIGN_Q_CHAN(__opt_as, dst, src, __sep_dst, __sep_src)   \
   __opt_as dst.q``__sep_dst``instr_data = src.q``__sep_src``instr_data; \
-  __opt_as dst.q``__sep_dst``rs1        = src.q``__sep_src``rs1;        \
-  __opt_as dst.q``__sep_dst``rs2        = src.q``__sep_src``rs2;        \
-  __opt_as dst.q``__sep_dst``rs3        = src.q``__sep_src``rs3;        \
+  __opt_as dst.q``__sep_dst``rs         = src.q``__sep_src``rs;         \
   __opt_as dst.q``__sep_dst``rs_valid   = src.q``__sep_src``rs_valid;   \
   __opt_as dst.q``__sep_dst``rd_clean   = src.q``__sep_src``rd_clean;
 
@@ -152,20 +144,18 @@
   __opt_as dst.k``__sep_dst``accept    = src.k``__sep_src``accept;    \
   __opt_as dst.k``__sep_dst``writeback = src.k``__sep_src``writeback;
 
-`define ACC_X_ASSIGN_P_CHAN(__opt_as, dst, src, __sep_dst, __sep_src)           \
-  __opt_as dst.p``__sep_dst``data0          = src.p``__sep_src``data0;          \
-  __opt_as dst.p``__sep_dst``data1          = src.p``__sep_src``data1;          \
-  __opt_as dst.p``__sep_dst``error          = src.p``__sep_src``error;          \
-  __opt_as dst.p``__sep_dst``dual_writeback = src.p``__sep_src``dual_writeback; \
-  __opt_as dst.p``__sep_dst``rd             = src.p``__sep_src``rd;
+`define ACC_X_ASSIGN_P_CHAN(__opt_as, dst, src, __sep_dst, __sep_src) \
+  __opt_as dst.p``__sep_dst``data   = src.p``__sep_src``data;         \
+  __opt_as dst.p``__sep_dst``error  = src.p``__sep_src``error;        \
+  __opt_as dst.p``__sep_dst``dualwb = src.p``__sep_src``dualwb;       \
+  __opt_as dst.p``__sep_dst``rd     = src.p``__sep_src``rd;
 
   // Assign P_channel signals with override.
-`define ACC_X_ASSIGN_P_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0)                 \
-  __opt_as dst.data0          = ``ovr_name`` == "data0" ? ovr_sig : src.data0;                   \
-  __opt_as dst.data1          = ``ovr_name`` == "data1" ? ovr_sig : src.data1;                   \
-  __opt_as dst.dual_writeback = ``ovr_name`` == "dual_writeback" ? ovr_sig : src.dual_writeback; \
-  __opt_as dst.error          = ``ovr_name`` == "error" ? ovr_sig : src.error;                   \
-  __opt_as dst.rd             = ``ovr_name`` == "rd" ? ovr_sig : src.rd;
+`define ACC_X_ASSIGN_P_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0) \
+  __opt_as dst.data   = ``ovr_name`` == "data"   ? ovr_sig : src.data;           \
+  __opt_as dst.dualwb = ``ovr_name`` == "dualwb" ? ovr_sig : src.dualwb;         \
+  __opt_as dst.error  = ``ovr_name`` == "error"  ? ovr_sig : src.error;          \
+  __opt_as dst.rd     = ``ovr_name`` == "rd"     ? ovr_sig : src.rd;
 
 `define ACC_X_ASSIGN(slv, mst)                 \
   `ACC_X_ASSIGN_Q_CHAN(assign, slv, mst, _, _) \

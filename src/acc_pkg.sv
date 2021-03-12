@@ -55,6 +55,6 @@ package acc_pkg;
     logic [31:0]  instr_data;
     logic [31:0]  instr_mask;
     acc_prd_rsp_t prd_rsp;
-  } acc_offl_instr_t;
+  } offload_instr_t;
 
 endpackage

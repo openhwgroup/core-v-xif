@@ -20,41 +20,45 @@
 interface ACC_C_BUS #(
     // ISA bit width
     parameter int unsigned DataWidth = 32,
-    // Address Width
-    parameter int          AddrWidth = -1
+    // Address width
+    parameter int          AddrWidth = -1,
+    // Support for dual-writeback instructions
+    parameter bit          DualWriteback = 0,
+    // Support for ternary operations (use rs3)
+    parameter bit          TernaryOps = 0
 );
 
   typedef logic [DataWidth-1:0] data_t;
   typedef logic [AddrWidth-1:0] addr_t;
 
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
+
   // Request channel (Q).
-  addr_t        q_addr;
-  logic  [31:0] q_data_op;
-  data_t        q_data_arga;
-  data_t        q_data_argb;
-  data_t        q_data_argc;
-  logic  [31:0] q_hart_id;
-  logic         q_valid;
-  logic         q_ready;
+  addr_t             q_addr;
+  logic  [31:0]      q_instr_data;
+  data_t [NumRs-1:0] q_rs;
+  data_t             q_hart_id;
+  logic              q_valid;
+  logic              q_ready;
 
   // Response Channel (P).
-  data_t        p_data0;
-  data_t        p_data1;
-  logic         p_dual_writeback;
-  logic  [31:0] p_hart_id;
-  logic  [ 4:0] p_rd;
-  logic         p_error;
-  logic         p_valid;
-  logic         p_ready;
+  data_t [NumWb-1:0] p_data;
+  logic              p_dualwb;
+  data_t             p_hart_id;
+  logic  [ 4:0]      p_rd;
+  logic              p_error;
+  logic              p_valid;
+  logic              p_ready;
 
   modport in(
-      input q_addr, q_data_op, q_data_arga, q_data_argb, q_data_argc, q_hart_id, q_valid, p_ready,
-      output q_ready, p_data0, p_data1, p_dual_writeback, p_hart_id, p_rd, p_error, p_valid
+      input q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      output q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
   );
 
   modport out(
-      output q_addr, q_data_op, q_data_arga, q_data_argb, q_data_argc, q_hart_id, q_valid, p_ready,
-      input q_ready, p_data0, p_data1, p_dual_writeback, p_hart_id, p_rd, p_error, p_valid
+      output q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      input q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
   );
 
 endinterface
@@ -62,63 +66,64 @@ endinterface
 interface ACC_C_BUS_DV #(
     // ISA bit width
     parameter int unsigned DataWidth = 32,
-    // Address Width
-    parameter int          AddrWidth = -1
+    // Address width
+    parameter int          AddrWidth = -1,
+    // Support for dual-writeback instructions
+    parameter bit          DualWriteback = 0,
+    // Support for ternary operations (use rs3)
+    parameter bit          TernaryOps = 0
 ) (
-    input logic clk_i
+  input clk_i
 );
 
   typedef logic [DataWidth-1:0] data_t;
   typedef logic [AddrWidth-1:0] addr_t;
 
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
+
   // Request channel (Q).
-  addr_t        q_addr;
-  logic  [31:0] q_data_op;
-  data_t        q_data_arga;
-  data_t        q_data_argb;
-  data_t        q_data_argc;
-  logic  [31:0] q_hart_id;
-  logic         q_valid;
-  logic         q_ready;
+  addr_t             q_addr;
+  logic  [31:0]      q_instr_data;
+  data_t [NumRs-1:0] q_rs;
+  data_t             q_hart_id;
+  logic              q_valid;
+  logic              q_ready;
 
   // Response Channel (P).
-  data_t        p_data0;
-  data_t        p_data1;
-  logic         p_dual_writeback;
-  logic  [31:0] p_hart_id;
-  logic  [ 4:0] p_rd;
-  logic         p_error;
-  logic         p_valid;
-  logic         p_ready;
+  data_t [NumWb-1:0] p_data;
+  logic              p_dualwb;
+  data_t             p_hart_id;
+  logic  [ 4:0]      p_rd;
+  logic              p_error;
+  logic              p_valid;
+  logic              p_ready;
 
   modport in(
-      input q_addr, q_data_op, q_data_arga, q_data_argb, q_data_argc, q_hart_id, q_valid, p_ready,
-      output q_ready, p_data0, p_data1, p_dual_writeback, p_hart_id, p_rd, p_error, p_valid
+      input q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      output q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
   );
 
   modport out(
-      output q_addr, q_data_op, q_data_arga, q_data_argb, q_data_argc, q_hart_id, q_valid, p_ready,
-      input q_ready, p_data0, p_data1, p_dual_writeback, p_hart_id, p_rd, p_error, p_valid
+      output q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      input q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
   );
 
   modport monitor(
-      input q_addr, q_data_op, q_data_arga, q_data_argb, q_data_argc, q_hart_id, q_valid, p_ready,
-      input q_ready, p_data0, p_data1, p_dual_writeback, p_hart_id, p_rd, p_error, p_valid
+      input q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      input q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
   );
 
   // pragma translate_off
 `ifndef VERILATOR
   assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_addr)));
-  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_data_op)));
-  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_data_arga)));
-  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_data_argb)));
-  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_data_argc)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_instr_data)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_rs)));
   assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_hart_id)));
   assert property (@(posedge clk_i) (q_valid && !q_ready |=> q_valid));
 
-  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_data0)));
-  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_data1)));
-  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_dual_writeback)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_data)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_dualwb)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_hart_id)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_rd)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_error)));
@@ -130,19 +135,23 @@ endinterface
 
 interface ACC_X_BUS #(
     // ISA bit Width
-    parameter int DataWidth = 32
+    parameter int unsigned DataWidth = 32,
+    // Support for dual-writeback instructions
+    parameter bit          DualWriteback = 0,
+    // Support for ternary operations (use rs3)
+    parameter bit          TernaryOps = 0
 );
 
   typedef logic [DataWidth-1:0] data_t;
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
 
   // Request Channel (Q)
-  logic  [31:0] q_instr_data;
-  data_t        q_rs1;
-  data_t        q_rs2;
-  data_t        q_rs3;
-  logic  [ 2:0] q_rs_valid;
-  logic  [ 1:0] q_rd_clean;
-  logic         q_valid;
+  logic  [     31:0] q_instr_data;
+  data_t [NumRs-1:0] q_rs;
+  logic  [NumRs-1:0] q_rs_valid;
+  logic  [NumWb-1:0] q_rd_clean;
+  logic              q_valid;
 
   // Acknowledge Channel (K)
   logic         k_accept;
@@ -150,47 +159,49 @@ interface ACC_X_BUS #(
   logic         q_ready;
 
   // Response Channel (P)
-  data_t        p_data0;
-  data_t        p_data1;
-  logic         p_dual_writeback;
-  logic  [ 4:0] p_rd;
-  logic         p_error;
-  logic         p_valid;
-  logic         p_ready;
+  data_t [NumWb-1:0] p_data;
+  logic              p_error;
+  logic  [ 4:0]      p_rd;
+  logic              p_dualwb;
+  logic              p_valid;
+  logic              p_ready;
 
   modport in(
-      input q_instr_data, q_rs1, q_rs2, q_rs3, q_rs_valid, q_rd_clean, q_valid, p_ready,
+      input q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
       output k_accept, k_writeback, q_ready,
-      output p_data0, p_data1, p_dual_writeback, p_rd, p_error, p_valid
+      output p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   modport out(
-      output q_instr_data, q_rs1, q_rs2, q_rs3, q_rs_valid, q_rd_clean, q_valid, p_ready,
+      output q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
       input k_accept, k_writeback, q_ready,
-      input p_data0, p_data1, p_dual_writeback, p_rd, p_error, p_valid
+      input p_data, p_dualwb, p_rd, p_error, p_valid
   );
-
 
 endinterface
 
 interface ACC_X_BUS_DV #(
     // ISA bit Width
-    parameter int DataWidth = 32
+    parameter int unsigned DataWidth = 32,
+    // Support for dual-writeback instructions
+    parameter bit          DualWriteback = 0,
+    // Support for ternary operations (use rs3)
+    parameter bit          TernaryOps = 0
 
 ) (
     input clk_i
 );
 
   typedef logic [DataWidth-1:0] data_t;
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
 
   // Request Channel (Q)
-  logic  [31:0] q_instr_data;
-  data_t        q_rs1;
-  data_t        q_rs2;
-  data_t        q_rs3;
-  logic  [ 2:0] q_rs_valid;
-  logic  [ 1:0] q_rd_clean;
-  logic         q_valid;
+  logic  [     31:0] q_instr_data;
+  data_t [NumRs-1:0] q_rs;
+  logic  [NumRs-1:0] q_rs_valid;
+  logic  [NumWb-1:0] q_rd_clean;
+  logic              q_valid;
 
   // Acknowledge Channel (K)
   logic         k_accept;
@@ -198,30 +209,29 @@ interface ACC_X_BUS_DV #(
   logic         q_ready;
 
   // Response Channel (P)
-  data_t        p_data0;
-  data_t        p_data1;
-  logic         p_error;
-  logic  [ 4:0] p_rd;
-  logic         p_dual_writeback;
-  logic         p_valid;
-  logic         p_ready;
+  data_t [NumWb-1:0] p_data;
+  logic              p_error;
+  logic  [ 4:0]      p_rd;
+  logic              p_dualwb;
+  logic              p_valid;
+  logic              p_ready;
 
   modport in(
-      input q_instr_data, q_rs1, q_rs2, q_rs3, q_rs_valid, q_rd_clean, q_valid, p_ready,
+      input q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
       output k_accept, k_writeback, q_ready,
-      output p_data0, p_data1, p_dual_writeback, p_rd, p_error, p_valid
+      output p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   modport out(
-      output q_instr_data, q_rs1, q_rs2, q_rs3, q_rs_valid, q_rd_clean, q_valid, p_ready,
+      output q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
       input k_accept, k_writeback, q_ready,
-      input p_data0, p_data1, p_dual_writeback, p_rd, p_error, p_valid
+      input p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   modport monitor(
-      output q_instr_data, q_rs1, q_rs2, q_rs3, q_rs_valid, q_rd_clean, q_valid, p_ready,
+      input q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
       input k_accept, k_writeback, q_ready,
-      input p_data0, p_data1, p_dual_writeback, p_rd, p_error, p_valid
+      input p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   // pragma translate_off
@@ -229,21 +239,16 @@ interface ACC_X_BUS_DV #(
   // q channel
   assert property (@(posedge clk_i) (q_valid && !q_ready |=> q_valid));
   assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_instr_data)));
-
-  assert property (@(posedge clk_i) (q_valid && q_rs_valid[0] && !q_ready |=> q_rs_valid[0]));
-  assert property (@(posedge clk_i) (q_valid && q_rs_valid[1] && !q_ready |=> q_rs_valid[1]));
-  assert property (@(posedge clk_i) (q_valid && q_rs_valid[2] && !q_ready |=> q_rs_valid[2]));
-  assert property (@(posedge clk_i) (q_valid && q_rs_valid[0] && !q_ready |=> $stable(q_rs1)));
-  assert property (@(posedge clk_i) (q_valid && q_rs_valid[1] && !q_ready |=> $stable(q_rs2)));
-  assert property (@(posedge clk_i) (q_valid && q_rs_valid[2] && !q_ready |=> $stable(q_rs3)));
-
+  for (genvar i = 0; i < NumRs; i++) begin : gen_rs_valid_assert
+    assert property (@(posedge clk_i) (q_valid && q_rs_valid[i] && !q_ready |=> q_rs_valid[i]));
+    assert property (@(posedge clk_i) (q_valid && q_rs_valid[i] && !q_ready |=> $stable(q_rs[i])));
+  end
   assert property (@(posedge clk_i)
       (q_valid && q_ready |-> ((k_writeback ~^ q_rd_clean) | ~k_writeback) == '1));
 
   // p channel
-  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_data0)));
-  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_data1)));
-  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_dual_writeback)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_data)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_dualwb)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_rd)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_error)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> p_valid));
@@ -286,12 +291,12 @@ interface ACC_PRD_BUS_DV (
 
   modport out (
     output q_instr_data,
-    input p_writeback, p_use_rs, p_accept
+    input  p_writeback, p_use_rs, p_accept
   );
 
   modport monitor (
     input  q_instr_data,
-    input p_writeback, p_use_rs, p_accept
+    input  p_writeback, p_use_rs, p_accept
   );
 
   // No asserts. This interface is completely combinational

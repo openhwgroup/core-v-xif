@@ -12,7 +12,9 @@ module acc_adapter_tb #(
   parameter int          NumHier         = 3,
   parameter int          NumRsp[NumHier] = '{4,2,2},
   parameter int          NumRspTot       = sumn(NumRsp, NumHier),
-  parameter int          HartId          = 32'hcafecafe,
+  parameter int          HartId          = DataWidth'(32'hcafecafe),
+  parameter bit          DualWriteback   = 1'b1,
+  parameter bit          TernaryOps      = 1'b1,
   // TB Params
   parameter int unsigned NrRandomTransactions = 1000
 );
@@ -22,6 +24,8 @@ module acc_adapter_tb #(
   localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
   localparam int unsigned AccAddrWidth  = cf_math_pkg::idx_width(MaxNumRsp);
   localparam int unsigned AddrWidth     = HierAddrWidth + AccAddrWidth;
+  localparam int unsigned NumRs         = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb         = DualWriteback ? 2 : 1;
 
   // Timing params
   localparam time ClkPeriod = 10ns;
@@ -48,19 +52,24 @@ module acc_adapter_tb #(
 
   typedef acc_test::c_req_t #(
     .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth )
+    .DataWidth ( DataWidth ),
+    .NumRs     ( NumRs     )
   ) tb_c_req_t;
 
   typedef acc_test::c_rsp_t #(
-    .DataWidth ( DataWidth )
+    .DataWidth ( DataWidth ),
+    .NumWb     ( NumWb     )
   ) tb_c_rsp_t;
 
   typedef acc_test::x_req_t #(
-    .DataWidth ( DataWidth )
+    .DataWidth ( DataWidth ),
+    .NumRs     ( NumRs     ),
+    .NumWb     ( NumWb     )
   ) tb_x_req_t;
 
   typedef acc_test::x_rsp_t #(
-    .DataWidth ( DataWidth )
+    .DataWidth ( DataWidth ),
+    .NumWb     ( NumWb     )
   ) tb_x_rsp_t;
 
   typedef acc_test::prd_req_t tb_prd_req_t;
@@ -68,24 +77,32 @@ module acc_adapter_tb #(
 
   // From / to core
   ACC_X_BUS #(
-    .DataWidth ( DataWidth )
+    .DataWidth     ( DataWidth     ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    )
   ) x_master ();
 
   ACC_X_BUS_DV #(
-    .DataWidth ( DataWidth )
+    .DataWidth     ( DataWidth     ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    )
   ) x_master_dv (
     clk
   );
 
   // From / to interconnect
   ACC_C_BUS #(
-    .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth )
+    .AddrWidth     ( AddrWidth     ),
+    .DataWidth     ( DataWidth     ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    )
   ) c_slave ();
 
   ACC_C_BUS_DV #(
-    .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth )
+    .AddrWidth     ( AddrWidth     ),
+    .DataWidth     ( DataWidth     ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    )
   ) c_slave_dv (
     clk
   );
@@ -108,19 +125,21 @@ module acc_adapter_tb #(
   // Monitors
   // --------
   typedef acc_test::acc_c_slv_monitor #(
-    // Acc bus interface paramaters;
-    .DataWidth ( DataWidth ),
-    .AddrWidth ( AddrWidth ),
-    .NumReq    ( 1         ),
-    // Stimuli application and test time
-    .TA ( ApplTime ),
-    .TT ( TestTime )
+    .DataWidth     ( DataWidth     ),
+    .AddrWidth     ( AddrWidth     ),
+    .NumReq        ( 1             ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    ),
+    .TA            ( ApplTime      ),
+    .TT            ( TestTime      )
   ) acc_c_slv_monitor_t;
 
   typedef acc_test::acc_x_monitor #(
-    .DataWidth ( DataWidth ),
-    .TA        ( ApplTime  ),
-    .TT        ( TestTime  )
+    .DataWidth     ( DataWidth     ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    ),
+    .TA            ( ApplTime      ),
+    .TT            ( TestTime      )
   ) acc_x_monitor_t;
 
   typedef acc_test::acc_prd_monitor #(
@@ -155,17 +174,21 @@ module acc_adapter_tb #(
   // -------
 
   typedef acc_test::rand_x_master#(
-    .DataWidth ( DataWidth ),
-    .TA        ( ApplTime  ),
-    .TT        ( TestTime  )
+    .DataWidth     ( DataWidth     ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    ),
+    .TA            ( ApplTime      ),
+    .TT            ( TestTime      )
   ) rand_x_master_t;
 
   typedef acc_test::rand_c_slave#(
-    .AddrWidth ( AddrWidth ),
-    .DataWidth ( DataWidth ),
-    .NumReq    ( 1         ),
-    .TA        ( ApplTime  ),
-    .TT        ( TestTime  )
+    .AddrWidth     ( AddrWidth     ),
+    .DataWidth     ( DataWidth     ),
+    .NumReq        ( 1             ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    ),
+    .TA            ( ApplTime      ),
+    .TT            ( TestTime      )
   ) rand_c_slave_t;
 
   typedef acc_test::rand_prd_slave_collective #(
@@ -199,7 +222,8 @@ module acc_adapter_tb #(
   let check_req(x_req, prd_rsp, c_req) = acc_test::adp_check_req#(
     .acc_c_req_t   ( tb_c_req_t   ),
     .acc_x_req_t   ( tb_x_req_t   ),
-    .acc_prd_rsp_t ( tb_prd_rsp_t )
+    .acc_prd_rsp_t ( tb_prd_rsp_t ),
+    .NumRs         ( NumRs        )
   )::do_check(
     x_req, prd_rsp, c_req
   );
@@ -208,8 +232,8 @@ module acc_adapter_tb #(
   // TODO: MARK0
   let check_rsp(c_rsp, x_rsp) = acc_test::compare_c_x_rsp#(
       .c_rsp_t(tb_c_rsp_t),
-      //.x_rsp_t(tb_x_rsp_t)
-      .x_rsp_t(acc_test::x_rsp_t#(32))
+      .x_rsp_t(tb_x_rsp_t)
+      //.x_rsp_t(acc_test::x_rsp_t#(32))
   )::do_compare(
       c_rsp, x_rsp
   );
@@ -264,8 +288,8 @@ module acc_adapter_tb #(
           $error("C slave request without corresponding predecoder response");
         assert(acc_x_mst_monitor.req_mbx.try_get(x_req)) else
           $error("C slave request without corresponding X master request");
-        assert((prd_req.instr_data ^ (x_req.instr_data ^ c_req.instr_data)) == '0) else
-          $error("C slave request does not match predecoder or X request");
+        assert((prd_req.instr_data == x_req.instr_data) && (x_req.instr_data == c_req.instr_data))
+        else $error("C slave request does not match predecoder or X request");
         assert(check_req(x_req, prd_rsp, c_req)) else
           $error("C slave request construction fault");
         nr_requests++;
@@ -293,8 +317,8 @@ module acc_adapter_tb #(
       // -------------
       forever begin
 
-        // automatic tb_x_rsp_t x_rsp;
-        automatic acc_test::x_rsp_t #(32) x_rsp;
+        automatic tb_x_rsp_t x_rsp;
+        //automatic acc_test::x_rsp_t #(32) x_rsp;
         // Seems to be necessary here to explicitly refer to the class from
         // acc_test.
         // TODO: Why doesn't it work with typedef?! Same problem: MARK0
@@ -333,9 +357,11 @@ module acc_adapter_tb #(
 
   // DUT instantiation
   acc_adapter_intf #(
-    .DataWidth ( DataWidth ),
-    .NumHier   ( NumHier   ),
-    .NumRsp    ( NumRsp    )
+    .DataWidth     ( DataWidth     ),
+    .NumHier       ( NumHier       ),
+    .NumRsp        ( NumRsp        ),
+    .DualWriteback ( DualWriteback ),
+    .TernaryOps    ( TernaryOps    )
   ) dut (
     .clk_i       ( clk          ),
     .rst_ni      ( rst_n        ),

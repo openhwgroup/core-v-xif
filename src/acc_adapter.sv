@@ -11,21 +11,23 @@
 `include "acc_interface/typedef.svh"
 
 module acc_adapter #(
-    parameter int unsigned DataWidth                 = 32,
-    parameter int          NumHier                   = 3,
-    parameter int          NumRsp          [NumHier] = '{4, 2, 2},
-    parameter type         acc_c_req_t               = logic,
-    parameter type         acc_c_req_chan_t          = logic,
-    parameter type         acc_c_rsp_t               = logic,
-    parameter type         acc_x_req_t               = logic,
-    parameter type         acc_x_rsp_t               = logic,
+    parameter int unsigned DataWidth        = 32,
+    parameter int          NumHier          = 3,
+    parameter int          NumRsp [NumHier] = '{4, 2, 2},
+    parameter bit          TernaryOps       = 0,
+    parameter bit          DualWriteback    = 0,
+    parameter type         acc_c_req_t      = logic,
+    parameter type         acc_c_req_chan_t = logic,
+    parameter type         acc_c_rsp_t      = logic,
+    parameter type         acc_x_req_t      = logic,
+    parameter type         acc_x_rsp_t      = logic,
     // Dependent parameter DO NOT OVERRIDE
     parameter int          NumRspTot                 = acc_pkg::sumn(NumRsp, NumHier)
 ) (
     input clk_i,
     input rst_ni,
 
-    input logic [31:0] hart_id_i,
+    input logic [DataWidth-1:0] hart_id_i,
 
     input  acc_x_req_t acc_x_req_i,
     output acc_x_rsp_t acc_x_rsp_o,
@@ -58,10 +60,10 @@ module acc_adapter #(
   localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
   localparam int unsigned AccAddrWidth = cf_math_pkg::idx_width(MaxNumRsp);
   localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
 
-  logic [NumRspTot-1:0][31:0] acc_op_a;
-  logic [NumRspTot-1:0][31:0] acc_op_b;
-  logic [NumRspTot-1:0][31:0] acc_op_c;
+  logic [NumRspTot-1:0][NumRs-1:0][31:0] acc_op;
 
   // Instruction data
   logic [31:0] instr_rdata_id;
@@ -101,13 +103,11 @@ module acc_adapter #(
   // operand muxes
   for (genvar i = 0; i < NumRspTot; i++) begin : gen_op_mux
     always_comb begin
-      acc_op_a[i] = '0;
-      acc_op_b[i] = '0;
-      acc_op_c[i] = '0;
+      acc_op[i] = '0;
       if (predecoder_accept_onehot[i]) begin
-        acc_op_a[i] = acc_prd_rsp_i[i].p_use_rs[0] ? acc_x_req_i.q.rs1 : '0;
-        acc_op_b[i] = acc_prd_rsp_i[i].p_use_rs[1] ? acc_x_req_i.q.rs2 : '0;
-        acc_op_c[i] = acc_prd_rsp_i[i].p_use_rs[2] ? acc_x_req_i.q.rs3 : '0;
+        for (int unsigned j = 0; j < NumRs; j++) begin
+          acc_op[i][j] = acc_prd_rsp_i[i].p_use_rs[j] ? acc_x_req_i.q.rs[j] : '0;
+        end
       end
     end
   end
@@ -131,10 +131,10 @@ module acc_adapter #(
 
     // Accelerator address encoder
     onehot_to_bin #(
-        .ONEHOT_WIDTH(MaxNumRsp)
+        .ONEHOT_WIDTH ( MaxNumRsp )
     ) acc_addr_enc_i (
-        .onehot(predecoder_accept_lvl[i]),
-        .bin   (acc_addr[i])
+        .onehot ( predecoder_accept_lvl[i] ),
+        .bin    ( acc_addr[i]              )
     );
     // Hierarchy level selsect
     assign hier_onehot[i] = |predecoder_accept_lvl[i][NumRsp[i]-1:0];
@@ -166,22 +166,34 @@ module acc_adapter #(
 
   // Operands
   always_comb begin
-    acc_c_req_fifo_req.data_arga = '0;
-    acc_c_req_fifo_req.data_argb = '0;
-    acc_c_req_fifo_req.data_argc = '0;
-    use_rs                       = '0;
-    acc_x_rsp_o.k.writeback      = '0;
+    acc_c_req_fifo_req.rs   = '0;
+    use_rs                  = '0;
+    acc_x_rsp_o.k.writeback = '0;
     for (int unsigned i = 0; i < NumRspTot; i++) begin
-      acc_c_req_fifo_req.data_arga |= predecoder_accept_onehot[i] ? acc_op_a[i] : '0;
-      acc_c_req_fifo_req.data_argb |= predecoder_accept_onehot[i] ? acc_op_b[i] : '0;
-      acc_c_req_fifo_req.data_argc |= predecoder_accept_onehot[i] ? acc_op_c[i] : '0;
+      for (int unsigned j = 0; j < NumRs; j++) begin
+        acc_c_req_fifo_req.rs[j] |= predecoder_accept_onehot[i] ? acc_op[i][j] : '0;
+      end
       use_rs |= predecoder_accept_onehot[i] ? acc_prd_rsp_i[i].p_use_rs : '0;
-      acc_x_rsp_o.k.writeback |= predecoder_accept_onehot[i] ? acc_prd_rsp_i[i].p_writeback : '0;
+      acc_x_rsp_o.k.writeback |=
+          predecoder_accept_onehot[i] ? acc_prd_rsp_i[i].p_writeback[NumWb-1:0] : '0;
     end
   end
 
+  if (!TernaryOps) begin : gen_no_ternaryops
+    logic unused_use_rs3;
+    assign unused_use_rs3 = use_rs[2];
+  end
+
+  if (!DualWriteback) begin : gen_no_dualwb
+    for (genvar i = 0; i < NumRspTot; i++) begin : gen_no_dualwb_tieoff
+      logic unused_writeback;
+      assign unused_writeback = acc_prd_rsp_i[i].p_writeback[1];
+    end
+  end
+
+
   // Instruction Data
-  assign acc_c_req_fifo_req.data_op = instr_rdata_id;
+  assign acc_c_req_fifo_req.instr_data = instr_rdata_id;
 
   //////////////////
   // Flow Control //
@@ -200,13 +212,12 @@ module acc_adapter #(
     ~acc_x_rsp_o.k.accept || (sources_valid  && rd_clean && acc_c_req_fifo_ready);
 
   // Forward accelerator response
-  assign acc_x_rsp_o.p.data0          = acc_c_rsp_i.p.data0;
-  assign acc_x_rsp_o.p.data1          = acc_c_rsp_i.p.data1;
-  assign acc_x_rsp_o.p.error          = acc_c_rsp_i.p.error;
-  assign acc_x_rsp_o.p.rd             = acc_c_rsp_i.p.rd;
-  assign acc_x_rsp_o.p.dual_writeback = acc_c_rsp_i.p.dual_writeback;
-  assign acc_x_rsp_o.p_valid          = acc_c_rsp_i.p_valid;
-  assign acc_c_req_o.p_ready          = acc_x_req_i.p_ready;
+  assign acc_x_rsp_o.p.data   = acc_c_rsp_i.p.data;
+  assign acc_x_rsp_o.p.error  = acc_c_rsp_i.p.error;
+  assign acc_x_rsp_o.p.rd     = acc_c_rsp_i.p.rd;
+  assign acc_x_rsp_o.p.dualwb = acc_c_rsp_i.p.dualwb;
+  assign acc_x_rsp_o.p_valid  = acc_c_rsp_i.p_valid;
+  assign acc_c_req_o.p_ready  = acc_x_req_i.p_ready;
 
 
   /////////////////
@@ -249,6 +260,19 @@ module acc_adapter #(
   assert property (@(posedge clk_i) (acc_c_rsp_i.p_valid && acc_c_req_o.p_ready)
                                     |-> acc_c_rsp_i.p.hart_id == hart_id_i ) else
       $error("Response routing error");
+  if (!TernaryOps) begin : gen_no_ternaryops_assert
+    assert property (@(posedge clk_i) (acc_c_rsp_i.p_valid && acc_c_req_o.p_ready)
+                                     |-> (use_rs[2] == 1'b0)) else
+        $error("Unsupported ternary instruction encountered. Set TernaryOps = 1");
+  end
+  if (!DualWriteback) begin : gen_no_dualwb_assert
+    for (genvar i = 0; i < NumRspTot; i++) begin : gen_no_dualwb_prd_assert
+      assert property (@(posedge clk_i) (acc_c_rsp_i.p_valid && acc_c_req_o.p_ready)
+                                       |-> (acc_prd_rsp_i[i].p_writeback[1] == 1'b0)) else
+          $error("Unsupported dual-writeback instruction encountered (Predecoder %0d).", i,
+                 "Set DualWriteback = 1");
+    end
+  end
 `endif
   // pragma translate_on
 
@@ -258,13 +282,15 @@ module acc_adapter_intf #(
     parameter int DataWidth          = 32,
     parameter int NumHier            = 3,
     parameter int NumRsp   [NumHier] = '{4, 2, 2},
+    parameter bit TernaryOps         = 0,
+    parameter bit DualWriteback      = 0,
     // Dependent parameter DO NOT OVERRIDE
     parameter int NumRspTot          = acc_pkg::sumn(NumRsp, NumHier)
 ) (
     input clk_i,
     input rst_ni,
 
-    input logic [31:0] hart_id_i,
+    input logic [DataWidth-1:0] hart_id_i,
 
     ACC_X_BUS   acc_x_mst,
     ACC_C_BUS   acc_c_slv,
@@ -276,13 +302,14 @@ module acc_adapter_intf #(
   localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
   localparam int unsigned AccAddrWidth = cf_math_pkg::idx_width(MaxNumRsp);
   localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
 
   typedef logic [AddrWidth-1:0] addr_t;
   typedef logic [DataWidth-1:0] data_t;
-  typedef logic [4:0]           id_t;
 
-  `ACC_X_TYPEDEF_ALL(acc_x, data_t)
-  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t)
+  `ACC_X_TYPEDEF_ALL(acc_x, data_t, NumRs, NumWb)
+  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t, NumRs, NumWb)
 
   acc_prd_req_t [NumRspTot-1:0] acc_prd_req;
   acc_prd_rsp_t [NumRspTot-1:0] acc_prd_rsp;
@@ -296,6 +323,8 @@ module acc_adapter_intf #(
       .DataWidth        ( DataWidth        ),
       .NumHier          ( NumHier          ),
       .NumRsp           ( NumRsp           ),
+      .TernaryOps       ( TernaryOps       ),
+      .DualWriteback    ( DualWriteback    ),
       .acc_c_req_t      ( acc_c_req_t      ),
       .acc_c_req_chan_t ( acc_c_req_chan_t ),
       .acc_c_rsp_t      ( acc_c_rsp_t      ),

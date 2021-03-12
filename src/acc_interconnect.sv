@@ -20,6 +20,10 @@ module acc_interconnect #(
     parameter int          NumReq        = -1,
     // The number of rsponders.
     parameter int          NumRsp        = -1,
+    // Support for ternary operations (use rs3)
+    parameter bit          TernaryOps    = 0,
+    // Support for dual-writeback instructions
+    parameter bit          DualWriteback = 0,
     // Insert Pipeline register into request path
     parameter bit          RegisterReq   = 0,
     // Insert Pipeline register into response path
@@ -231,6 +235,10 @@ module acc_interconnect_intf #(
     parameter int          NumReq        = -1,
     // The number of rsponders.
     parameter int          NumRsp        = -1,
+    // Support for ternary operations (use rs3)
+    parameter bit          TernaryOps    = 0,
+    // Support for dual-writeback instructions
+    parameter bit          DualWriteback = 0,
     // Insert Pipeline register into request path
     parameter bit          RegisterReq   = 0,
     // Insert Pipeline register into response path
@@ -245,13 +253,15 @@ module acc_interconnect_intf #(
 );
 
   localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
+  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
+  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
 
   typedef logic [DataWidth-1:0]  data_t;
   typedef logic [AddrWidth-1:0]  addr_t;
 
   // This generates some unused typedefs. still cleaner than invoking macros
   // separately.
-  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t)
+  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t, NumRs, NumWb)
 
   acc_c_req_t [NumReq-1:0] acc_c_slv_req;
   acc_c_rsp_t [NumReq-1:0] acc_c_slv_rsp;
@@ -269,6 +279,8 @@ module acc_interconnect_intf #(
       .HierLevel        ( HierLevel        ),
       .NumReq           ( NumReq           ),
       .NumRsp           ( NumRsp           ),
+      .TernaryOps       ( TernaryOps       ),
+      .DualWriteback    ( DualWriteback    ),
       .RegisterReq      ( RegisterReq      ),
       .RegisterRsp      ( RegisterRsp      ),
       .acc_c_req_t      ( acc_c_req_t      ),
