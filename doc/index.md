@@ -38,7 +38,7 @@ The REI allows for the offloading CPU core to continue execution of instructions
 ### Dual-Writeback Instructions
 The REI supports implementation of custom ISA extensions mandating dual register writebacks.
 In order to accomodate that need we provision the possibility to reserve multiple destination registers for a single offloaded instruction.
-For even destination registers other than `X0`,  `Xn` and `Xn+1` are reserved for write-back upon offloading a dual write-back instruction, where `Xn` denotes the destination register addresss extracted from `instr_data[11:7]`.
+For even destination registers other than `X0`,  `Xn` and `Xn+1` are reserved for writeback upon offloading a dual-writeback instruction, where `Xn` denotes the destination register addresss extracted from `instr_data[11:7]`.
 
 ### Hierarchical Interconnect
 The accelerator interface is designed to enable a number of flexible topologies.
@@ -71,22 +71,4 @@ All in- and output ports implement the [C-interface](c-interface.md).
 For request and response path, separate pipeline registers may be implemented for each interconnect module.
 
 ![Accelerator Interconnect Level](img/acc-interconnect-level.svg)
-
-
-## Requirements
-
-### CPU Support
-In order to continue normal operation during the execution of offloaded instructions, the core must maintain a scoreboard to keep track of outstanding accelerator write-backs.
-In order to support accelerators implementing dual write-back instructions, the offloading core must include provisions to reserve two destination registers upon offloading an instruction as well as simultaneous writeback, implying dual write-ports to the internal register file.
-Upon Wait for Interrupt (WFI) hints, the core may not go to sleep until, all scoreboard entries are cleared.
-To enable accelerator-agnostic instruction offloading, a CPU core architecture must implement the X-interface defined [here](x-interface.md).
-Connection to the accelerator interconnect is facilitated through the accelerator adapter module.
-Alternatively, a CPU core may implement all necessary predecoding internally, implement the [C-interface](c-interface.md) and directly connect to the accelerator interconnect.
-
-
-### Accelerator Support
-The external accelerator unit must implement the C-interface defined [here](c-interface.md).
-The accelerator unit must implement an instruction decoder for control of the accelerated data path.
-In case of state-dependent ISA extensions (dedicated register files, control and status registers), the accelerator must locally implement the required structures.
-For units shared among multiple cores, the accelerator must provide a means to separately maintain the status of each connected core.
 

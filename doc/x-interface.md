@@ -9,21 +9,27 @@ The interface is parameterized using the following parameter
 
 | Name               | Type / Range        | Description                                      |
 | ------------------ | ------------------- | ------------------------------------------------ |
-| `DataWidth`        | `int` (32, 64, 128) | ISA Bit-width                                    |
+| `DataWidth`        | `int` (32, 64, 128) | ISA bit-width: `max(XLEN, FLEN)`                 |
+| `TernaryOps`       | `bit`               | Support for ternary operations (use `rs3`)       |
+| `DualWriteback`    | `bit`               | Support for dual-writeback instructions          |
+
+#### Derived Parameters
+| Name    | Value                   | Description                                 |
+| ----    | -----                   | -----------                                 |
+| `NumRs` | `TernaryOps ? 3 : 2`    | Supported number of source registers        |
+| `NumWb` | `DualWriteback ? 2 : 1` | Supported number of simultaneous writebacks |
+
 
 ### Request Channel
-
 The request channel signals are:
-| Signal Name    | Range                      | Direction      | Description                                                 |
-| -------------  | -------------------------- | ---------      | -----------------------------------                         |
-| `q_instr_data` | `31:0`                     | Core > Adapter | Instruction data (ID stage)                                 |
-| `q_rs1`        | `DataWidth-1:0`            | Core > Adapter | Source register contents (rs1)                              |
-| `q_rs2`        | `DataWidth-1:0`            | Core > Adapter | Source register contents (rs2)                              |
-| `q_rs3`        | `DataWidth-1:0`            | Core > Adapter | Source register contents (rs3)                              |
-| `q_rs_valid`   | `2:0`                      | Core > Adapter | Source register valid indicator                             |
-| `q_rd_clean` | `1:0`                        | Core > Adapter | Scoreboard status of destination register. (NEW) |
-| `k_accept`     | `0:0`                      | Adapter > Core | Offload request acceptance indicator.                       |
-| `k_writeback`  | `1:0`                      | Adapter > Core | Mark outstanding accelerator writeback to`rd` (and `rd+1`). |
+| Signal Name       | Range           | Direction      | Description                                                 |
+| -----------       | -----           | ---------      | -----------                                                 |
+| `q_instr_data`    | `31:0`          | Core > Adapter | Instruction data (ID stage)                                 |
+| `q_rs[NumRs-1:0]` | `DataWidth-1:0` | Core > Adapter | Source register contents                                    |
+| `q_rs_valid`      | `NumRs-1:0`     | Core > Adapter | Source register valid indicator                             |
+| `q_rd_clean`      | `NumWb-1:0`     | Core > Adapter | Scoreboard status of destination register                   |
+| `k_accept`        | `0:0`           | Adapter > Core | Offload request acceptance indicator                        |
+| `k_writeback`     | `NumWb-1:0`     | Adapter > Core | Mark outstanding accelerator writeback to`rd` (and `rd+1`)  |
 
 Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
 
@@ -48,27 +54,28 @@ The instruction offloading process takes place according to the following scheme
 ### Response channel
 The response channel signals are:
 
-| Signal Name   | Range                   | Description                          |
-| ------------- | ----------------------- | ------------------------------------ |
-| `p_rd`        | `4:0`                   | Destination Register Address         |
-| `p_data0`     | `DataWidth-1:0`         | Primary Writeback Data               |
-| `p_data1`     | `DataWidth-1:0`         | Secondary Writeback Data             |
-| `p_dualwb`    | `0:0`                   | Dual-Writeback Response              |
-| `p_error`     | `0:0`                   | Error Flag                           |
+| Signal Name         | Range           | Description                                                                    |
+| -----------         | -----           | -----------                                                                    |
+| `p_rd`              | `4:0`           | Destination Register Address                                                   |
+| `p_data[NumWb-1:0]` | `DataWidth-1:0` | Writeback Data for `NumWb` multi-register writeback                            |
+| `p_dualwb`          | `0:0`           | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported)  |
+| `p_error`           | `0:0`           | Error Flag                                                                     |
 
 Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
 
 Notes:
-  - `p_data0` and `p_data1` carry the response data resulting from offloaded instructions.
-    `p_data0` carries the default write-back data and is written to the destination register identified by `p_rd_id`.
-    `p_data1` is used only for dual-writeback instructions.
-  - Dual write-back instructions are marked by the accelerator sub-system by setting `p_dualwb`.
+  - `p_data[NumWb:0]` carries the writeback data resulting from offloaded instructions.
+    `p_data[0]` carries the default writeback data and is written to the destination regiser identified by `p_rd`.
+    If dual-writeback instructions are supported, `p_data[1]` may carry the secondary writeback data written to `p_rd+1`.
+    For dual-writeback instructions, `p_rd` must specify an even destination register other than `X0`.
+  - Dual writeback instructions are marked by the accelerator sub-system by setting `p_dualwb`.
+    If dual-writeback instructions are not supported (`DualWriteback ==0`), `the signal must be constantly tied to 0.
   - The error flag included in the response channel indicates processing errors encountered by the accelerator.
     The actions to be taken by a core to recover from accelerator errors are not yet defined.
 
 #### Response Transaction
 The response channel is handshaked according to the following scheme:
-- The initiator asserts `p_valid`. The assertion of `p_valid` must not depend on `p_ready`. The assertion of ready may depend on `p_valid`.
+- The initiator asserts `p_valid`. The assertion of `p_valid` must not depend on `p_ready`. The assertion of `p_ready` may depend on `p_valid`.
 - Once `p_valid` has been asserted all data must remain stable.
 - The receiver asserts `p_ready` whenever it is ready to receive the transaction. Asserting `p_ready` by default is allowed. While `p_valid` is low, `p_ready` may be retracted at any time.
 - When both `p_valid` and `p_ready` are high the transaction is successful.
@@ -79,27 +86,22 @@ Any source registers from the integer register file of the offloading core as de
 If source registers are used, operand A, B and C contain `rs1`, `rs2` and `rs3` respectively.
 For ternary instructions, the instruction format R4-type instruction format is to be used, defining the `rs3` register address by bits `instr_data[31:27]`.
 
-## Write-back Destination
+## Writeback Destination
 The default writeback destination for offloaded instruction is the RISC-V destination register specified by `instr_data[11:7]`.
 
 ## Dual-Writeback Instructions
 Custom ISA extensions may mandate dual register writebacks.
 In order to accomodate that need we provision the possibility to reserve multiple destination registers for a single offloaded instruction.
-For even destination registers other than `X0`,  `Xn` and `Xn+1` are reserved for write-back upon offloading a dual write-back instruction, where `Xn` denotes the destination register addresss extracted from `instr_data[11:7]`.
+For even destination registers other than `X0`,  `Xn` and `Xn+1` are reserved for writeback upon offloading a dual-writeback instruction, where `Xn` denotes the destination register addresss extracted from `instr_data[11:7]`.
+Support for dual-writeback instructions is enabled via the parameter `DualWriteback`.
 
 For responses resulting from dual-writeback instructions, the accelerator asserts `p_dualwb`.
-Upon accepting the accelerator response, the offloading core writes back data contained in `p_data0` to register `p_id[4:0]`.
-`p_data1` is written back to `p_id[4:0]` + 1.
+Upon accepting the accelerator response, the offloading core writes back data contained in `p_data[0]` to register `p_rd[4:0]`.
+`p_data[1]` is written back to `p_rd[4:0]` + 1.
 
-
-In order to maximize benefits from dual-writeback instructions, the interconnect response path must accomodate simultaneous transfer of two operation results (`p_data0` and `p_data1`).
-If none of the connected accelerators implement dual write-back instructions, the according signal paths will be removed by synthesis tools.
-
-In order to support accelerators implementing dual write-back instructions, the offloading core must include provisions to reserve two destination registers upon offloading an instruction.
+In order to support accelerators implementing dual-writeback instructions, the offloading core must include provisions to reserve two destination registers upon offloading an instruction.
 Also, the core should include provisions for simultaneous writeback, implying dual write-ports to the internal register file.
 
-## Write-after-Write Hazards (NEW)
+## Write-after-Write Hazards
 The accelerator interconnect does not provide any guarantees regarding response ordering of offloaded instructions.
 To prevent potential write-after-write hazards upon multiple offloaded instructions of different latencies targeting the same destination register, the accelerator adapter must wait for the destination register's scoreboard entry to be clean.
-
-

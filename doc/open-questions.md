@@ -1,7 +1,7 @@
 
 # Discussion
 
-For extension units featuring offloaded memory access instructions (e.g. RVF/D: fld, fsw), a few additional questions are raised.
+For extension units featuring offloaded memory access instructions (e.g. RVF/D: `fld`, `fsw`), a few additional questions are raised.
 
 ## Memory Consistency
 The `RISC-V Weak Memory Ordering` memory consistency model specifies that code running in a single hart appears to execute in order from the perspective of other memory instructions in the _same_ hart.
