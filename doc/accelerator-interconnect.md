@@ -11,7 +11,7 @@ The accelerator interconnect module (`acc_interconnect`) is parameterized as fol
 
 | Name            | Type / Range        | Description                                           |
 | ----            | ------------        | -----------                                           |
-| `DataWidth`     | `int` (32, 64, 128) | ISA bit-width: `max(XLEN, FLEN)`                      |
+| `DataWidth`     | `int` (32, 64, 128) | ISA bit-width                                         |
 | `HierLevel`     | `int` (>=0)         | Hierarchy level                                       |
 | `HierAddrWidth` | `int` (>=1)         | Hierarchy address portion                             |
 | `AccAddrWidth`  | `int` (>=1)         | Level-specific accelerator address portion            |

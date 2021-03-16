@@ -15,7 +15,7 @@ The interface is parameterized using the following set of parameters.
 
 | Name              | Type / Range        | Description                                        |
 | ----              | ------------        | -----------                                        |
-| `DataWidth`       | `int` (32, 64, 128) | ISA Bit-width: `max(XLEN, FLEN)`                   |
+| `DataWidth`       | `int` (32, 64, 128) | ISA Bit-width                                      |
 | `NumReq`          | `int` (>=1)         | Number of requesting entities                      |
 | `NumHier`         | `int` (>=1)         | Number of hierarchical interconnect levels         |
 | `NumRsp[NumHier]` | `int[NumHier]`      | Number of responding entities per hierarchy level. |

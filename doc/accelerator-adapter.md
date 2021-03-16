@@ -13,7 +13,7 @@ The accelerator adapter module is parameterized as follows
 
 | Name              | Type / Range        | Description                                        |
 | ----              | ------------        | -----------                                        |
-| `DataWidth`       | `int` (32, 64, 128) | ISA bit-width: `max(XLEN, FLEN)`                   |
+| `DataWidth`       | `int` (32, 64, 128) | ISA bit-width                                      |
 | `NumHier`         | `int` (>=1)         | Number of interconnect hierarchy levels            |
 | `NumRsp[NumHier]` | `int[NumHier]`      | Number of responding entities per hierarchy level. |
 | `DualWriteback`   | `bit`               | Support for dual-writeback instructions            |

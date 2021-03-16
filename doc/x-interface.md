@@ -9,7 +9,7 @@ The interface is parameterized using the following parameter
 
 | Name               | Type / Range        | Description                                      |
 | ------------------ | ------------------- | ------------------------------------------------ |
-| `DataWidth`        | `int` (32, 64, 128) | ISA bit-width: `max(XLEN, FLEN)`                 |
+| `DataWidth`        | `int` (32, 64, 128) | ISA bit-width                                    |
 | `TernaryOps`       | `bit`               | Support for ternary operations (use `rs3`)       |
 | `DualWriteback`    | `bit`               | Support for dual-writeback instructions          |
 
