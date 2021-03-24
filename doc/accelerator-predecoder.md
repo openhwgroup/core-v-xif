@@ -27,7 +27,6 @@ The response channel signals are summarized in the SystemVerilog struct `prd_rsp
 | -----------   | ----         | ---------            | -----------                                                                       |
 | `p_accept`    | `logic`      | Predecoder > Adapter | Indicates valid instruction                                                       |
 | `p_writeback` | `logic[1:0]` | Predecoder > Adapter | Instruction writeback to `rd` (`p_writeback[0]`) and `rd + 1` (`p_writeback[1]`)  |
-| `p_use_rs`    | `logic[2:0]` | Predecoder > Adapter | Instruction needs source register `rs[i]` (`p_use_rs[i]`)                         |
 | `p_use_rs`    | `logic[2:0]` | Predecoder > Adapter | Asserting `p_use_rs[i]` implies the instruction requires source register `rs[i]`. |
 
 ## Parameterization

@@ -22,14 +22,14 @@ The interface is parameterized using the following parameter
 
 ### Request Channel
 The request channel signals are:
-| Signal Name       | Range           | Direction      | Description                                                 |
-| -----------       | -----           | ---------      | -----------                                                 |
-| `q_instr_data`    | `31:0`          | Core > Adapter | Instruction data (ID stage)                                 |
-| `q_rs[NumRs-1:0]` | `DataWidth-1:0` | Core > Adapter | Source register contents                                    |
-| `q_rs_valid`      | `NumRs-1:0`     | Core > Adapter | Source register valid indicator                             |
-| `q_rd_clean`      | `NumWb-1:0`     | Core > Adapter | Scoreboard status of destination register                   |
-| `k_accept`        | `0:0`           | Adapter > Core | Offload request acceptance indicator                        |
-| `k_writeback`     | `NumWb-1:0`     | Adapter > Core | Mark outstanding accelerator writeback to`rd` (and `rd+1`)  |
+| Signal Name       | Type                    | Direction      | Description                                                |
+| -----------       | -----                   | ---------      | -----------                                                |
+| `q_instr_data`    | `logic [31:0]`          | Core > Adapter | Instruction data (ID stage)                                |
+| `q_rs[NumRs-1:0]` | `logic [DataWidth-1:0]` | Core > Adapter | Source register contents                                   |
+| `q_rs_valid`      | `logic [NumRs-1:0]`     | Core > Adapter | Source register valid indicator                            |
+| `q_rd_clean`      | `logic [NumWb-1:0]`     | Core > Adapter | Scoreboard status of destination register                  |
+| `k_accept`        | `logic`                 | Adapter > Core | Offload request acceptance indicator                       |
+| `k_writeback`     | `logic [NumWb-1:0]`     | Adapter > Core | Mark outstanding accelerator writeback to`rd` (and `rd+1`) |
 
 Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
 
@@ -41,7 +41,7 @@ The instruction offloading process takes place according to the following scheme
   `q_rs_valid[i]` may initially be 0 and change to 1 during the transaction.
   While `q_rs_valid[i]` is low, `q_rs[i]` may change.
   Once `q_valid` and `q_rs_valid[i]` have been asserted, `q_rs_valid[i]` and `q_rs[i]` must remain stable.
-- `q_rd_clean` indicates the scoreboard entry of the destination register.
+- `q_rd_clean` indicates there is no pending writeback to the specified the destination register.
   It may initially be 0 and change to 1 during the transaction.
   Once `q_rd_clean` is asserted, it must remain stable.
 - The accelerator adapter asserts `q_ready`, if
@@ -54,12 +54,12 @@ The instruction offloading process takes place according to the following scheme
 ### Response channel
 The response channel signals are:
 
-| Signal Name         | Range           | Description                                                                    |
-| -----------         | -----           | -----------                                                                    |
-| `p_rd`              | `4:0`           | Destination Register Address                                                   |
-| `p_data[NumWb-1:0]` | `DataWidth-1:0` | Writeback Data for `NumWb` multi-register writeback                            |
-| `p_dualwb`          | `0:0`           | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported)  |
-| `p_error`           | `0:0`           | Error Flag                                                                     |
+| Signal Name         | Type                    | Description                                                                   |
+| -----------         | -----                   | -----------                                                                   |
+| `p_rd`              | `logic [4:0]`           | Destination Register Address                                                  |
+| `p_data[NumWb-1:0]` | `logic [DataWidth-1:0]` | Writeback Data for `NumWb` multi-register writeback                           |
+| `p_dualwb`          | `logic`                 | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported) |
+| `p_error`           | `logic`                 | Error Flag                                                                    |
 
 Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
 
@@ -104,4 +104,4 @@ Also, the core should include provisions for simultaneous writeback, implying du
 
 ## Write-after-Write Hazards
 The accelerator interconnect does not provide any guarantees regarding response ordering of offloaded instructions.
-To prevent potential write-after-write hazards upon multiple offloaded instructions of different latencies targeting the same destination register, the accelerator adapter must wait for the destination register's scoreboard entry to be clean.
+To prevent potential write-after-write hazards upon multiple offloaded instructions of different latencies targeting the same destination register, the offloading core exposes a single-bit line indicating outstanding writeback to the specified destination register.

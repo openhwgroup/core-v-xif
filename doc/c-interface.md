@@ -37,13 +37,13 @@ An offload request comprises the entire 32-bit RISC-V instruction three operands
 The nature of the offloaded instructions is not of importance to the accelerator interconnect.
 The request channel interface signals are:
 
-| Signal Name       | Range                      | Description                  |
-| -----------       | -----                      | -----------                  |
-| `q_instr_data`    | `31:0`                     | RISC-V instruction data      |
-| `q_addr`          | `AddrWidth-1:AccAddrWidth` | Accelerator hierarchy level. |
-|                   | `AccAddrWidth-1:0`         | Accelerator address.         |
-| `q_hart_id`       | `DataWidth-1:0`            | Hart ID.                     |
-| `q_rs[NumRs-1:0]` | `DataWidth`                | Source register contents.    |
+| Signal Name       | Type                               | Description                  |
+| -----------       | ----                               | -----------                  |
+| `q_instr_data`    | `logic [31:0]`                     | RISC-V instruction data      |
+| `q_addr`          | `logic [AddrWidth-1:AccAddrWidth]` | Accelerator hierarchy level. |
+|                   | `logic [AccAddrWidth-1:0]`         | Accelerator address.         |
+| `q_hart_id`       | `logic [DataWidth-1:0]`            | Hart ID.                     |
+| `q_rs[NumRs-1:0]` | `logic [DataWidth]`                | Source register contents.    |
 
 Notes:
   - The accelerator address `q_addr` is partitioned into the MSB Range identifying the interconnect hierarchy level of the target accelerator and the LSB Range denoting the accelerator address within a given hierarchy level.
@@ -54,13 +54,13 @@ Notes:
 *Not* every operation which was offloaded must ultimately return a response.
 If a response is returned, the response channel carries the following signals:
 
-| Signal Name       | Range           | Description                                                                    |
-| -----------       | -----           | -----------                                                                    |
-| `p_hart_id`       | `DataWidth-1:0` | Hart ID                                                                        |
-| `p_rd`            | `4:0`           | Destination Register Address                                                   |
-| `p_data[NumWb:0]` | `DataWidth-1:0` | Writeback Data for `NumWb` multi-register writeback.                           |
-| `p_dualwb`        | `0:0`           | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported). |
-| `p_error`         | `0:0`           | Error Flag                                                                     |
+| Signal Name       | Range                   | Description                                                                    |
+| -----------       | -----                   | -----------                                                                    |
+| `p_hart_id`       | `logic [DataWidth-1:0]` | Hart ID                                                                        |
+| `p_rd`            | `logic [4:0]`           | Destination Register Address                                                   |
+| `p_data[NumWb:0]` | `logic [DataWidth-1:0]` | Writeback Data for `NumWb` multi-register writeback.                           |
+| `p_dualwb`        | `logic`                 | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported). |
+| `p_error`         | `logic`                 | Error Flag                                                                     |
 
 Notes:
   - The `p_hart_id` signal identifies the target core for writeback of the offloaded instruction.
