@@ -2,10 +2,22 @@
 The X-Interface implements accelerator-agnostic instruction offloading and translation to the accelerator interconnect C-Interface.
 
 ## Interface Definition
-The X-Interface features two independent decoupled channels for offloading requests and accelerator writeback.
+The X-Interface defines in total four independent decoupled channels communication between the accelerator adapter and the offloading processor core.
+The X-Request and X-Response channels route instruction offloading requests and accelerator writeback responses.
+The XMem-Request and XMem-Reponse channels route memory transaction requests and responses.
+
+The X and XMem SystemVerilog interfaces are separately defined as independent entities.
+Request channel signals are prefixed with the letter `q`.
+Response channel signals are prefixed with the letter `p`.
+
+All transactions are handshaked according to the following scheme:
+- The initiator asserts `valid`. The assertion of `valid` must not depend on `ready`. The assertion of ready may depend on `valid`.
+- Once `valid` has been asserted all data must remain stable unless otherwise noted (see [X-Request transactions](#offload-x-request-transactions)).
+- The receiver asserts `ready` whenever it is ready to receive the transaction. Asserting `ready` by default is allowed. While `valid` is low, `ready` may be retracted at any time.
+- When both `valid` and `ready` are high the transaction is successful.
 
 ### Parameterization
-The interface is parameterized using the following parameter
+The interface is parameterized using the following set of parameters.
 
 | Name               | Type / Range        | Description                                      |
 | ------------------ | ------------------- | ------------------------------------------------ |
@@ -19,8 +31,8 @@ The interface is parameterized using the following parameter
 | `NumRs` | `TernaryOps ? 3 : 2`    | Supported number of source registers        |
 | `NumWb` | `DualWriteback ? 2 : 1` | Supported number of simultaneous writebacks |
 
-
-### Request Channel
+### Instruction Offloading Inteface
+#### X-Request Channel
 The request channel signals are:
 | Signal Name       | Type                    | Direction      | Description                                                |
 | -----------       | -----                   | ---------      | -----------                                                |
@@ -29,11 +41,13 @@ The request channel signals are:
 | `q_rs_valid`      | `logic [NumRs-1:0]`     | Core > Adapter | Source register valid indicator                            |
 | `q_rd_clean`      | `logic [NumWb-1:0]`     | Core > Adapter | Scoreboard status of destination register                  |
 | `k_accept`        | `logic`                 | Adapter > Core | Offload request acceptance indicator                       |
+| `k_is_load`       | `logic`                 | Adapter > Core | Offloaded instruction is a load instruction                |
+| `k_is_store`      | `logic`                 | Adapter > Core | Offloaded instruction is a store instruction               |
 | `k_writeback`     | `logic [NumWb-1:0]`     | Adapter > Core | Mark outstanding accelerator writeback to`rd` (and `rd+1`) |
 
 Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
 
-#### Request Transaction
+##### X-Request Transaction
 The instruction offloading process takes place according to the following scheme:
 - The offloading core asserts `q_valid` upon encountering an unknown instruction in the instruction decode stage, initiating a transaction.
 - Once `q_valid` has been asserted, `q_instr_data` must remain stable.
@@ -45,63 +59,73 @@ The instruction offloading process takes place according to the following scheme
   It may initially be 0 and change to 1 during the transaction.
   Once `q_rd_clean` is asserted, it must remain stable.
 - The accelerator adapter asserts `q_ready`, if
-    - The instruction is accepted by any of the connected predecoders, the required source registers are marked valid by the offloading core and the destination register is clean (if writeback is expected).
-      The adapter asserts `k_accept` and `k_writeback` accordingly.
+    - The instruction is accepted by any of the connected predecoders:
+      - The required source registers are marked valid by the offloading core  (`q_rs_valid`).
+      - There are no writebacks pending to the destination register (`q_rd_clean`).
+      - There are no pending memory operations in either the core pipeline or any of the connected accelerators. (status signal `core_mem_pending` and adapter-internal book-keeping)
+      The adapter asserts `k_accept` to indicate a valid offload instruction and `k_writeback` if writeback is excpected.
     - The instruction is not accepted by any of the connected predecoders.
       The adapter de-asserts `k_accept` and `k_writeback` to indicate an illegal instruction has been encountered.
 - When both `q_valid` and `q_ready` are high, the transaction is successful
 
-### Response channel
+#### X-Response channel
 The response channel signals are:
 
-| Signal Name         | Type                    | Description                                                                   |
-| -----------         | -----                   | -----------                                                                   |
-| `p_rd`              | `logic [4:0]`           | Destination Register Address                                                  |
-| `p_data[NumWb-1:0]` | `logic [DataWidth-1:0]` | Writeback Data for `NumWb` multi-register writeback                           |
-| `p_dualwb`          | `logic`                 | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported) |
-| `p_error`           | `logic`                 | Error Flag                                                                    |
-
-Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
+| Signal Name       | Type                    | Direction      | Description                                                                   |
+| -----------       | -----                   | ---------      | -----------                                                                   |
+| `p_rd`            | `logic [4:0]`           | Adapter > Core | Destination register address                                                  |
+| `p_data[NumWb:0]` | `logic [DataWidth-1:0]` | Adapter > Core | Instruction response data                                                     |
+| `p_dualwb`        | `logic`                 | Adapter > Core | Dual-Writeback response (constant `1'b0`, if dual-writeback is not supported) |
+| `p_type`          | `logic`                 | Adapter > Core | Response type
+| `p_error`         | `logic`                 | Adapter > Core | Error flag                                                                    |
 
 Notes:
-  - `p_data[NumWb:0]` carries the writeback data resulting from offloaded instructions.
-    `p_data[0]` carries the default writeback data and is written to the destination regiser identified by `p_rd`.
-    If dual-writeback instructions are supported, `p_data[1]` may carry the secondary writeback data written to `p_rd+1`.
-    For dual-writeback instructions, `p_rd` must specify an even destination register other than `X0`.
-  - Dual writeback instructions are marked by the accelerator sub-system by setting `p_dualwb`.
-    If dual-writeback instructions are not supported (`DualWriteback ==0`), `the signal must be constantly tied to 0.
+  - The instruction response type signal `p_type` encodes the nature of the response.
+      - `1'b0` encodes regular integer register file writeback.
+      - `1'b1` encodes an external memory operation response.
+  - `p_data` carries the response data resulting from the offloaded instruction.
+    - For regular integer register writeback responses, `p_data[NumWb-1:0]` carries the writeback data resulting from offloaded instructions.
+      `p_data[0]` carries the default writeback data and is written to the destination regiser identified by `p_rd`.
+      If dual-writeback instructions are supported, `p_data[1]` may carry the secondary writeback data written to `p_rd+1`.
+      For dual-writeback instructions, `p_rd` must specify an even destination register other than `X0`.
+    - For external memory transaction responses, the field `p_data[0]` carries the offending memory address in case of an access fault encountered by the external memory operation and `'0` otherwise.
+  - Dual writeback responses are marked by the accelerator sub-system by setting `p_dualwb`.
+    If dual-writeback instructions are not supported (`DualWriteback == 0`), the signal must be constantly tied to 0.
   - The error flag included in the response channel indicates processing errors encountered by the accelerator.
-    The actions to be taken by a core to recover from accelerator errors are not yet defined.
 
-#### Response Transaction
-The response channel is handshaked according to the following scheme:
-- The initiator asserts `p_valid`. The assertion of `p_valid` must not depend on `p_ready`. The assertion of `p_ready` may depend on `p_valid`.
-- Once `p_valid` has been asserted all data must remain stable.
-- The receiver asserts `p_ready` whenever it is ready to receive the transaction. Asserting `p_ready` by default is allowed. While `p_valid` is low, `p_ready` may be retracted at any time.
-- When both `p_valid` and `p_ready` are high the transaction is successful.
+### Memory Transaction Interface
 
-## Operand Origin
-The operands forwarded to the accelerator interconnect are determined in the same way as any regular RISC-V instructions.
-Any source registers from the integer register file of the offloading core as defined in the [RISC-V User-Level ISA specification](https://riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf#page=24) are allowed.
-If source registers are used, operand A, B and C contain `rs1`, `rs2` and `rs3` respectively.
-For ternary instructions, the instruction format R4-type instruction format is to be used, defining the `rs3` register address by bits `instr_data[31:27]`.
+#### XMem-Request Channel
 
-## Writeback Destination
-The default writeback destination for offloaded instruction is the RISC-V destination register specified by `instr_data[11:7]`.
+The request channel signals from the adapter to the offloading core are:
 
-## Dual-Writeback Instructions
-Custom ISA extensions may mandate dual register writebacks.
-In order to accomodate that need we provision the possibility to reserve multiple destination registers for a single offloaded instruction.
-For even destination registers other than `X0`,  `Xn` and `Xn+1` are reserved for writeback upon offloading a dual-writeback instruction, where `Xn` denotes the destination register addresss extracted from `instr_data[11:7]`.
-Support for dual-writeback instructions is enabled via the parameter `DualWriteback`.
+| Signal Name | Type                    | Direction      | Description                                        |
+| ----------- | ----                    | ---------      | -----------                                        |
+| `q_laddr`   | `logic [DataWidth-1:0]` | Adapter > Core | Target logical memory address                      |
+| `q_wdata`   | `logic [DataWidth-1:0]` | Adapter > Core | Memory write data                                  |
+| `q_width`   | `logic [1:0]`           | Adapter > Core | Memory access width (byte, half-word, word, [...]) |
+| `q_type`    | `logic [1:0]`           | Adapter > Core | Request type (X/W/R)                               |
+| `q_mode`    | `logic`                 | Adapter > Core | Memory access mode (standard / probe)              |
 
-For responses resulting from dual-writeback instructions, the accelerator asserts `p_dualwb`.
-Upon accepting the accelerator response, the offloading core writes back data contained in `p_data[0]` to register `p_rd[4:0]`.
-`p_data[1]` is written back to `p_rd[4:0]` + 1.
+#### XMem-Response Channel
 
-In order to support accelerators implementing dual-writeback instructions, the offloading core must include provisions to reserve two destination registers upon offloading an instruction.
-Also, the core should include provisions for simultaneous writeback, implying dual write-ports to the internal register file.
+The response channel signals from the offloading core to the adapter are:
 
-## Write-after-Write Hazards
-The accelerator interconnect does not provide any guarantees regarding response ordering of offloaded instructions.
-To prevent potential write-after-write hazards upon multiple offloaded instructions of different latencies targeting the same destination register, the offloading core exposes a single-bit line indicating outstanding writeback to the specified destination register.
+| Signal Name | Type                           | Direction             | Description                           |
+| ----------- | ----                           | ---------             | -----------                           |
+| `p_rdata`   | `logic [DataWidth-1:0]`        | Core > Adapter        | Memory response data.                 |
+| `p_range`   | `logic [clog2(DataWidth)-1:0]` | Core > Adapter        | Validity LSB range of memory metadata |
+| `p_status`  | `logic`                        | Core > Adapter        | Transaction status (success / fail)   |
+
+Notes:
+  - The response transaction status `p_status` field indicates the success (`p_status = 1'b1`) or failure (`p_status = 1'b0`) of the memory operation.
+      - For standard requests, the status field indicates if the operation raised an access fault exception.
+      - For probing memory requests, the status field indicates if the requested access has been granted.
+  - The `p_range` field carries information on the memory region querried with a probing memory request.
+    If the `p_status` field signals access has been granted, this field specifies the number of bits that can be changed in the logical address without changing the metadata
+
+## Master/Slave Interface Ports
+- An X-interface master port is defined to source X-request signals and sink X-response signals
+- An X-interface slave port is defined to sink X-request signals and source X-response signals.
+- An XMem-interface master port is defined to source XMem-request signals and sink XMem-response signals.
+- An XMem-interface slave portis defined to sink XMem-request signals and source XMem-response signals.

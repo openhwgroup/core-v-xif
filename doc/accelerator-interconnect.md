@@ -1,5 +1,10 @@
 # Accelerator Interconnect Module Specification
-The [accelerator interconnect module](../src/acc_interconnect.sv) implements signal routing from the offloading accelerator adapter to connected accelerator units on the corresponding interconnect level and forwards requests to higher levels in the hierarchy.
+The accelerator interconnect module implements the interconnect fabric on each level of the interconnect hierarchy.
+It comprises a crossbar for routing of requests and responses from a number of requesting units the accelerator structures residing on the corresponding interconnect level, as well as a bypass-path to forward requests from and to a higher hierarchy level.
+All in- and output ports implement the [C-interface](c-interface.md).
+For request and response path, separate pipeline registers may be implemented for each interconnect module.
+
+![Accelerator Interconnect Level](img/acc-interconnect-level.svg)
 
 ## Module Variations
 - The module `acc_interconnect_intf` features port connections using the SystemVerilog `ACC_C_BUS` interface defined [here](../src/acc_intf.sv).
@@ -27,10 +32,12 @@ The accelerator interconnect module (`acc_interconnect`) is parameterized as fol
   | `TernaryOps`    | `bit` | Support for ternary operations (use `rs3`) |
 
 - The `acc_interconnect` module variation additionally requires the accordingly generated request/response struct types:
-  | Name          | Description                 |
-  | ----          | -----------                 |
-  | `acc_c_req_t` | C-interface request struct  |
-  | `acc_c_rsp_t` | C-interface response struct |
+  | Name             | Description                    |
+  | ----             | -----------                    |
+  | `acc_c_req_t`    | C-interface request struct     |
+  | `acc_c_rsp_t`    | C-interface response struct    |
+  | `acc_cmem_req_t` | CMem-interface request struct  |
+  | `acc_cmem_rsp_t` | CMem-interface response struct |
 
   The typedefs are automatically declared using the typedef macros defined [here](../include/acc_interface/typedef.svh) as demonstrated in the following snippet.
 
@@ -47,11 +54,17 @@ The accelerator interconnect module (`acc_interconnect`) is parameterized as fol
 ## Port Map
 The accelerator interconnect module features the following [C-interface](c-interface.md) ports:
 
-| Port Name (`acc_interconnect_intf`) | Port Name (`acc_interconnect`) | Type (`acc_interconnect`) | Description                                                                           |
-| ---------                           | ----------                     | ---------                 | -----------                                                                           |
-| `acc_c_slv[NumReq]`                 | `acc_c_slv_req_i[NumReq-1:0]`  | `acc_c_req_t`             | C-interface request channel input from accelerator adapter / lower-level interconnect |
-|                                     | `acc_c_slv_rsp_o[NumReq-1:0]`  | `acc_c_rsp_t`             | C-interface response channel output to accelerator adapter / lower level interconnect |
-| `acc_c_mst_next[NumReq]`            | `acc_c_mst_req_o[NumReq-1:0]`  | `acc_c_req_t`             | C-interface request channel output to higher-level interconnect                       |
-|                                     | `acc_c_mst_rsp_i[NumReq-1:0]`  | `acc_c_rsp_t`             | C-interface response channel input from higher level interconnect                     |
-| `acc_c_mst[NumRsp]`                 | `acc_c_mst_req_o[NumRsp-1:0]`  | `acc_c_req_t`             | C-interface request channel to directly connected accelerators                        |
-|                                     | `acc_c_mst_rsp_i[NumRsp-1:0]`  | `acc_c_rsp_t`             | C-interface response channel from directly connected accelerators                     |
+| Port Name (`acc_interconnect_intf`) | Port Name (`acc_interconnect`)   | Type (`acc_interconnect`) | Description                                                                               |
+| ---------                           | ----------                       | ---------                 | -----------                                                                               |
+| `acc_c_slv[NumReq]`                 | `acc_c_slv_req_i[NumReq-1:0]`    | `acc_c_req_t`             | C-interface request channel input from accelerator adapter / lower-level interconnect     |
+|                                     | `acc_c_slv_rsp_o[NumReq-1:0]`    | `acc_c_rsp_t`             | C-interface response channel output to accelerator adapter / lower level interconnect     |
+| `acc_cmem_mst[NumReq]`              | `acc_cmem_mst_req_o[NumReq-1:0]` | `acc_cmem_req_t`          | CMem-interface request channel output to accelerator adapter / lower-level interconnect   |
+|                                     | `acc_cmem_mst_rsp_i[NumReq-1:0]` | `acc_cmem_rsp_t`          | CMem-interface response channel input from accelerator adapter / lower level interconnect |
+| `acc_c_mst_next[NumReq]`            | `acc_c_mst_req_o[NumReq-1:0]`    | `acc_c_req_t`             | C-interface request channel output to higher-level interconnect                           |
+|                                     | `acc_c_mst_rsp_i[NumReq-1:0]`    | `acc_c_rsp_t`             | C-interface response channel input from higher level interconnect                         |
+| `acc_cmem_slv_next[NumReq]`         | `acc_cmem_slv_req_i[NumReq-1:0]` | `acc_cmem_req_t`          | CMem-interface request channel input from higher-level interconnect                       |
+|                                     | `acc_cmem_slv_rsp_o[NumReq-1:0]` | `acc_cmem_rsp_t`          | CMem-interface response channel output to higher-level interconnect                       |
+| `acc_c_mst[NumRsp]`                 | `acc_c_mst_req_o[NumRsp-1:0]`    | `acc_c_req_t`             | C-interface request channel output to directly connected accelerators                     |
+|                                     | `acc_c_mst_rsp_i[NumRsp-1:0]`    | `acc_c_rsp_t`             | C-interface response channel input from directly connected accelerators                   |
+| `acc_cmem_slv[NumReq]`              | `acc_cmem_slv_req_i[NumReq-1:0]` | `acc_cmem_req_t`          | CMem-interface request channel input from directly connected accelerators                 |
+|                                    | `acc_cmem_slv_rsp_o[NumReq-1:0]` | `acc_cmem_rsp_t`          | CMem-interface response channel output to directly connected accelerators                 |
