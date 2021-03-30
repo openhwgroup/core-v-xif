@@ -55,7 +55,6 @@ The accelerator adapter module featuresthe following ports:
 | Interface Name (`acc_adapter_intf`) | Port Name (`acc_adapter`) | Type (`acc_adapter`)     | Description                                                        |
 | ---------                           | ---------                 | ----                     | -----------                                                        |
 | `hart_id_i`                         | `hart_id_i`               | `logic [DataWdth-1:0]`   | RISC-V hardware threat ID (hart id)                                |
-| `adapter_mem_pending_o`             | `adapter_mem_pending_o`   | `logic`                  | Offloaded memory operation pending status signal                   |
 | `acc_x_slv`                         | `acc_x_slv_req_i`         | `acc_x_req_t`            | X-interface request channel input from offloading CPU              |
 |                                     | `acc_x_slv_rsp_o`         | `acc_x_rsp_t`            | X-interface response channel output to offloading CPU              |
 | `acc_xmem_mst`                      | `acc_xmem_mst_req_o`      | `acc_xmem_req_t`         | XMem-interface request channel output to offloading CPU            |

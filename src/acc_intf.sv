@@ -63,6 +63,40 @@ interface ACC_C_BUS #(
 
 endinterface
 
+interface ACC_CMEM_BUS #(
+    // ISA bit width
+    parameter int unsigned DataWidth = 32,
+    // Accelerator Address width
+    parameter int          AddrWidth = -1
+);
+
+  typedef logic [DataWidth-1:0] data_t;
+  typedef logic [AddrWidth-1:0] addr_t;
+
+  // Request channel (Q).
+  data_t             q_laddr;
+  data_t q_wdata;
+  logic [2:0] q_width;
+  logic [1:0] q_type;
+  logic q_mode;
+  logic q_spec;
+  logic q_endoftransaction;
+  logic q_hart_id;
+  addr_t q_addr;
+
+  // Response Channel (P).
+
+  modport in(
+      input q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      output q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
+  );
+
+  modport out(
+      output q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
+      input q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
+  );
+
+endinterface
 interface ACC_C_BUS_DV #(
     // ISA bit width
     parameter int unsigned DataWidth = 32,

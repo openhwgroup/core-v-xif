@@ -41,8 +41,7 @@ The request channel signals are:
 | `q_rs_valid`      | `logic [NumRs-1:0]`     | Core > Adapter | Source register valid indicator                            |
 | `q_rd_clean`      | `logic [NumWb-1:0]`     | Core > Adapter | Scoreboard status of destination register                  |
 | `k_accept`        | `logic`                 | Adapter > Core | Offload request acceptance indicator                       |
-| `k_is_load`       | `logic`                 | Adapter > Core | Offloaded instruction is a load instruction                |
-| `k_is_store`      | `logic`                 | Adapter > Core | Offloaded instruction is a store instruction               |
+| `k_is_mem_op`     | `logic`                 | Adapter > Core | Offloaded instruction is a memory operation                |
 | `k_writeback`     | `logic [NumWb-1:0]`     | Adapter > Core | Mark outstanding accelerator writeback to`rd` (and `rd+1`) |
 
 Additionally, the handshake signals `q_ready` and `q_valid` are implemented.
@@ -99,14 +98,15 @@ Notes:
 
 The request channel signals from the adapter to the offloading core are:
 
-| Signal Name | Type                    | Direction      | Description                                               |
-| ----------- | ----                    | ---------      | -----------                                               |
-| `q_laddr`   | `logic [DataWidth-1:0]` | Adapter > Core | Target logical memory address                             |
-| `q_wdata`   | `logic [DataWidth-1:0]` | Adapter > Core | Memory write data                                         |
-| `q_width`   | `logic [1:0]`           | Adapter > Core | Memory access width (byte, half-word, word, [...])        |
-| `q_type`    | `logic [1:0]`           | Adapter > Core | Request type (X/W/R)                                      |
-| `q_mode`    | `logic`                 | Adapter > Core | Memory access mode (standard / probe)                     |
-| `q_spec`    | `logic`                 | Adapter > Core | Speculative memory operation (no trap upon access faults) |
+| Signal Name          | Type                    | Direction             | Description                                               |
+| -----------          | ----                    | ---------             | -----------                                               |
+| `q_laddr`            | `logic [DataWidth-1:0]` | Adapter > Core        | Target logical memory address                             |
+| `q_wdata`            | `logic [DataWidth-1:0]` | Adapter > Core        | Memory write data                                         |
+| `q_width`            | `logic [1:0]`           | Adapter > Core        | Memory access width (byte, half-word, word, [...])        |
+| `q_req_type`         | `logic [1:0]`           | Adapter > Core        | Request type (X/W/R)                                      |
+| `q_mode`             | `logic`                 | Adapter > Core        | Memory access mode (standard / probe)                     |
+| `q_spec`             | `logic`                 | Adapter > Core        | Speculative memory operation (no trap upon access faults) |
+| `q_endoftransaction` | `logic`                 | Accelerator > Adapter | Indicates the end of a memory operation sequence          |
 
 #### XMem-Response Channel
 
