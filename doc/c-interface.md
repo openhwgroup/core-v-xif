@@ -92,15 +92,16 @@ Notes:
 #### CMem-Request Channel
 The request channel signals from the accelerator units to the accelerator adapter are:
 
-| Signal Name          | Type                    | Direction             | Description                                        |
-| -----------          | ----                    | ---------             | -----------                                        |
-| `q_laddr`            | `logic [DataWidth-1:0]` | Accelerator > Adapter | Target logical memory address                      |
-| `q_wdata`            | `logic [DataWidth-1:0]` | Accelerator > Adapter | Memory write data.                                 |
-| `q_width`            | `logic [2:0]`           | Accelerator > Adapter | Memory access width (byte, half-word, word, [...]) |
-| `q_type`             | `logic [1:0]`           | Accelerator > Adapter | Request type (X/W/R)                               |
-| `q_mode`             | `logic`                 | Accelerator > Adapter | Memory access mode (standard / probe)              |
-| `q_endoftransaction` | `logic`                 | Accelerator > Adapter | Indicates the end of a memory operation sequence   |
-| `q_hart_id`          | `logic [DataWidth-1:0]` | Accelerator > Adapter | Hart ID                                            |
+| Signal Name          | Type                    | Direction             | Description                                               |
+| -----------          | ----                    | ---------             | -----------                                               |
+| `q_laddr`            | `logic [DataWidth-1:0]` | Accelerator > Adapter | Target logical memory address                             |
+| `q_wdata`            | `logic [DataWidth-1:0]` | Accelerator > Adapter | Memory write data.                                        |
+| `q_width`            | `logic [2:0]`           | Accelerator > Adapter | Memory access width (byte, half-word, word, [...])        |
+| `q_type`             | `logic [1:0]`           | Accelerator > Adapter | Request type (X/W/R)                                      |
+| `q_mode`             | `logic`                 | Accelerator > Adapter | Memory access mode (standard / probe)                     |
+| `q_spec`             | `logic`                 | Adapter > Core        | Speculative memory operation (no trap upon access faults) |
+| `q_endoftransaction` | `logic`                 | Accelerator > Adapter | Indicates the end of a memory operation sequence          |
+| `q_hart_id`          | `logic [DataWidth-1:0]` | Accelerator > Adapter | Hart ID                                                   |
 
 #### CMem-Response Channel
 The response channel signals from the accelerator adapter to the accelerator unit are:
@@ -109,7 +110,7 @@ The response channel signals from the accelerator adapter to the accelerator uni
 | -----------  | ----                           | ---------             | -----------                           |
 | `p_rdata`    | `logic [DataWidth-1:0]`        | Adapter > Accelerator | Memory response data.                 |
 | `p_range`    | `logic [clog2(DataWidth)-1:0]` | Adapter > Accelerator | Validity LSB range of memory metadata |
-| `p_status`   | `logic`                        | Adapter > Accelerator | Transaction Status (success / fail)   |
+| `p_status`   | `logic`                        | Adapter > Accelerator | Transaction status (success / fail)   |
 | `p_acc_addr` | `logic [AddrWidth-1:0]`        | Adapter > Accelerator | Accelerator address                   |
 | `p_hart_id`  | `logic [DataWidth-1:0]`        | Adapter > Accelerator | Hart ID                               |
 

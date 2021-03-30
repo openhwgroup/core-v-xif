@@ -6,12 +6,12 @@ This section describes operating principles of the REI.
 A processor core implementing the REI does not need to be aware of any of its connected extensions.
 Upon encountering an instruction in the instruction decoder which it is not able to decode, the offloading process is initiated.
 
+### Core-Adapter Offloading Handshake
 Offloaded instructions can not be retracted by the offloading core once they have been accepted by the accelerator adapter.
 It is therefore essential, that any instructions present in the offloading core's pipeline are guaranteed to not raise any exceptions that might require invalidation of the results produced by the offloaded instruction.
 In particular, an instrucion may not be offloaded if there is a memory operation pending in either the core's pipeline or any of the connected accelerator units.
 The memory operation status of connected accelerators is tracked by the accelerator adapter and provided to the core via the asynchronous status signal `adapter_mem_pending`.
 
-### Core-Adapter Offloading Handshake
 Once there are no such conflicts possible, the offloading core initiates the offload request transaction by asserting it's `x.q_valid` line on the [X instruction offloading interface](x-interface.md).
 
 It exposes the RISC-V instruction data to the accelerator adapter using the `x.q_instr_data` signal.
@@ -36,12 +36,7 @@ Once all the necessary integer source registers are marked valid, and the destin
 The offloading core is responsible for tracking possible dependencies of the instruction sequence following the offloaded instruction upon the outcome of the latter.
 Accelerated instructions may not write back to the integer register file, if they impact only the architectural state of the accelerator unit.
 If no write-back is expected to the integer register file, no dependencies arise in the core's pipeline.
-
-### Offload Instruction Response
-The offloaded instruction returns a response for
-- Regular integer register file writebacks (Response Type `1'b0`).
-  The offload response carries wrieteback data along with the target destination register.
-- External mode synchronous memory operations (Response Type `1'b1`) See [Synchronous Memory Operations](#synchronous-memory-operations) for details.
+In this case the instructions can be treated as fire-and-forget operations from a core's perspective.
 
 ### Accelerator Units
 Once an offload request transaction is completed between the offloading processor core and the accelerator adapter, the offloaded instruction data along with the necessary source data are sent to the accelerator units via the accelerator interconnect [C-interface](c-interface.md).
@@ -52,8 +47,68 @@ If the instruction writes back to the integer register file, an offload response
 Regular integer register writeback responses are marked by setting the `c.p_type` signal to `1'b0`.
 If the instruction only impacts the accelerator's internal architectural state, no response is issued.
 
+### Offload Instruction Response
+The offloaded instruction returns a response for
+- Regular integer register file writebacks (Response Type `1'b0`).
+  The offload response carries wrieteback data along with the target destination register.
+- External mode synchronous memory operations (Response Type `1'b1`) See [Synchronous Memory Operations](#synchronous-memory-operations) for details.
+
 ### Memory operations
 The REI defines two distinct modes of memory access for external accelerator units.
+
+- *Internal mode*: Memory operations are performed through the offloading core's load/store unit
+- *External mode*: Memory operations are performed through separately implemented accelerator-private memory ports.
+
+Furthermore, offloaded memory operations are classified with the following attributes.
+- *Synchronous* memory operations are performed in lockstep with the rest of the instruction stream.
+  Access faults resulting from synchronous memory operations are trapped precisely by the offloading core.
+  Neither the offloading core nor any of the connected accelerators may commit any new instruction results while synchronous memory operations are being served.
+- *Speculative* memory operations do not automatically trigger exceptions in the offloading core upon encountering access faults.
+  The success or failure of a speculative memory operation is reported by the accelerator upon completion of the instruciton.
+- *Asynchronous* memory operations execute in parallel to the main instruction stream.
+  Memory access permissions are probed via the defined memory interfaces before starting the memory operation.
+  Once the necessary permissions are acquired by the accelerator, core pipeline is released to continue operation.
+  Accelerators implementing asynchronous memory operation must implement separate memory ports.
+  Access faults encountered by asynchronous memory operations may not be trapped precisely and are therefore not strictly compliant to the RISC-V ISA specification.
+
+
+#### Memory Interface
+The REI defines separate memory channels for communication related to offloaded memory operations.
+The channels are routed along with the regular instruction offloading interface.
+The *XMem-interface* is defined as an analogue of the X- instruction offloading interface for communication between the offloading core and the accelerator adapter.
+The *Cmem-interface* connects the adapter to the accelerator units.
+The Xmem/Cmem-requests are generated by the accelerator units a memory operation has been offloaded to.
+Xmem/Cmem-Responses are generated by the offloading core.
+They may carry explicit memory access results in case of internal mode memory operations, or metadata concerning the targeted memory region by an external mode memory operation.
+
+Additionally, we define the status signal *mem_op_pending*, exposing the memory operation status of the connected accelerators to the offloading core.
+The status signal is asserted whenever the accelerator adapter encounters an offloaded memory operation.
+It is checked by the core to enable precise trapping upon memory access faults resulting from offloaded instructions.
+
+#### End of Transaction Signalling
+
+To enable the different flavors of memory operations, the memory operation pending status signal may be lifted in two ways:
+- A Cmem-request packet is sent by the accelerator unit with the specially defined `q_endoftransaction` bit asserted.
+  The `mem_op_pending` signal is deasserted immediately as soon as the request is accepted by the offloading core.
+  This mechanism can be used for
+  - *Non-speculative synchronous internal mode* memory transactions:
+    The number of required memory operations to serve an offloaded instruction is known to the issuing accelerator unit before the fact.
+    As soon as The last operation associated with the offloaded instruction has been served, the offloading core may be released without requiring an additional response by the accelerator unit.
+  - *Asynchronous external mode* memory transactions: The accelerator unit must probe the memory region in question for permission before independently issuing its memory operations.
+    By setting the `q_endoftransaction` signal associated with this probing request, the core pipeline is released to continue operation in parallel with the accelerator unit issuing it's asynchronous requests.
+- An explicit memory response packet (marked by `c.p_type`) is sent from the accelerator unit to the offloading core.
+  The `mem_op_pending` status signal is deasserted as soon as the packet is acknowleged by the offloading core.
+  In addition to ending the transaction, the C-response packet carries any relevant information on the success or failure status of the associated instruction.
+  This mechanisms can be used for
+  - *Speculative synchronous internal mode* memory transactions:
+    If the number of memory operations required to complete an instructions is not known beforehand (e.g. it depends on the memory contents), the accelerator unit may issue speculative memory transactions.
+    As the last memory operation is not known at request time, Cmem-request may not be marked to end the sequence.
+    Instead the accelerator unit may explicitly end the memory operations.
+  - *Synchronous external mode* memory transactions:
+    The accelerator unit performs memory opertions independently of the offloading core.
+    The core is explicitly informed of the end of such a memory operation and its success/failure status.
+
+The following subsections describe the transaction process for internal and external mode memory operations in some more detail.
 
 #### Internal Mode
 The standard mode for accessing memories for extension accelerators is through the offloading core's load/store unit.
@@ -62,7 +117,6 @@ This brings several advantages as compared to accelerator-private memory interfa
 - Sharing the offloading core's memory infrastructure, simplifies coherent address translation, permission checks and precise exception handling.
 - Through the detailed specification of instruction offloading *and* memory interfaces, the RISC-V extension interface becomes truely plug-and-play for accelerators implementing this memory operation mode.
 
-##### Transaction Process
 An internal-mode memory transaction is triggered by an offload request implying a load or store memory access being accepted by the accelerator adapter.
 The memory operation is identified by the accelerator predecoders, the offloading core is informed of the nature of the operation through the X-interface signals `x.k_is_load` and `x.k_is_store` and the adapter's `adapter_mem_pending` status signal is set.
 
@@ -87,6 +141,9 @@ The accelerator unit set the appropriate signals on the C-Mem request channel an
   This signal is fowarded to the offloading core via the X-Mem interface.
 - `cmem.q_mode` is set to `1'b0` for standard memory operations.
   This signal is fowarded to the offloading core via the X-Mem interface.
+- `cmem.q_spec` marks speculative memory operations.
+  If asserted, the offloading core will not raise an exception upon encountering an access fault.
+  This signal is fowarded to the offloading core via the X-Mem interface.
 - `cmem.q_endoftransaction` designates the last in a series of memory request pertaining to the same offloaded memory instruction.
   This signal is used only for book-keeping by the accelerator adapter and is *not* fowarded to the offloading core accross the X-Mem interface.
 - `cmem.q_hart_id` the processor core's hart ID is used for routing the C-Mem request accross the accelerator interconnect.
@@ -94,11 +151,7 @@ The accelerator unit set the appropriate signals on the C-Mem request channel an
 
 The accelerator adapter forwards the C-Mem request to the offloading core via the X-Mem interface.
 The offloading core is aware of an outstanding memory request by the accelerator adapter due to the `adapter_mem_pending` status signal and provides control over the the internal load/store unit to the adapter.
-The X-Mem request channel payload signals comprise the signals `q_laddr`, `q_wdata`, `q_width`, `q_type`, and `q_mode`.
-An offloaded memory operation may require multiple memory accesses thorugh the core's LSU, if the required data width exceeds the native ISA XLEN (e.g. RV32D, RV32V).
-The exclusive C-Mem request signal `q_endoftransaction` marks the end of an offloaded memory operation.
-Acknowlegement of a memory transaction marked with `q_endoftransaction` by the offloading core results in the adapter's status signal `adapter_mem_pending` being deasserted in the same cycle.
-
+The X-Mem request channel payload signals comprise the signals `q_laddr`, `q_wdata`, `q_width`, `q_type`, `q_mode` and `q_spec`.
 
 The X-Mem request payload data is transfered to the offloading core's LSU and acknowleged by the core via the `xmem.q_ready` signal in the same cycle as the memory response transaction is initiated:
 - The offloading core asserts `xmem.q_ready` to complete the memory request transaction and simultaneously initiates a memory response transaction by asserting `xmem.p_valid`.
@@ -110,7 +163,7 @@ The response transaction is acknowleged by the accelerator adapter by asserting 
 
 
 > Any memory operations issued by the accelerator units traverse all implemented PMP and PMA checks as well address translation in the offloading core as would be the case for core-internal memory operations.
-> If a memory operation raises an exception due to failed checks or memory system errors, the exception is handled precisely by the offoading core.
+> Unless a memory operation is marked as speculative operation, the core must raise a precise exception due any failed checks or memory system errors.
 > The issueing accelerator unit is informed of a possible access fault via the `xmem.p_status` line.
 
 #### External Mode
@@ -150,7 +203,7 @@ The response channel carries the following information:
 - `xmem.p_status` indicates if the requested access to the specified memory region is granted.
 The response transaction is acknowleged by the accelerator adapter by asserting the `xmem.p_ready` signal and sent across the accelerator interconnect to the accelerator unit via the C-Mem response channel.
 
-External mode memory requests resulting in an access not granted response trigger a precise trap of the offending instruction in the core's pipeline.
+External mode memory requests resulting in an access *not granted response* trigger a precise trap of the offending instruction in the core's pipeline.
 
 ##### Asynchronous Memory Operations
 The accelerator unit may assert `cmem.q_endoftransaction` to signal the memory access will be handled asynchronously by the accelerator unit.

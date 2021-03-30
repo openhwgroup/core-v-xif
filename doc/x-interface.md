@@ -99,13 +99,14 @@ Notes:
 
 The request channel signals from the adapter to the offloading core are:
 
-| Signal Name | Type                    | Direction      | Description                                        |
-| ----------- | ----                    | ---------      | -----------                                        |
-| `q_laddr`   | `logic [DataWidth-1:0]` | Adapter > Core | Target logical memory address                      |
-| `q_wdata`   | `logic [DataWidth-1:0]` | Adapter > Core | Memory write data                                  |
-| `q_width`   | `logic [1:0]`           | Adapter > Core | Memory access width (byte, half-word, word, [...]) |
-| `q_type`    | `logic [1:0]`           | Adapter > Core | Request type (X/W/R)                               |
-| `q_mode`    | `logic`                 | Adapter > Core | Memory access mode (standard / probe)              |
+| Signal Name | Type                    | Direction      | Description                                               |
+| ----------- | ----                    | ---------      | -----------                                               |
+| `q_laddr`   | `logic [DataWidth-1:0]` | Adapter > Core | Target logical memory address                             |
+| `q_wdata`   | `logic [DataWidth-1:0]` | Adapter > Core | Memory write data                                         |
+| `q_width`   | `logic [1:0]`           | Adapter > Core | Memory access width (byte, half-word, word, [...])        |
+| `q_type`    | `logic [1:0]`           | Adapter > Core | Request type (X/W/R)                                      |
+| `q_mode`    | `logic`                 | Adapter > Core | Memory access mode (standard / probe)                     |
+| `q_spec`    | `logic`                 | Adapter > Core | Speculative memory operation (no trap upon access faults) |
 
 #### XMem-Response Channel
 
