@@ -36,9 +36,13 @@ The REI defines the following interfaces:
 The REI enables decoupled development of accelerators and CPU cores through a mechanism facilitating accelerator-agnostic instruction offloading.
 
 ### Dual-Writeback Instructions
-The REI supports implementation of custom ISA extensions mandating dual register writebacks.
+The REI optionally supports implementation of custom ISA extensions mandating dual register writebacks.
 In order to accomodate that need we provision the possibility to reserve multiple destination registers for a single offloaded instruction.
 For even destination registers other than `X0`,  `Xn` and `Xn+1` are reserved for writeback upon offloading a dual-writeback instruction, where `Xn` denotes the destination register addresss extracted from `instr_data[11:7]`.
+
+### Ternary Operations
+The REI optionally supports ISA extensions implementing instructions which use three source operands.
+Ternary instructions must be encoded in the R4-type instruction format defined by the RISC-V specification.
 
 ### Hierarchical Interconnect
 The accelerator interface is designed to enable a number of flexible topologies.
@@ -54,9 +58,24 @@ The offloading core may provide internal structures to facilitate multiple instr
 
 ### Memory Operations
 The REI defines two distinct modes of memory access for external accelerator units.
-- The standard mode for accessing memories for extension accelerators is through the offloading core's load/store unit.
+- The internal mode for accessing memories for extension accelerators is through the offloading core's load/store unit.
   For executing offloaded memory operations, control over the offloading core's load/store unit is handed to the accelerator unit.
-  External load and store operations happen directly through the core's memory interface.
+  Offloaded load and store operations happen directly through the core's memory interface.
 - Certain accelerators may implement their own dedicated memory interfaces in order to increase the available memory bandwidth or to enable more independent operation.
-  For this purpose, external mode memory operations is defined.
+  For this purpose, external mode memory operations are defined.
+
+## Interface Subset Naming Convention
+The naming scheme to describe the subset of optional features included in a hardware implementation of the REI implementation comprises the following components.
+
+| Component | Description |
+| --------- | ----------- |
+| REIv[X]   | REI Version of the specification draft.|
+| XLEN      | Base ISA bit width |
+| T         | Support for ternary |
+| D         | Support for dual-writeback instruction |
+| M         | Support for 'internal mode' memory operations |
+| E         | Support for 'external mode' memory operations |
+
+The specification version indicator is separated from the rest of the description string by an underscore (`_`).
+For example, a hardware implementation of the spec version 0.1 (this version) based on a 32 bit core supporting ternary operations and internal mode memory operations would be described with `REIv0.1_32TM`.
 
