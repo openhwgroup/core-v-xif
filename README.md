@@ -6,9 +6,9 @@ A more thourough documentation can be found in the [doc](doc/index.md) folder.
 
 ## List of Modules
 
-| Name               | Description                                                        | Status         |
-| ------------------ | ------------------------------------------------------------------ | ----------------- |
-| `acc_intf`         | Systemverilog interface definition of the `X-` and `C-Interface`.  | in development |
-| `acc_interconnect` | Instruction offload and response interconnect.                     | in development |
-| `acc_adapter`      | Accelerator-agnostic offloading adapter.                           | in development |
-| `acc_predecoder`   | Accelerator-specific instruction predecoder.                       | in development |
+| Name               | Description                                                                 | Status        |
+| ----               | -----------                                                                 | ------        |
+| `acc_intf`         | Systemverilog interface definition of the `X/C-` and `XMem/CMem-Interface`. | active (v0.1) |
+| `acc_interconnect` | Instruction offload and response interconnect.                              | active (v0.1) |
+| `acc_adapter`      | Accelerator-agnostic offloading adapter.                                    | active (v0.1) |
+| `acc_predecoder`   | Accelerator-specific instruction predecoder.                                | active (v0.1) |

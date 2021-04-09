@@ -67,12 +67,12 @@ The REI defines two distinct modes of memory access for external accelerator uni
 ## Interface Subset Naming Convention
 The naming scheme to describe the subset of optional features included in a hardware implementation of the REI implementation comprises the following components.
 
-| Component | Description |
-| --------- | ----------- |
-| REIv[X]   | REI Version of the specification draft.|
-| XLEN      | Base ISA bit width |
-| T         | Support for ternary |
-| D         | Support for dual-writeback instruction |
+| Component | Description                                   |
+| --------- | -----------                                   |
+| REIv[X]   | REI Version [X] of the specification draft    |
+| XLEN      | Base ISA bit width                            |
+| T         | Support for ternary operations                |
+| D         | Support for dual-writeback instructions       |
 | M         | Support for 'internal mode' memory operations |
 | E         | Support for 'external mode' memory operations |
 
