@@ -10,8 +10,8 @@
 // ACC_C Interface //
 /////////////////////
 
-`ifndef ACC_C_ASSIGN_SVH_
-`define ACC_C_ASSIGN_SVH_
+`ifndef ACC_ASSIGN_SVH_
+`define ACC_ASSIGN_SVH_
 
 // Assign handshake.
 `define ACC_ASSIGN_VALID(__opt_as, __dst, __src, __chan) \
@@ -125,6 +125,88 @@
   `ACC_ASSIGN_VALID(assign, resp_struct, acc_if, p)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////
+// ACC_CMEM Interface //
+////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning one ACC_CMEM interface to another, as if you would do `assign slv =
+// mst;`
+
+`define ACC_CMEM_ASSIGN_Q_CHAN(__opt_as, dst, src, __sep_dst, __sep_src)            \
+  __opt_as dst.q``__sep_dst``laddr            = src.q``__sep_src``laddr;            \
+  __opt_as dst.q``__sep_dst``wdata            = src.q``__sep_src``wdata;            \
+  __opt_as dst.q``__sep_dst``width            = src.q``__sep_src``width;            \
+  __opt_as dst.q``__sep_dst``req_type         = src.q``__sep_src``req_type;         \
+  __opt_as dst.q``__sep_dst``mode             = src.q``__sep_src``mode;             \
+  __opt_as dst.q``__sep_dst``spec             = src.q``__sep_src``spec;             \
+  __opt_as dst.q``__sep_dst``endoftransaction = src.q``__sep_src``endoftransaction; \
+  __opt_as dst.q``__sep_dst``hart_id          = src.q``__sep_src``hart_id;          \
+  __opt_as dst.q``__sep_dst``addr             = src.q``__sep_src``addr;
+
+`define ACC_CMEM_ASSIGN_P_CHAN(__opt_as, dst, src, __sep_dst, __sep_src) \
+  __opt_as dst.p``__sep_dst``rdata   = src.p``__sep_src``rdata;          \
+  __opt_as dst.p``__sep_dst``range   = src.p``__sep_src``range;          \
+  __opt_as dst.p``__sep_dst``status  = src.p``__sep_src``status;         \
+  __opt_as dst.p``__sep_dst``addr    = src.p``__sep_src``addr;           \
+  __opt_as dst.p``__sep_dst``hart_id = src.p``__sep_src``hart_id;
+
+  // Assign P_channel signals with override.
+`define ACC_CMEM_ASSIGN_Q_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0)                    \
+  __opt_as dst.laddr            = ``ovr_name`` == "laddr"            ? ovr_sig : src.laddr;            \
+  __opt_as dst.wdata            = ``ovr_name`` == "wdata"            ? ovr_sig : src.wdata;            \
+  __opt_as dst.width            = ``ovr_name`` == "width"            ? ovr_sig : src.width;            \
+  __opt_as dst.req_type         = ``ovr_name`` == "req_type"         ? ovr_sig : src.req_type;         \
+  __opt_as dst.mode             = ``ovr_name`` == "mode"             ? ovr_sig : src.mode;             \
+  __opt_as dst.spec             = ``ovr_name`` == "spec"             ? ovr_sig : src.spec;             \
+  __opt_as dst.endoftransaction = ``ovr_name`` == "endoftransaction" ? ovr_sig : src.endoftransaction; \
+  __opt_as dst.hart_id          = ``ovr_name`` == "hart_id"          ? ovr_sig : src.hart_id;          \
+  __opt_as dst.addr             = ``ovr_name`` == "addr"             ? ovr_sig : src.addr;
+
+`define ACC_CMEM_ASSIGN_P_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0) \
+  __opt_as dst.rdata   = ``ovr_name`` == "rdata"   ? ovr_sig : src.rdata;           \
+  __opt_as dst.range   = ``ovr_name`` == "range"   ? ovr_sig : src.range;           \
+  __opt_as dst.status  = ``ovr_name`` == "status"  ? ovr_sig : src.status;          \
+  __opt_as dst.addr    = ``ovr_name`` == "addr"    ? ovr_sig : src.addr;            \
+  __opt_as dst.hart_id = ``ovr_name`` == "hart_id" ? ovr_sig : src.hart_id;
+
+`define ACC_CMEM_ASSIGN(slv, mst)                 \
+  `ACC_CMEM_ASSIGN_Q_CHAN(assign, slv, mst, _, _) \
+  `ACC_ASSIGN_HANDSHAKE(assign, slv, mst, q)      \
+  `ACC_CMEM_ASSIGN_P_CHAN(assign, mst, slv, _, _) \
+  `ACC_ASSIGN_HANDSHAKE(assign, mst, slv, p)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning an interface from channel or request/response structs outside a
+// process.
+
+`define ACC_CMEM_ASSIGN_FROM_REQ(acc_if, req_struct)        \
+  `ACC_ASSIGN_VALID(assign, acc_if, req_struct, q)          \
+  `ACC_CMEM_ASSIGN_Q_CHAN(assign, acc_if, req_struct, _, .) \
+  `ACC_ASSIGN_READY(assign, acc_if, req_struct, p)
+
+`define ACC_CMEM_ASSIGN_FROM_RESP(acc_if, resp_struct)       \
+  `ACC_ASSIGN_READY(assign, acc_if, resp_struct, q)          \
+  `ACC_CMEM_ASSIGN_P_CHAN(assign, acc_if, resp_struct, _, .) \
+  `ACC_ASSIGN_VALID(assign, acc_if, resp_struct, p)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning channel or request/response structs from an interface outside a
+// process.
+`define ACC_CMEM_ASSIGN_TO_REQ(req_struct, acc_if)          \
+  `ACC_ASSIGN_VALID(assign, req_struct, acc_if, q)          \
+  `ACC_CMEM_ASSIGN_Q_CHAN(assign, req_struct, acc_if, ., _) \
+  `ACC_ASSIGN_READY(assign, req_struct, acc_if, p)
+
+`define ACC_CMEM_ASSIGN_TO_RESP(resp_struct, acc_if)         \
+  `ACC_ASSIGN_READY(assign, resp_struct, acc_if, q)          \
+  `ACC_CMEM_ASSIGN_P_CHAN(assign, resp_struct, acc_if, ., _) \
+  `ACC_ASSIGN_VALID(assign, resp_struct, acc_if, p)
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////
 // ACC_X Interface //
@@ -180,8 +262,6 @@
   `ACC_ASSIGN_VALID(assign, acc_if, resp_struct, p)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 // Assigning channel or request/response structs from an interface outside a
 // process.
 `define ACC_X_ASSIGN_TO_REQ(req_struct, acc_if)          \
@@ -193,6 +273,77 @@
   `ACC_ASSIGN_READY(assign, resp_struct, acc_if, q)       \
   `ACC_X_ASSIGN_P_CHAN(assign, resp_struct, acc_if, ., _) \
   `ACC_X_ASSIGN_K_CHAN(assign, resp_struct, acc_if, ., _) \
+  `ACC_ASSIGN_VALID(assign, resp_struct, acc_if, p)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////
+// ACC_XMEM Interface //
+////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning one ACC_XMEM interface to another, as if you would do `assign slv =
+// mst;`
+
+`define ACC_XMEM_ASSIGN_Q_CHAN(__opt_as, dst, src, __sep_dst, __sep_src)    \
+  __opt_as dst.q``__sep_dst``laddr            = src.q``__sep_src``laddr;    \
+  __opt_as dst.q``__sep_dst``wdata            = src.q``__sep_src``wdata;    \
+  __opt_as dst.q``__sep_dst``width            = src.q``__sep_src``width;    \
+  __opt_as dst.q``__sep_dst``req_type         = src.q``__sep_src``req_type; \
+  __opt_as dst.q``__sep_dst``mode             = src.q``__sep_src``mode;     \
+  __opt_as dst.q``__sep_dst``spec             = src.q``__sep_src``spec;     \
+  __opt_as dst.q``__sep_dst``endoftransaction = src.q``__sep_src``endoftransaction;
+
+`define ACC_XMEM_ASSIGN_P_CHAN(__opt_as, dst, src, __sep_dst, __sep_src) \
+  __opt_as dst.p``__sep_dst``rdata   = src.p``__sep_src``rdata;          \
+  __opt_as dst.p``__sep_dst``range   = src.p``__sep_src``range;          \
+  __opt_as dst.p``__sep_dst``status  = src.p``__sep_src``status;
+
+  // Assign P_channel signals with override.
+`define ACC_XMEM_ASSIGN_Q_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0) \
+  __opt_as dst.data = ``ovr_name`` == "laddr"            ? ovr_sig : src.laddr;     \
+  __opt_as dst.data = ``ovr_name`` == "wdata"            ? ovr_sig : src.wdata;     \
+  __opt_as dst.data = ``ovr_name`` == "width"            ? ovr_sig : src.width;     \
+  __opt_as dst.data = ``ovr_name`` == "req_type"         ? ovr_sig : src.req_type;  \
+  __opt_as dst.data = ``ovr_name`` == "mode"             ? ovr_sig : src.mode;      \
+  __opt_as dst.data = ``ovr_name`` == "spec"             ? ovr_sig : src.spec;      \
+  __opt_as dst.data = ``ovr_name`` == "endoftransaction" ? ovr_sig : src.endoftransaction;
+
+`define ACC_XMEM_ASSIGN_P_SIGNALS(__opt_as, dst, src,  ovr_name="none", ovr_sig='0) \
+  __opt_as dst.data = ``ovr_name`` == "rdata"   ? ovr_sig : src.rdata;              \
+  __opt_as dst.data = ``ovr_name`` == "range"   ? ovr_sig : src.range;              \
+  __opt_as dst.data = ``ovr_name`` == "status"  ? ovr_sig : src.status;
+
+`define ACC_XMEM_ASSIGN(slv, mst)                 \
+  `ACC_XMEM_ASSIGN_Q_CHAN(assign, slv, mst, _, _) \
+  `ACC_ASSIGN_HANDSHAKE(assign, slv, mst, q)      \
+  `ACC_XMEM_ASSIGN_P_CHAN(assign, mst, slv, _, _) \
+  `ACC_ASSIGN_HANDSHAKE(assign, mst, slv, p)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning an interface from channel or request/response structs outside a
+// process.
+
+`define ACC_XMEM_ASSIGN_FROM_REQ(acc_if, req_struct)        \
+  `ACC_ASSIGN_VALID(assign, acc_if, req_struct, q)          \
+  `ACC_XMEM_ASSIGN_Q_CHAN(assign, acc_if, req_struct, _, .) \
+  `ACC_ASSIGN_READY(assign, acc_if, req_struct, p)
+
+`define ACC_XMEM_ASSIGN_FROM_RESP(acc_if, resp_struct)       \
+  `ACC_ASSIGN_READY(assign, acc_if, resp_struct, q)          \
+  `ACC_XMEM_ASSIGN_P_CHAN(assign, acc_if, resp_struct, _, .) \
+  `ACC_ASSIGN_VALID(assign, acc_if, resp_struct, p)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assigning channel or request/response structs from an interface outside a
+// process.
+`define ACC_XMEM_ASSIGN_TO_REQ(req_struct, acc_if)          \
+  `ACC_ASSIGN_VALID(assign, req_struct, acc_if, q)          \
+  `ACC_XMEM_ASSIGN_Q_CHAN(assign, req_struct, acc_if, ., _) \
+  `ACC_ASSIGN_READY(assign, req_struct, acc_if, p)
+
+`define ACC_XMEM_ASSIGN_TO_RESP(resp_struct, acc_if)         \
+  `ACC_ASSIGN_READY(assign, resp_struct, acc_if, q)          \
+  `ACC_XMEM_ASSIGN_P_CHAN(assign, resp_struct, acc_if, ., _) \
   `ACC_ASSIGN_VALID(assign, resp_struct, acc_if, p)
 
 
@@ -227,4 +378,4 @@
 `define ACC_PRD_ASSIGN_TO_RESP(resp_struct, acc_if) \
   `ACC_PRD_ASSIGN_P_CHAN(assign, resp_struct, acc_if, _, _)
 
-`endif
+`endif // ACC_ASSIGN_SVH_

@@ -63,40 +63,6 @@ interface ACC_C_BUS #(
 
 endinterface
 
-interface ACC_CMEM_BUS #(
-    // ISA bit width
-    parameter int unsigned DataWidth = 32,
-    // Accelerator Address width
-    parameter int          AddrWidth = -1
-);
-
-  typedef logic [DataWidth-1:0] data_t;
-  typedef logic [AddrWidth-1:0] addr_t;
-
-  // Request channel (Q).
-  data_t             q_laddr;
-  data_t q_wdata;
-  logic [2:0] q_width;
-  logic [1:0] q_type;
-  logic q_mode;
-  logic q_spec;
-  logic q_endoftransaction;
-  logic q_hart_id;
-  addr_t q_addr;
-
-  // Response Channel (P).
-
-  modport in(
-      input q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
-      output q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
-  );
-
-  modport out(
-      output q_addr, q_instr_data, q_rs, q_hart_id, q_valid, p_ready,
-      input q_ready, p_data, p_dualwb, p_hart_id, p_rd, p_error, p_valid
-  );
-
-endinterface
 interface ACC_C_BUS_DV #(
     // ISA bit width
     parameter int unsigned DataWidth = 32,
@@ -166,6 +132,128 @@ interface ACC_C_BUS_DV #(
   // pragma translate_on
 
 endinterface
+
+interface ACC_CMEM_BUS #(
+    // ISA bit width
+    parameter int unsigned DataWidth = 32,
+    // Accelerator Address width
+    parameter int          AddrWidth = -1
+);
+
+  typedef logic [DataWidth-1:0] data_t;
+  typedef logic [AddrWidth-1:0] addr_t;
+
+  // Request channel (Q).
+  data_t      q_laddr;
+  data_t      q_wdata;
+  logic [2:0] q_width;
+  logic [1:0] q_req_type;
+  logic       q_mode;
+  logic       q_spec;
+  logic       q_endoftransaction;
+  data_t      q_hart_id;
+  addr_t      q_addr;
+  logic       q_valid;
+  logic       q_ready;
+
+  // Response Channel (P).
+  data_t                        p_rdata;
+  logic [$clog2(DataWidth)-1:0] p_range;
+  logic                         p_status;
+  addr_t                        p_addr;
+  data_t                        p_hart_id;
+  logic                         p_valid;
+  logic                         p_ready;
+
+  modport in(
+    input q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction, q_hart_id,
+        q_addr, q_valid, p_ready,
+    output p_rdata, p_range, p_status, p_addr, p_hart_id, p_valid, q_ready
+  );
+
+  modport out(
+    output q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction, q_hart_id,
+        q_addr, q_valid, p_ready,
+    input p_rdata, p_range, p_status, p_addr, p_hart_id, p_valid, q_ready
+  );
+
+endinterface
+
+interface ACC_CMEM_BUS_DV #(
+    // ISA bit width
+    parameter int unsigned DataWidth = 32,
+    // Accelerator Address width
+    parameter int          AddrWidth = -1
+) (
+  input clk_i
+);
+
+  typedef logic [DataWidth-1:0] data_t;
+  typedef logic [AddrWidth-1:0] addr_t;
+
+  // Request channel (Q).
+  data_t      q_laddr;
+  data_t      q_wdata;
+  logic [2:0] q_width;
+  logic [1:0] q_req_type;
+  logic       q_mode;
+  logic       q_spec;
+  logic       q_endoftransaction;
+  data_t      q_hart_id;
+  addr_t      q_addr;
+  logic       q_valid;
+  logic       q_ready;
+
+  // Response Channel (P).
+  data_t                        p_rdata;
+  logic [$clog2(DataWidth)-1:0] p_range;
+  logic                         p_status;
+  addr_t                        p_addr;
+  data_t                        p_hart_id;
+  logic                         p_valid;
+  logic                         p_ready;
+
+  modport in(
+    input q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction, q_hart_id,
+        q_addr, q_valid, p_ready,
+    output p_rdata, p_range, p_status, p_addr, p_hart_id, p_valid, q_ready
+  );
+
+  modport out(
+    output q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction, q_hart_id,
+        q_addr, q_valid, p_ready,
+    input p_rdata, p_range, p_status, p_addr, p_hart_id, p_valid, q_ready
+  );
+
+  modport monitor(
+    input q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction, q_hart_id,
+        q_addr, q_valid, p_ready,
+    input p_rdata, p_range, p_status, p_addr, p_hart_id, p_valid, q_ready
+  );
+
+  // pragma translate_off
+`ifndef VERILATOR
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_laddr)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_wdata)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_width)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_req_type)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_mode)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_spec)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_endoftransaction)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_hart_id)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_addr)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> q_valid));
+
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_rdata)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_range)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_status)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_addr)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_hart_id)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> p_valid));
+`endif
+  // pragma translate_on
+endinterface
+
 
 interface ACC_X_BUS #(
     // ISA bit Width
@@ -285,6 +373,109 @@ interface ACC_X_BUS_DV #(
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_dualwb)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_rd)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_error)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> p_valid));
+`endif
+  // pragma translate_on
+endinterface
+
+interface ACC_XMEM_BUS #(
+    // ISA bit width
+    parameter int unsigned DataWidth = 32
+);
+
+  typedef logic [DataWidth-1:0] data_t;
+
+  // Request channel (Q).
+  data_t      q_laddr;
+  data_t      q_wdata;
+  logic [2:0] q_width;
+  logic [1:0] q_req_type;
+  logic       q_mode;
+  logic       q_spec;
+  logic       q_endoftransaction;
+  logic       q_valid;
+  logic       q_ready;
+
+  // Response Channel (P).
+  data_t                        p_rdata;
+  logic [$clog2(DataWidth)-1:0] p_range;
+  logic                         p_status;
+  logic                         p_valid;
+  logic                         p_ready;
+
+  modport in(
+    input q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction,
+        q_valid, p_ready,
+    output p_rdata, p_range, p_status, p_valid, q_ready
+  );
+
+  modport out(
+    output q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction,
+        q_valid, p_ready,
+    input p_rdata, p_range, p_status, p_valid, q_ready
+  );
+
+endinterface
+
+interface ACC_XMEM_BUS_DV #(
+    // ISA bit width
+    parameter int unsigned DataWidth = 32
+) (
+  input clk_i
+);
+
+  typedef logic [DataWidth-1:0] data_t;
+
+  // Request channel (Q).
+  data_t      q_laddr;
+  data_t      q_wdata;
+  logic [2:0] q_width;
+  logic [1:0] q_req_type;
+  logic       q_mode;
+  logic       q_spec;
+  logic       q_endoftransaction;
+  logic       q_valid;
+  logic       q_ready;
+
+  // Response Channel (P).
+  data_t                        p_rdata;
+  logic [$clog2(DataWidth)-1:0] p_range;
+  logic                         p_status;
+  logic                         p_valid;
+  logic                         p_ready;
+
+  modport in(
+    input q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction,
+        q_valid, p_ready,
+    output p_rdata, p_range, p_status, p_valid, q_ready
+  );
+
+  modport out(
+    output q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction,
+        q_valid, p_ready,
+    input p_rdata, p_range, p_status, p_valid, q_ready
+  );
+
+  modport monitor(
+    input q_laddr, q_wdata, q_width, q_req_type, q_mode, q_spec, q_endoftransaction,
+        q_valid, p_ready,
+    input p_rdata, p_range, p_status, p_valid, q_ready
+  );
+
+  // pragma translate_off
+`ifndef VERILATOR
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_laddr)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_wdata)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_width)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_req_type)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_mode)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_spec)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> $stable(q_endoftransaction)));
+  assert property (@(posedge clk_i) (q_valid && !q_ready |=> q_valid));
+
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_rdata)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_range)));
+  assert property (@(posedge clk_i) (p_valid && !p_ready |=> $stable(p_status)));
   assert property (@(posedge clk_i) (p_valid && !p_ready |=> p_valid));
 `endif
   // pragma translate_on
