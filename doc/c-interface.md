@@ -47,10 +47,10 @@ The request channel interface signals are:
 
 | Signal Name       | Type                               | Direction             | Description                 |
 | -----------       | ----                               | ---------             | -----------                 |
-| `q_instr_data`    | `logic [31:0]`                     | Adapter > Accelerator | RISC-V instruction data     |
 | `q_addr`          | `logic [AddrWidth-1:AccAddrWidth]` | Adapter > Accelerator | Accelerator hierarchy level |
 |                   | `logic [AccAddrWidth-1:0]`         | Adapter > Accelerator | Accelerator address         |
 | `q_hart_id`       | `logic [DataWidth-1:0]`            | Adapter > Accelerator | Hart ID                     |
+| `q_instr_data`    | `logic [31:0]`                     | Adapter > Accelerator | RISC-V instruction data     |
 | `q_rs[NumRs-1:0]` | `logic [DataWidth]`                | Adapter > Accelerator | Source register contents    |
 
 Notes:
@@ -70,6 +70,7 @@ If a response is returned, the response channel carries the following signals:
 | `p_dualwb`        | `logic`                 | Accelerator > Adapter | Dual-Writeback Response (constant `1'b0`, if dual-writeback is not supported) |
 | `p_type`          | `logic`                 | Accelerator > Adapter | Response type
 | `p_error`         | `logic`                 | Accelerator > Adapter | Error Flag                                                                    |
+
 Notes:
   - The `p_hart_id` signal identifies the target core for writeback of the offloaded instruction.
   - The instruction response type signal `p_type` encodes the nature of the response.
@@ -92,6 +93,9 @@ The request channel signals from the accelerator units to the accelerator adapte
 
 | Signal Name          | Type                               | Direction             | Description                                               |
 | -----------          | ----                               | ---------             | -----------                                               |
+| `q_hart_id`          | `logic [DataWidth-1:0]`            | Accelerator > Adapter | Hart ID                                                   |
+| `q_addr`             | `logic [AddrWidth-1:AccAddrWidth]` | Accelerator > Adapter | Accelerator hierarchy level                               |
+|                      | `logic [AccAddrWidth-1:0]`         | Accelerator > Adapter | Accelerator address                                       |
 | `q_laddr`            | `logic [DataWidth-1:0]`            | Accelerator > Adapter | Target logical memory address                             |
 | `q_wdata`            | `logic [DataWidth-1:0]`            | Accelerator > Adapter | Memory write data.                                        |
 | `q_width`            | `logic [2:0]`                      | Accelerator > Adapter | Memory access width (byte, half-word, word, [...])        |
@@ -99,20 +103,17 @@ The request channel signals from the accelerator units to the accelerator adapte
 | `q_mode`             | `logic`                            | Accelerator > Adapter | Memory access mode (standard / probe)                     |
 | `q_spec`             | `logic`                            | Accelerator > Adapter | Speculative memory operation (no trap upon access faults) |
 | `q_endoftransaction` | `logic`                            | Accelerator > Adapter | Indicates the end of a memory operation sequence          |
-| `q_hart_id`          | `logic [DataWidth-1:0]`            | Accelerator > Adapter | Hart ID                                                   |
-| `q_addr`             | `logic [AddrWidth-1:AccAddrWidth]` | Accelerator > Adapter | Accelerator hierarchy level                               |
-|                      | `logic [AccAddrWidth-1:0]`         | Accelerator > Adapter | Accelerator address                                       |
 
 #### CMem-Response Channel
 The response channel signals from the accelerator adapter to the accelerator unit are:
 
 | Signal Name  | Type                           | Direction             | Description                           |
 | -----------  | ----                           | ---------             | -----------                           |
+| `p_addr` | `logic [AddrWidth-1:0]`        | Adapter > Accelerator | Accelerator address                   |
+| `p_hart_id`  | `logic [DataWidth-1:0]`        | Adapter > Accelerator | Hart ID                               |
 | `p_rdata`    | `logic [DataWidth-1:0]`        | Adapter > Accelerator | Memory response data.                 |
 | `p_range`    | `logic [clog2(DataWidth)-1:0]` | Adapter > Accelerator | Validity LSB range of memory metadata |
 | `p_status`   | `logic`                        | Adapter > Accelerator | Transaction status (success / fail)   |
-| `p_addr` | `logic [AddrWidth-1:0]`        | Adapter > Accelerator | Accelerator address                   |
-| `p_hart_id`  | `logic [DataWidth-1:0]`        | Adapter > Accelerator | Hart ID                               |
 
 Notes:
   - The response transaction status `p_status` field indicates the success (`p_status = 1'b1`) or failure (`p_status = 1'b0`) of the memory operation.

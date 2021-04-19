@@ -67,7 +67,7 @@ The instruction offloading process takes place according to the following scheme
       The adapter de-asserts `k_accept` and `k_writeback` to indicate an illegal instruction has been encountered.
 - When both `q_valid` and `q_ready` are high, the transaction is successful
 
-#### X-Response channel
+#### X-Response Channel
 The response channel signals are:
 
 | Signal Name       | Type                    | Direction      | Description                                                                   |
