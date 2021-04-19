@@ -22,13 +22,34 @@ No extension-specific changes should be necessary to a CPU core architecture sup
 
 
 The REI comprises the following core components
-- The [accelerator interconnect module](accelerator-interconnect.md) implements the signal accelerator adapter to accelerator units.
-- The [accelerator adapter module](accelerator-adapter.md) implements limited predecoding and book-keeping for offloaded instrucions. It operates in conjunction with the accelerator predecoders.
-- The [accelerator predecoder module](accelerator-predecoder.md) is instantiated for each implemented extension and implements decoding of instruction-specific metadata.
+- CPU core: In order to communicate with the accelerator adapter, the offloading core exposes instruction data not implemented by the supported base ISA and potential operands to the accelerator adapter.
+- The [accelerator interconnect module](accelerator-interconnect.md) implements a hierarchical interconnect beween the offloading core and core-private or shared accelerator units.
+- The [accelerator adapter module](accelerator-adapter.md) implements communication with the offloading core, accelerator units and accelerator predecoders.
+- The [accelerator predecoder module](accelerator-predecoder.md) implements limited decoding of instruction-specific metadata necessary for correct operation (source operands, memory operation, writeback status). One predecoder module is instantiated per connected accelerator.
+- Accelerator Subsystem: Extension-specific wrapper module, implementing full decoding of the offloaded instructions, execution and maintains architectural state (external register file, CSRs).
 
 The REI defines the following interfaces:
-- The [X-Interface](x-interface.md) implements communication between the offloading processor core and the accelerator adapter.
-- The [C-interface](c-interface.md) implements communication between the accelerator adapter and connected accelerator units.
+
+### Instruction Offloading Interfaces
+
+| Interface Name                                                     | Channel  | Source > Sink         | Description                                                 |
+| --------------                                                     | -------  | -------------         | -----------                                                 |
+| [X-Interface](doc/x-interface.md#instruction-offloading-interface) | Request  | Core > Adapter        | Accelerator-agnostic instruction offloading                 |
+|                                                                    | Response | Adapter > Core        | Writeback of instruction result to integer register file    |
+| [C-Interface](doc/c-interface.md#instruction-offloading-interface) | Request  | Adapter > Accelerator | Forwarding pre-decoded instruction accross the interconnect |
+|                                                                    | Response | Accelerator > Adapter | Back-routing of integer instruction results                 |
+
+### Memory Operation Interfaces
+| Interface Name                                                    | Channel  | Source > Sink         | Description                     |
+| --------------                                                    | -------  | -------------         | -----------                     |
+| [CMem-Interface](doc/c-interface.md#memory-transaction-interface) | Request  | Accelerator > Adapter | Initiate memory request         |
+|                                                                   | Response | Adapter > Accelerator | Back-routing of memory response |
+| [XMem-Interface](doc/x-interface.md#memory-transaction-interface) | Request  | Adapter > Core        | Initiate memory request         |
+|                                                                   | Response | Accelerator > Adapter | Memory response                 |
+
+A simplified schematic of the overall architecture is given below.
+
+![REI Architecture](img/rei-architecture.svg)
 
 ## Properties
 
