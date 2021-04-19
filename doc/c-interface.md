@@ -43,8 +43,6 @@ The interface is parameterized using the following set of parameters.
 ### Instruction Offloading Interface
 
 #### C-Request Channel
-An offload request comprises the entire 32-bit RISC-V instruction three operands and a request ID tag specifying requesting entity.
-The nature of the offloaded instructions is not of importance to the accelerator interconnect.
 The request channel interface signals are:
 
 | Signal Name       | Type                               | Direction             | Description                 |
