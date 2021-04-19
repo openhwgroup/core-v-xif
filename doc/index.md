@@ -34,17 +34,17 @@ The REI defines the following interfaces:
 
 | Interface Name                                                     | Channel  | Source > Sink         | Description                                                 |
 | --------------                                                     | -------  | -------------         | -----------                                                 |
-| [X-Interface](doc/x-interface.md#instruction-offloading-interface) | Request  | Core > Adapter        | Accelerator-agnostic instruction offloading                 |
+| [X-Interface](x-interface.md#instruction-offloading-interface) | Request  | Core > Adapter        | Accelerator-agnostic instruction offloading                 |
 |                                                                    | Response | Adapter > Core        | Writeback of instruction result to integer register file    |
-| [C-Interface](doc/c-interface.md#instruction-offloading-interface) | Request  | Adapter > Accelerator | Forwarding pre-decoded instruction accross the interconnect |
+| [C-Interface](c-interface.md#instruction-offloading-interface) | Request  | Adapter > Accelerator | Forwarding pre-decoded instruction accross the interconnect |
 |                                                                    | Response | Accelerator > Adapter | Back-routing of integer instruction results                 |
 
 ### Memory Operation Interfaces
 | Interface Name                                                    | Channel  | Source > Sink         | Description                     |
 | --------------                                                    | -------  | -------------         | -----------                     |
-| [CMem-Interface](doc/c-interface.md#memory-transaction-interface) | Request  | Accelerator > Adapter | Initiate memory request         |
+| [CMem-Interface](c-interface.md#memory-transaction-interface) | Request  | Accelerator > Adapter | Initiate memory request         |
 |                                                                   | Response | Adapter > Accelerator | Back-routing of memory response |
-| [XMem-Interface](doc/x-interface.md#memory-transaction-interface) | Request  | Adapter > Core        | Initiate memory request         |
+| [XMem-Interface](x-interface.md#memory-transaction-interface) | Request  | Adapter > Core        | Initiate memory request         |
 |                                                                   | Response | Accelerator > Adapter | Memory response                 |
 
 A simplified schematic of the overall architecture is given below.

@@ -31,7 +31,7 @@ The interface is parameterized using the following set of parameters.
 | `NumRs` | `TernaryOps ? 3 : 2`    | Supported number of source registers        |
 | `NumWb` | `DualWriteback ? 2 : 1` | Supported number of simultaneous writebacks |
 
-### Instruction Offloading Inteface
+### Instruction Offloading Interface
 #### X-Request Channel
 The request channel signals are:
 | Signal Name       | Type                    | Direction      | Description                                                |
