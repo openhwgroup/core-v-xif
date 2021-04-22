@@ -16,6 +16,7 @@
 // Not all offloaded instructions necessarily result in a response. The
 // offloading entity must be aware if a write-back is to be expected.
 // For further details see docs/index.md.
+/* verilator lint_off DECLFILENAME */
 
 interface ACC_C_BUS #(
     // ISA bit width
@@ -487,7 +488,7 @@ interface ACC_PRD_BUS;
 
   logic [31:0] q_instr_data;
   logic [ 1:0] p_writeback;
-  logic [ 1:0] p_is_mem_op;
+  logic        p_is_mem_op;
   logic [ 2:0] p_use_rs;
   logic        p_accept;
 
@@ -509,7 +510,7 @@ interface ACC_PRD_BUS_DV (
 
   logic [31:0] q_instr_data;
   logic [ 1:0] p_writeback;
-  logic [ 1:0] p_is_mem_op;
+  logic        p_is_mem_op;
   logic [ 2:0] p_use_rs;
   logic        p_accept;
 

@@ -10,58 +10,26 @@
 `include "acc_interface/assign.svh"
 `include "acc_interface/typedef.svh"
 
-module acc_adapter #(
-    // ISA bit width.
-    parameter int unsigned DataWidth        = 32,
-    // Number of Hierarchy Levels
-    parameter int          NumHier          = 3,
-    // Number of Respondesr per hierarchy level
-    parameter int          NumRsp [NumHier] = '{4, 2, 2},
-    // Support for ternary operations (use rs3)
-    parameter bit          TernaryOps       = 0,
-    // Support for dual-writeback instructions
-    parameter bit          DualWriteback    = 0,
-    // C Request Type
-    parameter type         acc_c_req_t      = logic,
-    // C Request Payload Type
-    parameter type         acc_c_req_chan_t = logic,
-    // C Response Type
-    parameter type         acc_c_rsp_t      = logic,
-    // X Request Type
-    parameter type         acc_x_req_t      = logic,
-    // X Response Type
-    parameter type         acc_x_rsp_t      = logic,
-    // CMEM Request Type
-    parameter type acc_cmem_req_t       = logic,
-    // CMEM Response Type
-    parameter type acc_cmem_rsp_t       = logic,
-    // XMEM Request Type
-    parameter type acc_xmem_req_t       = logic,
-    // XMEM Response Type
-    parameter type acc_xmem_rsp_t       = logic,
-
-    // Dependent parameter DO NOT OVERRIDE
-    parameter int          NumRspTot                 = acc_pkg::sumn(NumRsp, NumHier)
-) (
+module acc_adapter (
     input clk_i,
     input rst_ni,
 
-    input logic [DataWidth-1:0] hart_id_i,
+    input logic [acc_pkg::DataWidth-1:0] hart_id_i,
 
-    input  acc_x_req_t acc_x_req_i,
-    output acc_x_rsp_t acc_x_rsp_o,
+    input  acc_pkg::acc_x_req_t acc_x_req_i,
+    output acc_pkg::acc_x_rsp_t acc_x_rsp_o,
 
-    output acc_c_req_t acc_c_req_o,
-    input  acc_c_rsp_t acc_c_rsp_i,
+    output acc_pkg::acc_c_req_t acc_c_req_o,
+    input  acc_pkg::acc_c_rsp_t acc_c_rsp_i,
 
-    output acc_xmem_req_t acc_xmem_req_o,
-    input  acc_xmem_rsp_t acc_xmem_rsp_i,
+    output acc_pkg::acc_xmem_req_t acc_xmem_req_o,
+    input  acc_pkg::acc_xmem_rsp_t acc_xmem_rsp_i,
 
-    input  acc_cmem_req_t acc_cmem_req_i,
-    output acc_cmem_rsp_t acc_cmem_rsp_o,
+    input  acc_pkg::acc_cmem_req_t acc_cmem_req_i,
+    output acc_pkg::acc_cmem_rsp_t acc_cmem_rsp_o,
 
-    output acc_pkg::acc_prd_req_t [NumRspTot-1:0] acc_prd_req_o,
-    input  acc_pkg::acc_prd_rsp_t [NumRspTot-1:0] acc_prd_rsp_i
+    output acc_pkg::acc_prd_req_t [acc_pkg::NumRspTot-1:0] acc_prd_req_o,
+    input  acc_pkg::acc_prd_rsp_t [acc_pkg::NumRspTot-1:0] acc_prd_rsp_i
 
     /*
     // To compressed predecoders: -- integrate into predecoders
@@ -81,18 +49,11 @@ module acc_adapter #(
   */
 
   import acc_pkg::*;
-  localparam int unsigned MaxNumRsp = maxn(NumRsp, NumHier);
-  localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
-  localparam int unsigned AccAddrWidth = cf_math_pkg::idx_width(MaxNumRsp);
-  localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
-  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
-  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
 
   logic [NumRspTot-1:0][NumRs-1:0][31:0] acc_op;
 
   // Instruction data
   logic [31:0] instr_rdata_id;
-  logic [ 4:0] instr_rd;
   logic [ 2:0] use_rs;
 
   // Core status signals
@@ -165,9 +126,6 @@ module acc_adapter #(
 
   // Instruction data
   assign instr_rdata_id = acc_x_req_i.q.instr_data;
-
-  // Destination register
-  assign instr_rd = instr_rdata_id[11:7];
 
   // operand muxes
   for (genvar i = 0; i < NumRspTot; i++) begin : gen_op_mux
@@ -346,7 +304,7 @@ module acc_adapter #(
       assert property (@(posedge clk_i) (acc_c_rsp_i.p_valid && acc_c_req_o.p_ready)
                                        |-> (acc_prd_rsp_i[i].p_writeback[1] == 1'b0)) else
           $error("Unsupported dual-writeback instruction encountered (Predecoder %0d).", i,
-                 "Set DualWriteback = 1");
+                 " Set DualWriteback = 1");
     end
   end
 `endif
@@ -354,102 +312,3 @@ module acc_adapter #(
 
 endmodule
 
-module acc_adapter_intf #(
-    parameter int DataWidth          = 32,
-    parameter int NumHier            = 3,
-    parameter int NumRsp   [NumHier] = '{4, 2, 2},
-    parameter bit TernaryOps         = 0,
-    parameter bit DualWriteback      = 0,
-    // Dependent parameter DO NOT OVERRIDE
-    parameter int NumRspTot          = acc_pkg::sumn(NumRsp, NumHier)
-) (
-    input clk_i,
-    input rst_ni,
-
-    input logic [DataWidth-1:0] hart_id_i,
-
-    ACC_X_BUS    acc_x_mst,
-    ACC_C_BUS    acc_c_slv,
-    ACC_XMEM_BUS acc_xmem_slv,
-    ACC_CMEM_BUS acc_cmem_mst,
-    ACC_PRD_BUS  acc_prd_mst[NumRspTot]
-);
-  import acc_pkg::*;
-
-  localparam int unsigned MaxNumRsp = maxn(NumRsp, NumHier);
-  localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
-  localparam int unsigned AccAddrWidth = cf_math_pkg::idx_width(MaxNumRsp);
-  localparam int unsigned AddrWidth = HierAddrWidth + AccAddrWidth;
-  localparam int unsigned NumRs = TernaryOps ? 3 : 2;
-  localparam int unsigned NumWb = DualWriteback ? 2 : 1;
-
-  typedef logic [AddrWidth-1:0] addr_t;
-  typedef logic [DataWidth-1:0] data_t;
-
-  `ACC_X_TYPEDEF_ALL(acc_x, data_t, NumRs, NumWb)
-  `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t, NumRs, NumWb)
-  `ACC_CMEM_TYPEDEF_ALL(acc_cmem, addr_t, data_t)
-  `ACC_XMEM_TYPEDEF_ALL(acc_xmem, data_t)
-
-  acc_prd_req_t [NumRspTot-1:0] acc_prd_req;
-  acc_prd_rsp_t [NumRspTot-1:0] acc_prd_rsp;
-
-  acc_x_req_t acc_x_req;
-  acc_x_rsp_t acc_x_rsp;
-  acc_c_req_t acc_c_req;
-  acc_c_rsp_t acc_c_rsp;
-
-  acc_xmem_req_t acc_xmem_req;
-  acc_xmem_rsp_t acc_xmem_rsp;
-  acc_cmem_req_t acc_cmem_req;
-  acc_cmem_rsp_t acc_cmem_rsp;
-
-  acc_adapter #(
-      .DataWidth        ( DataWidth        ),
-      .NumHier          ( NumHier          ),
-      .NumRsp           ( NumRsp           ),
-      .TernaryOps       ( TernaryOps       ),
-      .DualWriteback    ( DualWriteback    ),
-      .acc_c_req_t      ( acc_c_req_t      ),
-      .acc_c_req_chan_t ( acc_c_req_chan_t ),
-      .acc_c_rsp_t      ( acc_c_rsp_t      ),
-      .acc_x_req_t      ( acc_x_req_t      ),
-      .acc_x_rsp_t      ( acc_x_rsp_t      ),
-      .acc_cmem_req_t   ( acc_cmem_req_t   ),
-      .acc_cmem_rsp_t   ( acc_cmem_rsp_t   ),
-      .acc_xmem_req_t   ( acc_xmem_req_t   ),
-      .acc_xmem_rsp_t   ( acc_xmem_rsp_t   )
-  ) acc_adapter_i (
-      .clk_i          ( clk_i        ),
-      .rst_ni         ( rst_ni       ),
-      .hart_id_i      ( hart_id_i    ),
-      .acc_x_req_i    ( acc_x_req    ),
-      .acc_x_rsp_o    ( acc_x_rsp    ),
-      .acc_c_req_o    ( acc_c_req    ),
-      .acc_c_rsp_i    ( acc_c_rsp    ),
-      .acc_xmem_req_o ( acc_xmem_req ),
-      .acc_xmem_rsp_i ( acc_xmem_rsp ),
-      .acc_cmem_req_i ( acc_cmem_req ),
-      .acc_cmem_rsp_o ( acc_cmem_rsp ),
-      .acc_prd_req_o  ( acc_prd_req  ),
-      .acc_prd_rsp_i  ( acc_prd_rsp  )
-  );
-
-  `ACC_C_ASSIGN_FROM_REQ(acc_c_slv, acc_c_req)
-  `ACC_C_ASSIGN_TO_RESP(acc_c_rsp, acc_c_slv)
-
-  `ACC_X_ASSIGN_TO_REQ(acc_x_req, acc_x_mst)
-  `ACC_X_ASSIGN_FROM_RESP(acc_x_mst, acc_x_rsp)
-
-  `ACC_CMEM_ASSIGN_TO_REQ(acc_cmem_req, acc_cmem_mst)
-  `ACC_CMEM_ASSIGN_FROM_RESP(acc_cmem_mst, acc_cmem_rsp)
-
-  `ACC_XMEM_ASSIGN_FROM_REQ(acc_xmem_slv, acc_xmem_req)
-  `ACC_XMEM_ASSIGN_TO_RESP(acc_xmem_rsp, acc_xmem_slv)
-
-  for (genvar i = 0; i < NumRspTot; i++) begin : gen_acc_predecoder_intf_assign
-    `ACC_PRD_ASSIGN_FROM_REQ(acc_prd_mst[i], acc_prd_req[i])
-    `ACC_PRD_ASSIGN_TO_RESP(acc_prd_rsp[i], acc_prd_mst[i])
-  end
-
-endmodule

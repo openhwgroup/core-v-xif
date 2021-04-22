@@ -10,27 +10,51 @@
 `include "acc_interface/typedef.svh"
 
 module acc_interconnect_tb  #(
-  parameter int NumHier         = 3,
-  parameter int NumReq          = 8,
-  parameter int NumRsp[NumHier] = '{3,5,9},
   parameter int HierLevel       = 1, // 0, .., NumHier-1
-  parameter int DataWidth       = 32,
-  parameter bit DualWriteback       = 0,
-  parameter bit TernaryOps          = 0,
+  parameter int NumReq          = 8,
   parameter bit RegisterReq     = 1,
   parameter bit RegisterRsp     = 1,
   // TB params
   parameter int unsigned NrRandomTransactions = 1000
 );
 
-  // dependent parameters
-  localparam int unsigned MaxNumRsp     = acc_pkg::maxn(NumRsp, NumHier);
-  localparam int unsigned AccAddrWidth  = cf_math_pkg::idx_width(MaxNumRsp);
-  localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
-  localparam int unsigned AddrWidth     = AccAddrWidth + HierAddrWidth;
-  localparam int unsigned NumRs         = TernaryOps ? 3 : 2;
-  localparam int unsigned NumWb         = DualWriteback ? 2 : 1;
+  // All relevant top-level design parameters are derived from the following base parameters
+  // defined in acc_pkg.
 
+  // ISA bit width:
+  // --- parameter int DataWidth
+  // Number of interconnect hierarchy levels:
+  // --- parameter int NumHier
+  // Number of responders per hierarchy level:
+  // --- parameter int NumRsp[NumHier]
+  // Support for ternary operations:
+  // --- parameter bit TernaryOps
+  // Support for dual writeback instructions:
+  // --- parameter bit DualWriteback
+  // Insert pipeline stage at hierarchy level X, request path:
+  // --- parameter bit RegisterReq [NumHier]
+  // Insert pipeline stage at hierarchy level X, response path:
+  // --- parameter bit RegisterRsp [NumHier]
+
+  // The following dependent parameters are derived:
+  //
+  // Total number of connected accelerators
+  // --- parameter int unsigned NumRspTot
+  // Maximum number of accelerators per sharing level
+  // --- parameter int unsigned MaxNumRsp
+  // Hierarchy address width
+  // --- parameter int unsigned HierAddrWidth
+  // Per-level accelerator addresss width
+  // --- parameter int unsigned AccAddrWidth
+  // Total Address Width
+  // --- parameter int unsigned AddrWidth
+  // Number of source regs
+  // --- parameter int unsigned NumRs
+  // Number of simultaneous writebacks.
+  // --- parameter int unsigned NumWb
+  // dependent parameters
+
+  import acc_pkg::*;
 
   typedef acc_test::c_req_t #(
     .AddrWidth ( AddrWidth ),
@@ -671,14 +695,9 @@ module acc_interconnect_tb  #(
   end
 
   acc_interconnect_intf #(
-    .DataWidth     ( DataWidth         ),
-    .HierAddrWidth ( HierAddrWidth     ),
-    .AccAddrWidth  ( AccAddrWidth      ),
     .HierLevel     ( HierLevel         ),
     .NumReq        ( NumReq            ),
     .NumRsp        ( NumRsp[HierLevel] ),
-    .DualWriteback ( DualWriteback     ),
-    .TernaryOps    ( TernaryOps        ),
     .RegisterReq   ( RegisterReq       ),
     .RegisterRsp   ( RegisterRsp       )
   ) dut (

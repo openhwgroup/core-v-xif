@@ -8,23 +8,46 @@
 `include "acc_interface/typedef.svh"
 
 module acc_adapter_tb #(
-  parameter int unsigned DataWidth       = 32,
-  parameter int          NumHier         = 3,
-  parameter int          NumRsp[NumHier] = '{4,2,2},
-  parameter int          NumRspTot       = sumn(NumRsp, NumHier),
-  parameter bit          DualWriteback   = 1'b1,
-  parameter bit          TernaryOps      = 1'b1,
   // TB Params
   parameter int unsigned NrRandomTransactions = 1000
 );
 
+  // All relevant top-level design parameters are derived from the following base parameters
+  // defined in acc_pkg.
+
+  // ISA bit width:
+  // --- parameter int DataWidth
+  // Number of interconnect hierarchy levels:
+  // --- parameter int NumHier
+  // Number of responders per hierarchy level:
+  // --- parameter int NumRsp[NumHier]
+  // Support for ternary operations:
+  // --- parameter bit TernaryOps
+  // Support for dual writeback instructions:
+  // --- parameter bit DualWriteback
+  // Insert pipeline stage at hierarchy level X, request path:
+  // --- parameter bit RegisterReq [NumHier]
+  // Insert pipeline stage at hierarchy level X, response path:
+  // --- parameter bit RegisterRsp [NumHier]
+
+  // The following dependent parameters are derived:
+  //
+  // Total number of connected accelerators
+  // --- parameter int unsigned NumRspTot
+  // Maximum number of accelerators per sharing level
+  // --- parameter int unsigned MaxNumRsp
+  // Hierarchy address width
+  // --- parameter int unsigned HierAddrWidth
+  // Per-level accelerator addresss width
+  // --- parameter int unsigned AccAddrWidth
+  // Total Address Width
+  // --- parameter int unsigned AddrWidth
+  // Number of source regs
+  // --- parameter int unsigned NumRs
+  // Number of simultaneous writebacks.
+  // --- parameter int unsigned NumWb
+
   import acc_pkg::*;
-  localparam int unsigned MaxNumRsp     = maxn(NumRsp, NumHier);
-  localparam int unsigned HierAddrWidth = cf_math_pkg::idx_width(NumHier);
-  localparam int unsigned AccAddrWidth  = cf_math_pkg::idx_width(MaxNumRsp);
-  localparam int unsigned AddrWidth     = HierAddrWidth + AccAddrWidth;
-  localparam int unsigned NumRs         = TernaryOps ? 3 : 2;
-  localparam int unsigned NumWb         = DualWriteback ? 2 : 1;
 
   // Timing params
   localparam time ClkPeriod = 10ns;
@@ -93,7 +116,10 @@ module acc_adapter_tb #(
   ) tb_xmem_rsp_t;
 
   typedef acc_test::prd_req_t tb_prd_req_t;
-  typedef acc_test::prd_rsp_t tb_prd_rsp_t;
+
+  typedef acc_test::prd_rsp_t #(
+    .NumWb ( NumWb )
+  ) tb_prd_rsp_t;
 
   // From / to core
   ACC_X_BUS #(
@@ -203,8 +229,9 @@ module acc_adapter_tb #(
   ) acc_xmem_slv_monitor_t;
 
   typedef acc_test::acc_prd_monitor #(
-    .TA ( ApplTime ),
-    .TT ( TestTime )
+    .NumWb ( NumWb    ),
+    .TA    ( ApplTime ),
+    .TT    ( TestTime )
   ) acc_prd_monitor_t;
 
 
@@ -277,6 +304,7 @@ module acc_adapter_tb #(
   ) rand_xmem_slave_t;
 
   typedef acc_test::rand_prd_slave_collective #(
+    .NumWb     ( NumWb     ),
     .NumRspTot ( NumRspTot ),
     .TA        ( ApplTime  ),
     .TT        ( TestTime  )
@@ -528,13 +556,7 @@ module acc_adapter_tb #(
   end
 
   // DUT instantiation
-  acc_adapter_intf #(
-    .DataWidth     ( DataWidth     ),
-    .NumHier       ( NumHier       ),
-    .NumRsp        ( NumRsp        ),
-    .DualWriteback ( DualWriteback ),
-    .TernaryOps    ( TernaryOps    )
-  ) dut (
+  acc_adapter_intf dut (
     .clk_i        ( clk         ),
     .rst_ni       ( rst_n       ),
     .hart_id_i    ( hart_id     ),

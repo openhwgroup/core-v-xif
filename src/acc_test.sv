@@ -2342,7 +2342,9 @@ package acc_test;
   // Accelerator Predecoder Test Structures //
   ////////////////////////////////////////////
 
-  class prd_rsp_t;
+  class prd_rsp_t #(
+    parameter int NumWb = -1
+  );
     rand logic       accept;
     rand logic [1:0] writeback;
     rand logic       is_mem_op;
@@ -2352,6 +2354,10 @@ package acc_test;
       accept == 1'b0 -> writeback == '0;
       accept == 1'b0 -> is_mem_op == '0;
       accept == 1'b0 -> use_rs == '0;
+    };
+
+    constraint numwb_c {
+      NumWb < 2 -> writeback[1] == 1'b0;
     };
 
     task display;
@@ -2371,9 +2377,14 @@ package acc_test;
   endclass
 
   class acc_prd_driver #(
+    parameter NumWb   = -1,
     parameter time TA = 0ps, // stimuli application time
     parameter time TT = 0ps  // stimuli test time
   );
+
+    typedef prd_rsp_t #(
+      .NumWb ( NumWb )
+    ) int_prd_rsp_t;
 
     virtual ACC_PRD_BUS_DV bus;
 
@@ -2407,7 +2418,7 @@ package acc_test;
 
     // Send a response
     // Response is sent in the same cycle, a new request is detected
-    task send_rsp (input prd_rsp_t rsp);
+    task send_rsp (input int_prd_rsp_t rsp);
       // Predecoders respond entirely combinational
       bus.p_accept    <= #TA rsp.accept;
       bus.p_writeback <= #TA rsp.writeback;
@@ -2420,7 +2431,7 @@ package acc_test;
 
     // request and response are generated at the same time.
 
-    task mon_reqrsp (output prd_req_t req, output prd_rsp_t rsp);
+    task mon_reqrsp (output prd_req_t req, output int_prd_rsp_t rsp);
       // record request and response at each change of instr_data input.
       automatic logic [31:0] last_instr_data = bus.q_instr_data;
       cycle_start();
@@ -2440,11 +2451,13 @@ package acc_test;
   endclass
 
  class rand_prd #(
-    parameter time TA = 0ps,
-    parameter time TT = 0ps
+    parameter int NumWb = -1,
+    parameter time TA   = 0ps,
+    parameter time TT   = 0ps
   );
 
     typedef acc_test::acc_prd_driver #(
+      .NumWb(NumWb),
       .TT(TT),
       .TA(TA)
     ) acc_prd_driver_t;
@@ -2463,11 +2476,13 @@ package acc_test;
  // signal for adapter testbench.
  class rand_prd_slave_collective #(
     parameter int NumRspTot = -1,
+    parameter int NumWb     = -1,
     parameter time TA       = 0ps,
     parameter time TT       = 0ps
   );
 
     typedef acc_test::acc_prd_driver #(
+      .NumWb(NumWb),
       .TT(TT),
       .TA(TA)
     ) acc_prd_driver_t;
@@ -2492,7 +2507,10 @@ package acc_test;
 
     task run();
       // We generate random responses, not caring about the exact request.
-      automatic prd_rsp_t prd_rsp[NumRspTot];
+      automatic prd_rsp_t #(
+        .NumWb ( NumWb)
+      ) prd_rsp[NumRspTot];
+
       forever begin
 
         assert(std::randomize(accept_onehot) with {
@@ -2520,12 +2538,18 @@ package acc_test;
   endclass
 
   class acc_prd_monitor #(
+    parameter NumWb   = -1,
     parameter time TA = 0ps,
     parameter time TT = 0ps
   ) extends rand_prd #(
+    .NumWb(NumWb),
     .TA(TA),
     .TT(TT)
   );
+    typedef prd_rsp_t #(
+      .NumWb ( NumWb )
+    ) int_prd_rsp_t;
+
 
     // Constructor.
     function new (virtual ACC_PRD_BUS_DV bus);
@@ -2539,7 +2563,7 @@ package acc_test;
     task monitor;
       forever begin
         automatic prd_req_t req;
-        automatic prd_rsp_t rsp;
+        automatic int_prd_rsp_t rsp;
         this.drv.mon_reqrsp(req, rsp);
         if (rsp.accept) begin
           req_mbx.put(req);
