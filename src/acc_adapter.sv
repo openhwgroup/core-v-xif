@@ -202,6 +202,7 @@ module acc_adapter (
     acc_c_req_fifo_req.rs   = '0;
     use_rs                  = '0;
     acc_x_rsp_o.k.writeback = '0;
+    acc_x_rsp_o.k.is_mem_op = '0;
     for (int unsigned i = 0; i < NumRspTot; i++) begin
       for (int unsigned j = 0; j < NumRs; j++) begin
         acc_c_req_fifo_req.rs[j] |= predecoder_accept_onehot[i] ? acc_op[i][j] : '0;

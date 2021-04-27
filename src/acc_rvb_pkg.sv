@@ -202,7 +202,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 00000_0000000_00000_001_00000_0010011, // SLLI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -212,7 +212,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 00000_0000000_00000_101_00000_0010011, // SRLI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -222,7 +222,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 01000_0000000_00000_101_00000_0010011, // SRAI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -232,7 +232,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 00100_0000000_00000_001_00000_0010011, // SLOI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -242,7 +242,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 00100_0000000_00000_101_00000_0010011, // SROI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -252,7 +252,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 01100_0000000_00000_101_00000_0010011, // RORI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -262,7 +262,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 01001_0000000_00000_001_00000_0010011, // SBCLRI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -272,7 +272,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 00101_0000000_00000_001_00000_0010011, // SBSETI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -282,7 +282,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 01101_0000000_00000_001_00000_0010011, // SBINVI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -292,7 +292,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 01001_0000000_00000_101_00000_0010011, // SBEXTI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -302,7 +302,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 00101_0000000_00000_101_00000_0010011, // GORCI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -312,7 +312,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 01101_0000000_00000_101_00000_0010011, // GREVI (RV32)
-    instr_mask: 32'b 1111_1100000_00000_111_00000_1111111,
+    instr_mask: 32'b 11111_1100000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -322,7 +322,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 0000011_00000_00000_001_00000_0110011, // CMIX
-    instr_mask: 32'b 000001_00000_00000_111_00000_1111111,
+    instr_mask: 32'b 0000011_00000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -332,7 +332,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 0000011_00000_00000_101_00000_0110011, // CMOV
-    instr_mask: 32'b 000001_00000_00000_111_00000_1111111,
+    instr_mask: 32'b 0000011_00000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -342,7 +342,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 0000010_00000_00000_001_00000_0110011, // FSL
-    instr_mask: 32'b 000001_00000_00000_111_00000_1111111,
+    instr_mask: 32'b 0000011_00000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -352,7 +352,7 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
   },
   '{
     instr_data: 32'b 0000010_00000_00000_101_00000_0110011, // FSR
-    instr_mask: 32'b 000001_00000_00000_111_00000_1111111,
+    instr_mask: 32'b 0000011_00000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
@@ -360,9 +360,9 @@ parameter acc_pkg::offload_instr_t Instr[67] = '{
       p_use_rs : 3'b111
     }
   },
-  '{
+ '{
     instr_data: 32'b 000001_000000_00000_101_00000_0010011, // FSRI (RV32)
-    instr_mask: 32'b 00000_100000_00000_111_00000_1111111,
+    instr_mask: 32'b 000001_000000_00000_111_00000_1111111,
     prd_rsp : '{
       p_accept : 1'b1,
       p_writeback : 2'b01,
