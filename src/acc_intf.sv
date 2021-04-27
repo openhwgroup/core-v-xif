@@ -278,6 +278,7 @@ interface ACC_X_BUS #(
   // Acknowledge Channel (K)
   logic         k_accept;
   logic  [ 1:0] k_writeback;
+  logic  [ 1:0] k_is_mem_op;
   logic         q_ready;
 
   // Response Channel (P)
@@ -290,13 +291,13 @@ interface ACC_X_BUS #(
 
   modport in(
       input q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
-      output k_accept, k_writeback, q_ready,
+      output k_accept, k_writeback, k_is_mem_op, q_ready,
       output p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   modport out(
       output q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
-      input k_accept, k_writeback, q_ready,
+      input k_accept, k_writeback, k_is_mem_op, q_ready,
       input p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
@@ -328,6 +329,7 @@ interface ACC_X_BUS_DV #(
   // Acknowledge Channel (K)
   logic         k_accept;
   logic  [ 1:0] k_writeback;
+  logic  [ 1:0] k_is_mem_op;
   logic         q_ready;
 
   // Response Channel (P)
@@ -340,19 +342,19 @@ interface ACC_X_BUS_DV #(
 
   modport in(
       input q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
-      output k_accept, k_writeback, q_ready,
+      output k_accept, k_writeback, k_is_mem_op, q_ready,
       output p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   modport out(
       output q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
-      input k_accept, k_writeback, q_ready,
+      input k_accept, k_writeback, k_is_mem_op, q_ready,
       input p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
   modport monitor(
       input q_instr_data, q_rs, q_rs_valid, q_rd_clean, q_valid, p_ready,
-      input k_accept, k_writeback, q_ready,
+      input k_accept, k_writeback, k_is_mem_op, q_ready,
       input p_data, p_dualwb, p_rd, p_error, p_valid
   );
 
@@ -485,17 +487,18 @@ interface ACC_PRD_BUS;
 
   logic [31:0] q_instr_data;
   logic [ 1:0] p_writeback;
+  logic [ 1:0] p_is_mem_op;
   logic [ 2:0] p_use_rs;
   logic        p_accept;
 
   modport in (
     input  q_instr_data,
-    output p_writeback, p_use_rs, p_accept
+    output p_writeback, p_is_mem_op, p_use_rs, p_accept
   );
 
   modport out (
     output q_instr_data,
-    input p_writeback, p_use_rs, p_accept
+    input p_writeback, p_is_mem_op, p_use_rs, p_accept
   );
 
 endinterface
@@ -506,22 +509,23 @@ interface ACC_PRD_BUS_DV (
 
   logic [31:0] q_instr_data;
   logic [ 1:0] p_writeback;
+  logic [ 1:0] p_is_mem_op;
   logic [ 2:0] p_use_rs;
   logic        p_accept;
 
   modport in (
     input  q_instr_data,
-    output p_writeback, p_use_rs, p_accept
+    output p_writeback, p_is_mem_op, p_use_rs, p_accept
   );
 
   modport out (
     output q_instr_data,
-    input  p_writeback, p_use_rs, p_accept
+    input  p_writeback, p_is_mem_op, p_use_rs, p_accept
   );
 
   modport monitor (
     input  q_instr_data,
-    input  p_writeback, p_use_rs, p_accept
+    input  p_writeback, p_is_mem_op, p_use_rs, p_accept
   );
 
   // No asserts. This interface is completely combinational

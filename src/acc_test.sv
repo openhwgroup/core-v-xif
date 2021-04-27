@@ -1393,6 +1393,7 @@ package acc_test;
     // ACK channel
     rand logic                            accept;
     rand logic            [    NumWb-1:0] writeback;
+    rand logic                            is_mem_op;
 
     // Helper for randomization
     logic            [    NumRs-1:0] last_rs_valid;
@@ -1413,6 +1414,7 @@ package acc_test;
               "x_req.rd_clean = %x\n",    rd_clean,
               "x_req.accept = %x\n",      accept,
               "x_req.writeback = %x\n",   writeback,
+              "x_req.is_mem_op = %x\n",   is_mem_op,
               "\n"
             );
     endtask
@@ -1492,6 +1494,7 @@ package acc_test;
       bus.q_ready     <= '0;
       bus.k_accept    <= '0;
       bus.k_writeback <= '0;
+      bus.k_is_mem_op <= '0;
       bus.p_data      <= '0;
       bus.p_dualwb    <= '0;
       bus.p_rd        <= '0;
@@ -1544,6 +1547,7 @@ package acc_test;
       cycle_end();
       bus.q_valid  <= #TA '0;
       req.writeback = bus.k_writeback;
+      req.is_mem_op = bus.k_is_mem_op;
       req.accept    = bus.k_accept;
     endtask
 
@@ -1569,6 +1573,7 @@ package acc_test;
       bus.q_ready     <= #TA 1;
       bus.k_accept    <= #TA req.accept;
       bus.k_writeback <= #TA req.writeback;
+      bus.k_is_mem_op <= #TA req.is_mem_op;
       while (bus.q_valid != 1) begin cycle_end(); cycle_start(); end
       req            = new;
       req.instr_data = bus.q_instr_data;
@@ -1579,6 +1584,7 @@ package acc_test;
       bus.q_ready     <= #TA 0;
       bus.k_accept    <= #TA '0;
       bus.k_writeback <= #TA '0;
+      bus.k_is_mem_op <= #TA '0;
     endtask
 
     // Receive a response.
@@ -1606,6 +1612,7 @@ package acc_test;
       req.rd_clean   = bus.q_rd_clean;
       req.accept     = bus.k_accept;
       req.writeback  = bus.k_writeback;
+      req.is_mem_op  = bus.k_is_mem_op;
       cycle_end();
     endtask
 
@@ -2338,10 +2345,12 @@ package acc_test;
   class prd_rsp_t;
     rand logic       accept;
     rand logic [1:0] writeback;
+    rand logic       is_mem_op;
     rand logic [2:0] use_rs;
 
     constraint accept_c {
       accept == 1'b0 -> writeback == '0;
+      accept == 1'b0 -> is_mem_op == '0;
       accept == 1'b0 -> use_rs == '0;
     };
 
@@ -2349,6 +2358,7 @@ package acc_test;
       $display(
               "prd_rsp.accept: %0d\n",     accept,
               "prd_rsp.writeback: %0d\n",  writeback,
+              "prd_rsp.is_mem_op: %0d\n",  is_mem_op,
               "prd_rsp.use_rs: %0d\n",     use_rs,
               "\n"
               );
@@ -2378,6 +2388,7 @@ package acc_test;
     task reset_slave;
       bus.p_accept    <= '0;
       bus.p_writeback <= '0;
+      bus.p_is_mem_op <= '0;
       bus.p_use_rs    <= '0;
     endtask
 
@@ -2400,6 +2411,7 @@ package acc_test;
       // Predecoders respond entirely combinational
       bus.p_accept    <= #TA rsp.accept;
       bus.p_writeback <= #TA rsp.writeback;
+      bus.p_is_mem_op <= #TA rsp.is_mem_op;
       bus.p_use_rs    <= #TA rsp.use_rs;
       //cycle_end();
     endtask
@@ -2420,6 +2432,7 @@ package acc_test;
       req.instr_data = bus.q_instr_data;
       rsp.accept     = bus.p_accept;
       rsp.writeback  = bus.p_writeback;
+      rsp.is_mem_op  = bus.p_is_mem_op;
       rsp.use_rs     = bus.p_use_rs;
       cycle_end();
     endtask

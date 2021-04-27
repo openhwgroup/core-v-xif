@@ -251,6 +251,8 @@ module acc_adapter #(
       use_rs |= predecoder_accept_onehot[i] ? acc_prd_rsp_i[i].p_use_rs : '0;
       acc_x_rsp_o.k.writeback |=
           predecoder_accept_onehot[i] ? acc_prd_rsp_i[i].p_writeback[NumWb-1:0] : '0;
+      acc_x_rsp_o.k.is_mem_op |=
+          predecoder_accept_onehot[i] ? acc_prd_rsp_i[i].p_is_mem_op : '0;
     end
   end
 

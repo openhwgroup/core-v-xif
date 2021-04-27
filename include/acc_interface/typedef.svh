@@ -128,6 +128,7 @@
   typedef struct packed {                               \
     logic               accept;                         \
     logic [__NumWb-1:0] writeback;                      \
+    logic               is_mem_op;                      \
   } __ack_chan_t;
 
 `define ACC_X_TYPEDEF_RSP_CHAN_T(__rsp_chan_t, __data_t, __NumWb) \
