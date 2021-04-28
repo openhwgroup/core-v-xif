@@ -279,7 +279,7 @@ interface ACC_X_BUS #(
   // Acknowledge Channel (K)
   logic         k_accept;
   logic  [ 1:0] k_writeback;
-  logic  [ 1:0] k_is_mem_op;
+  logic         k_is_mem_op;
   logic         q_ready;
 
   // Response Channel (P)
@@ -330,7 +330,7 @@ interface ACC_X_BUS_DV #(
   // Acknowledge Channel (K)
   logic         k_accept;
   logic  [ 1:0] k_writeback;
-  logic  [ 1:0] k_is_mem_op;
+  logic         k_is_mem_op;
   logic         q_ready;
 
   // Response Channel (P)
