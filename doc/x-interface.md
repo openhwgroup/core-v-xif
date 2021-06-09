@@ -103,7 +103,7 @@ The request channel signals from the adapter to the offloading core are:
 | `q_laddr`            | `logic [DataWidth-1:0]` | Adapter > Core | Target logical memory address                             |
 | `q_wdata`            | `logic [DataWidth-1:0]` | Adapter > Core | Memory write data                                         |
 | `q_width`            | `logic [1:0]`           | Adapter > Core | Memory access width (byte, half-word, word, [...])        |
-| `q_req_type`         | `logic [1:0]`           | Adapter > Core | Request type (X/W/R)                                      |
+| `q_req_type`         | `mem_req_type_e`        | Adapter > Core | Request type (R/W/X)                                      |
 | `q_mode`             | `logic`                 | Adapter > Core | Memory access mode (standard / probe)                     |
 | `q_spec`             | `logic`                 | Adapter > Core | Speculative memory operation (no trap upon access faults) |
 | `q_endoftransaction` | `logic`                 | Adapter > Core | Indicates the end of a memory operation sequence          |

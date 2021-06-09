@@ -55,17 +55,17 @@
 // ACC_CMEM Typedefs //
 ///////////////////////
 
-`define ACC_CMEM_TYPEDEF_REQ_CHAN_T(__req_chan_t, __addr_t, __data_t) \
-  typedef struct packed {                                             \
-    __data_t    laddr;                                                \
-    __data_t    wdata;                                                \
-    logic [2:0] width;                                                \
-    logic [1:0] req_type;                                             \
-    logic       mode;                                                 \
-    logic       spec;                                                 \
-    logic       endoftransaction;                                     \
-    __data_t    hart_id;                                              \
-    __addr_t    addr;                                                 \
+`define ACC_CMEM_TYPEDEF_REQ_CHAN_T(__req_chan_t, __addr_t, __data_t, __mem_req_type_e) \
+  typedef struct packed {                                                               \
+    __data_t         laddr;                                                             \
+    __data_t         wdata;                                                             \
+    logic [2:0]      width;                                                             \
+    __mem_req_type_e req_type;                                                          \
+    logic            mode;                                                              \
+    logic            spec;                                                              \
+    logic            endoftransaction;                                                  \
+    __data_t         hart_id;                                                           \
+    __addr_t         addr;                                                              \
   } __req_chan_t;
 
 `define ACC_CMEM_TYPEDEF_REQ_T(__req_t, __req_chan_t) \
@@ -91,10 +91,10 @@
     logic        q_ready;                             \
   } __rsp_t;
 
-`define ACC_CMEM_TYPEDEF_ALL(__name, __addr_t, __data_t)                \
-  `ACC_CMEM_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t, __addr_t, __data_t) \
-  `ACC_CMEM_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __addr_t, __data_t) \
-  `ACC_CMEM_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t )         \
+`define ACC_CMEM_TYPEDEF_ALL(__name, __addr_t, __data_t, __mem_req_type_e)                \
+  `ACC_CMEM_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t, __addr_t, __data_t, __mem_req_type_e) \
+  `ACC_CMEM_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __addr_t, __data_t)                   \
+  `ACC_CMEM_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t )                           \
   `ACC_CMEM_TYPEDEF_RSP_T(__name``_rsp_t,  __name``_rsp_chan_t )
 
 ////////////////////
@@ -152,15 +152,15 @@
 // ACC_XMEM Typedefs //
 ///////////////////////
 
-`define ACC_XMEM_TYPEDEF_REQ_CHAN_T(__req_chan_t,  __data_t) \
-  typedef struct packed {                                    \
-    __data_t    laddr;                                       \
-    __data_t    wdata;                                       \
-    logic [2:0] width;                                       \
-    logic [1:0] req_type;                                    \
-    logic       mode;                                        \
-    logic       spec;                                        \
-    logic       endoftransaction;                            \
+`define ACC_XMEM_TYPEDEF_REQ_CHAN_T(__req_chan_t,  __data_t, __mem_req_type_e) \
+  typedef struct packed {                                                      \
+    __data_t         laddr;                                                    \
+    __data_t         wdata;                                                    \
+    logic [2:0]      width;                                                    \
+    __mem_req_type_e req_type;                                                 \
+    logic            mode;                                                     \
+    logic            spec;                                                     \
+    logic            endoftransaction;                                         \
   } __req_chan_t;
 
 `define ACC_XMEM_TYPEDEF_REQ_T(__req_t, __req_chan_t) \
@@ -184,8 +184,8 @@
     logic        q_ready;                             \
   } __rsp_t;
 
-`define ACC_XMEM_TYPEDEF_ALL(__name,  __data_t)                \
-  `ACC_XMEM_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t,  __data_t) \
-  `ACC_XMEM_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __data_t)           \
-  `ACC_XMEM_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t)          \
+`define ACC_XMEM_TYPEDEF_ALL(__name,  __data_t, __mem_req_type_e)                \
+  `ACC_XMEM_TYPEDEF_REQ_CHAN_T(__name``_req_chan_t,  __data_t, __mem_req_type_e) \
+  `ACC_XMEM_TYPEDEF_RSP_CHAN_T(__name``_rsp_chan_t, __data_t)                    \
+  `ACC_XMEM_TYPEDEF_REQ_T(__name``_req_t, __name``_req_chan_t)                   \
   `ACC_XMEM_TYPEDEF_RSP_T(__name``_rsp_t,  __name``_rsp_chan_t)

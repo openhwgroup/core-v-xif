@@ -90,11 +90,17 @@ package acc_pkg;
   typedef logic [AddrWidth-1:0] addr_t;
   typedef logic [         31:0] data_t;
 
+  typedef enum logic [1:0] {
+  READ     = 2'b00,
+  WRITE    = 2'b01,
+  EXECUTE  = 2'b10
+  } mem_req_type_e;
+
   // Interface Typedefs
   `ACC_C_TYPEDEF_ALL(acc_c, addr_t, data_t, NumRs, NumWb)
   `ACC_X_TYPEDEF_ALL(acc_x, data_t, NumRs, NumWb)
-  `ACC_CMEM_TYPEDEF_ALL(acc_cmem, addr_t, data_t)
-  `ACC_XMEM_TYPEDEF_ALL(acc_xmem, data_t)
+  `ACC_CMEM_TYPEDEF_ALL(acc_cmem, addr_t, data_t, mem_req_type_e)
+  `ACC_XMEM_TYPEDEF_ALL(acc_xmem, data_t, mem_req_type_e)
 
   // Predecoder response type
   typedef struct packed {
