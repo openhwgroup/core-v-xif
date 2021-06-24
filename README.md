@@ -1,6 +1,6 @@
-# RISC-V Extension Interface
+# CORE-V X-Interface
 
-The RISC-V extension interface provides a generalized framework suitable to implement custom co-processors and ISA extensions for existing RISC-V CPU cores.
+The CORE-V X-Interface (core-v-xif) is a RISC-V extension interface that provides a generalized framework suitable to implement custom co-processors and ISA extensions for existing RISC-V CPU cores.
 It features independent channels for accelerator-agnostic offloading of instructions and writeback of the result, pseudo dual-issue behaviour and configurable sharing granularity of external functional units.
 A more thourough documentation can be found in the [doc](doc/index.md) folder.
 
