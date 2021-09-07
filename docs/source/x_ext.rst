@@ -163,20 +163,12 @@ the instructions need to obey the same instruction dependency rules, memory cons
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``instr``              | logic [15:0]            | Offloaded compressed instruction.                                                                               |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``                 | logic [X_ID_WIDTH-1:0]  | Identification number of the offloaded compressed instruction.                                                  |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |corev| itself. A coprocessor can provide an uncompressed instruction
 in response to receiving this.
 
-The ``id`` is a unique identification number for offloaded instructions. An ``id`` value can be reused after an earlier instruction related to the same ``id`` value
-has fully completed (i.e. because it was not accepted for offload, because it was killed or because it retired). The same ``id`` value will be used for all transaction
-packets on all interfaces that logically relate to the same instruction.
-
-A compressed request transaction is defined as the combination of all ``x_compressed_req_o`` signals during which ``x_compressed_valid_o`` is 1 and the ``id`` remains unchanged. I.e. a new
-transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
-
-The signals in ``x_compressed_req_o`` are valid when ``x_compressed_valid_o`` is 1. These signals remain stable during a compressed request transaction.
+The signals in ``x_compressed_req_o`` are valid when ``x_compressed_valid_o`` is 1. There is no stability requirement for the ``x_compressed_req_o`` signal. I.e. a new
+transaction can be started before a previous transaction is accepted by just changing the ``x_compressed_req_o`` signal and keeping the valid signal asserted.
 
 :numref:`Compressed response type` describes the ``x_compressed_resp_t`` type.
 
@@ -249,6 +241,10 @@ the instruction will cause an illegal instruction fault.
 A issue request transaction is defined as the combination of all ``x_issue_req_o`` signals during which ``x_issue_valid_o`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
 
+The ``id`` is a unique identification number for offloaded instructions. An ``id`` value can be reused after an earlier instruction related to the same ``id`` value
+has fully completed (i.e. because it was not accepted for offload, because it was killed or because it retired). The same ``id`` value will be used for all transaction
+packets on all interfaces, except the compressed interface, that logically relate to the same instruction.
+
 The ``instr``, ``mode``, ``id`` and ``rs_valid`` signals are valid when ``x_issue_valid_o`` is 1. The ``rs`` is only considered valid when ``x_issue_valid_o`` is 1 and the corresponding
 bit in ``rs_valid`` is 1 as well.
 
@@ -304,7 +300,6 @@ The core will attempt to offload instructions via the issue interface for the fo
 Apart from the above two main scenarios |corev| might also attempt to offload
 (compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the core and the coprocessor accept the same instruction as being valid,
 the instruction will cause an illegal instruction fault.
-
 
 A coprocessor can (only) accept an offloaded instruction when:
 
@@ -549,7 +544,6 @@ Interface dependencies
 The following rules apply to the relative ordering of the interface handshakes:
 
 * The compressed interface transactions are in program order (but instructions that are considered valid in the core itself are not attempted for offload).
-* Every accepted compressed interface transaction has an associated issue interface transaction (but not the other way around) and both interfaces use a matching transaction ordering.
 * The issue interface transactions are in program order (but instructions that are considered valid in the core itself are not attempted for offload).
 * Every issue interface transaction has an associated commit interface transaction and both interfaces use a matching transaction ordering.
 * If an offloaded instruction is accepted as a ``loadstore`` instruction and not killed, then for each such instruction one or more memory transaction must occur
