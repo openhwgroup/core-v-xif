@@ -26,6 +26,7 @@ The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangea
 
 * ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the core, so for  |corev| ``X_DATAWIDTH`` = 32.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
+* ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
 * ``X_MEM_WIDTH`` specifies the memory access width for loads/stores via the eXtension interface. (Legal values are TBD.)
 * ``X_RFR_WIDTH`` specifies the register file read access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64. If XLEN = 64, then the legal value is (only) 64.
@@ -34,25 +35,26 @@ The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangea
 Parameters
 ----------
 
-.. note::
-   The non-default (i.e. non-zero) settings of ``FPU`` have not been verified yet.
-
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
-| Name                         | Type/Range     | Default       | Description                                                        |
-+==============================+================+===============+====================================================================+
-| ``X_NUM_RS``                 | int (2..3)     | 2             | Number of register file read ports that can be used by the         |
-|                              |                |               | eXtension interface.                                               |
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
-| ``X_ID_WIDTH``               | int (1..32)    | 4             | Identification width for the eXtension interface.                  |
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
-| ``X_MEM_WIDTH``              | int (32)       | 32            | Memory access width for loads/stores via the eXtension interface.  |
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
-| ``X_RFR_WIDTH``              | int (32)       | 32            | Register file read access width for the eXtension interface.       |
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
-| ``X_RFW_WIDTH``              | int (32)       | 32            | Register file write access width for the eXtension interface.      |
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
-| ``X_MISA``                   | logic [31:0]   | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
-+------------------------------+----------------+---------------+--------------------------------------------------------------------+
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| Name                         | Type/Range             | Default       | Description                                                        |
++==============================+========================+===============+====================================================================+
+| ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
+|                              |                        |               | eXtension interface.                                               |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_NUM_FRS``                | int (2..3)             | 2             | Number of floating-point register file read ports that can be used |
+|                              |                        |               | by the eXtension interface.                                        |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_ID_WIDTH``               | int (1..32)            | 4             | Identification width for the eXtension interface.                  |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_MEM_WIDTH``              | int (32, 64, 128, 256) | 32            | Memory access width for loads/stores via the eXtension interface.  |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_RFR_WIDTH``              | int (32, 64)           | 32            | Register file read access width for the eXtension interface.       |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_RFW_WIDTH``              | int (32, 64)           | 32            | Register file write access width for the eXtension interface.      |
+|                              |                        |               | Must be at least FLEN.                                             |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 The major features of CORE-V-XIF are:
 
@@ -237,6 +239,12 @@ the instruction will cause an illegal instruction fault.
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rs_valid``           | logic [X_NUM_RS-1:0]    | Validity of the register file source operand(s).                                                                |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``frs[X_NUM_FRS-1:0]`` | logic [FLEN-1:0]        | Floating-point register file source operands for the offloaded instruction. Tied to 0 if no floating-point      |
+  |                        |                         | register file is present.                                                                                       |
+  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``frs_valid``          | logic [X_NUM_FRS-1:0]   | Validity of the floating-point register file source operand(s). Tied to 0 if no floating-point                  |
+  |                        |                         | register file is present.                                                                                       |
+  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A issue request transaction is defined as the combination of all ``x_issue_req_o`` signals during which ``x_issue_valid_o`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
@@ -268,6 +276,9 @@ odd register file index is provided in the upper 32 bits.
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``writeback``          | logic                | Will the coprocessor perform a writeback in the core to ``rd``?                                                  | 
   |                        |                      | A coprocessor must signal ``writeback`` as 0 for non-accepted instructions.                                      | 
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
+  | ``float``              | logic                | Qualifies whether a writeback is to the floating-point register file or to integer register file?                |
+  |                        |                      | A coprocessor must signal ``float`` as 0 for non-accepted instructions.                                          | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``dualwrite``          | logic                | Will the coprocessor perform a dual writeback in the core to ``rd`` and ``rd+1``?                                | 
   |                        |                      | A coprocessor must signal ``dualwrite`` as 0 for non-accepted instructions.                                      | 
@@ -519,6 +530,8 @@ have exactly one result group transaction (even if no data needs to be written b
   | ``rd ``       | logic [4:0]               | Register file destination address(es).                                                                          |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``        | logic                     | Register file write enable(s).                                                                                  |
+  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``float``     | logic                     | Floating-point register file or integer register file?                                                          |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exc``       | logic                     | Did the instruction cause a synchronous exception?                                                              |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
