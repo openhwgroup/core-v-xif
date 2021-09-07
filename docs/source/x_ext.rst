@@ -586,3 +586,16 @@ have combinatorial paths from its eXtension interface input signals to its eXten
 
    The above implies that the non-compressed instruction ``instr[31:0]`` received via the compressed interface is not allowed
    to combinatorially feed into the issue interface's ``instr[31:0]`` instruction.
+
+CPU recommendations
+-------------------
+
+Coprocessor recommendations
+---------------------------
+
+A |coproc| is recommended (but not required) to follow the following suggestions to maximize its re-use potential:
+
+* Avoid using opcodes that are reserved or already used by RISC-V International unless for supporting a standard RISC-V extension.
+* Make it easy to change opcode assignments such that a |coproc| can easily be updated if it conflicts with another |coproc|.
+* Clearly document the supported parameter values.
+* Clearly document the usage of features which are optional |corev| (TBD, e.g. ``dualwrite``, ``dualread``).
