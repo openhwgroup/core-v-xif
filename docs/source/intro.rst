@@ -1,11 +1,11 @@
 Introduction
 =============
 
-The ``eXtension interface``, also called ``CORE-V-XIF`` is an interface aimed at extending a |corev| with custom instructions implemented in a |coproc|.
+The ``eXtension interface``, also called ``CORE-V-XIF`` is an interface aimed at extending a |processor| with custom instructions implemented in a |coproc|.
 
 It can be used to implement standard RISC-V extensions as for example B (Bitmanip), M (Integer Multiplication and Division), F (Single-Precision Floating Point) and D (Double-Precision Floating Point). It can also be used to implement custom extensions.
 
-The goal of ``CORE-V-XIF`` is to enable the design and verification of instruction extensions in a |coproc| in a standardized manner without the need to modify the |corev| itself.
+The goal of ``CORE-V-XIF`` is to enable the design and verification of instruction extensions in a |coproc| in a standardized manner without the need to modify the |processor| itself.
 
 License
 -------

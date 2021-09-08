@@ -78,8 +78,8 @@ pygments_style = None
 
 # Entries for text replacement
 rst_epilog = """
-.. |corev| replace:: CPU
-.. |coproc| replace:: coprocessor
+.. |processor| replace:: CPU
+.. |coprocessor| replace:: coprocessor
 """
 
 # Tags for conditional text

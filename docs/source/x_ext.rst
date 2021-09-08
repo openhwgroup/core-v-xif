@@ -3,15 +3,15 @@
 eXtension Interface
 ===================
 
-The eXtension interface enables extending |corev| with custom instructions without the need to change the RTL
-of |corev| itself. Custom extensions can be provided in separate modules external to |corev| and are integrated
+The eXtension interface enables extending |processor| with custom instructions without the need to change the RTL
+of |processor| itself. Custom extensions can be provided in separate modules external to |processor| and are integrated
 at system level by connecting them to the eXtension interface.
 
-The eXtension interface provides low latency (tightly integrated) read and write access to the |corev| register file.
-All opcodes which are not used (i.e. considered to be invalid) by |corev| can be used for custom extensions. It is recommended
+The eXtension interface provides low latency (tightly integrated) read and write access to the |processor| register file.
+All opcodes which are not used (i.e. considered to be invalid) by |processor| can be used for custom extensions. It is recommended
 however that custom instructions do not use opcodes that are reserved/used by RISC-V International.
 
-The eXtension interface enables extension of |corev| with:
+The eXtension interface enables extension of |processor| with:
 
 * Custom ALU type instructions.
 * Custom load/store type instructions.
@@ -24,7 +24,7 @@ CORE-V-XIF
 
 The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-IF specification contains the following parameters:
 
-* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the core, so for  |corev| ``X_DATAWIDTH`` = 32.
+* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the core, so for  |processor| ``X_DATAWIDTH`` = 32.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
@@ -63,7 +63,7 @@ The major features of CORE-V-XIF are:
   If a custom instruction relies on reading from or writing to the core's general purpose register file, then the standard
   RISC-V bitfield locations for rs1, rs2, rs3, rd as used for non-compressed instructions ([RISC-V-UNPRIV]_) must be used.
   Bitfields for unused read or write operands can be fully repurposed. Custom instructions can either use the compressed
-  or uncompressed instruction format. For offloading compressed instructions the coprocessor must provide the core with
+  or uncompressed instruction format. For offloading compressed instructions the |coprocessor| must provide the core with
   the related non-compressed instructions.
 
 * Support for dual writeback instructions.
@@ -103,36 +103,36 @@ CORE-V-XIF consists of six interfaces:
 Operating principle
 -------------------
 
-|corev| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself. In case of a
-compressed instruction the coprocessor must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
+|processor| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself. In case of a
+compressed instruction the |coprocessor| must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
 This non-compressed instruction is then attempted for offload via the issue interface.
 
 Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface. 
-The external coprocessor can decide to accept or reject the instruction offload. In case of acceptation the coprocessor
+The external |coprocessor| can decide to accept or reject the instruction offload. In case of acceptation the |coprocessor|
 will further handle the instruction. In case of rejection the core will raise an illegal instruction exception (unless the instruction does not reach the
-commit stage). As part of the issue interface transaction the core provides the instruction and required register file operand(s) to the coprocessor. If
+commit stage). As part of the issue interface transaction the core provides the instruction and required register file operand(s) to the |coprocessor|. If
 an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
-``[24:20]`` and ``[31:27]`` respectively. The coprocessor only needs to wait for the register file operands that a specific instruction actually uses.
-The coprocessor informs the core whether an accepted offloaded instruction is a load/store, to which register(s) in the register file it will writeback, and
-whether the offloaded instruction can potentially cause a synchronous exception. |corev| uses this information to reserve the load/store unit, to track
+``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
+The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store, to which register(s) in the register file it will writeback, and
+whether the offloaded instruction can potentially cause a synchronous exception. |processor| uses this information to reserve the load/store unit, to track
 data dependencies between instructions, and to properly deal with exceptions caused by offloaded instructions.
 
-Offloaded instructions are speculative; |corev| has not necessarily committed to them yet and might decide to kill them (e.g.
+Offloaded instructions are speculative; |processor| has not necessarily committed to them yet and might decide to kill them (e.g.
 because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
-core will inform the coprocessor about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
+core will inform the |coprocessor| about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
 is no longer speculative and is allowed to be commited.
 
-In case an accepted offloaded instruction is a load or store, then the coprocessor will use the load/store unit(s) in |corev| to actually perform the load
-or store. The coprocessor provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |corev|
+In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
+or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
 will use its PMA to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
-provide the result (e.g. load data and/or fault status) back to the coprocessor via the memory result interface.
+provide the result (e.g. load data and/or fault status) back to the |coprocessor| via the memory result interface.
 
-The final result of an accepted offloaded instruction can be written back into the coprocessor itself or into the core's register file. Either way, the
+The final result of an accepted offloaded instruction can be written back into the |coprocessor| itself or into the core's register file. Either way, the
 result interface is used to signal to the core that the instruction has completed. Apart from a possible writeback into the register file, the result
 interface transaction is for example used in the core to increment the ``minstret`` CSR, to implement the fence instructions and to judge if instructions
 before a ``WFI`` instruction have fully completed (so that sleep mode can be entered if needed).
 
-In short: From a functional perspective it should not matter whether an instruction is handled inside the core or inside a coprocessor. In both cases
+In short: From a functional perspective it should not matter whether an instruction is handled inside the core or inside a |coprocessor|. In both cases
 the instructions need to obey the same instruction dependency rules, memory consistency rules, load/store address checks, fences, etc.
 
 :numref:`Compressed interface signals` describes the compressed interface signals.
@@ -164,7 +164,7 @@ the instructions need to obey the same instruction dependency rules, memory cons
   | ``instr``              | logic [15:0]            | Offloaded compressed instruction.                                                                               |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |corev| itself. A coprocessor can provide an uncompressed instruction
+The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |processor| itself. A |coprocessor| can provide an uncompressed instruction
 in response to receiving this.
 
 The signals in ``x_compressed_req_o`` are valid when ``x_compressed_valid_o`` is 1. There is no stability requirement for the ``x_compressed_req_o`` signal. I.e. a new
@@ -182,15 +182,15 @@ transaction can be started before a previous transaction is accepted by just cha
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``mode``               | logic [1:0]          | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the coprocessor?                                   | 
+  | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 | 
   |                        |                      | If the compressed instruction is not accepted, then the core will cause an illegal instruction trap unless this | 
   |                        |                      | instruction is killed in the core's pipeline.                                                                   | 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
 
 The signals in ``x_compressed_resp_i`` are valid when ``x_compressed_valid_o`` and ``x_compressed_ready_i`` are both 1. There are no stability requirements.
 
-|corev| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |corev| might also attempt to offload
-compressed instructions that it does recognize as legal instructions itself. In case that both the core and the coprocessor accept the same instruction as being valid,
+|processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
+compressed instructions that it does recognize as legal instructions itself. In case that both the core and the |coprocessor| accept the same instruction as being valid,
 the instruction will cause an illegal instruction fault.
 
 :numref:`Issue interface signals` describes the issue interface signals.
@@ -201,7 +201,7 @@ the instruction will cause an illegal instruction fault.
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_issue_valid_o``       | logic           | output          | Issue request valid. Indicates that |corev| wants to offload an instruction.                                                 |
+  | ``x_issue_valid_o``       | logic           | output          | Issue request valid. Indicates that |processor| wants to offload an instruction.                                             |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_issue_ready_i``       | logic           | input           | Issue request ready. The transaction signaled via ``x_issue_req_o`` and ``x_issue_resp_i`` is accepted when                  |
   |                           |                 |                 | ``x_issue_valid_o`` and  ``x_issue_ready_i`` are both 1.                                                                     |
@@ -252,7 +252,7 @@ The ``instr`` and ``mode`` signals remain stable during an issue request transac
 can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction. The ``rs`` signals are only required to be stable during the part
 of a transaction in which these signals are considered to be valid.
 
-The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the coprocessor. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
+The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |coprocessor|. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
@@ -266,42 +266,42 @@ odd register file index is provided in the upper 32 bits.
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | **Signal**             | **Type**             | **Description**                                                                                                  | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the coprocessor? If                                            | 
+  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|? If                                          | 
   |                        |                      | the instruction is not accepted, then the core will cause an illegal instruction trap unless this offloaded      | 
   |                        |                      | instruction is killed.                                                                                           | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``writeback``          | logic                | Will the coprocessor perform a writeback in the core to ``rd``?                                                  | 
-  |                        |                      | A coprocessor must signal ``writeback`` as 0 for non-accepted instructions.                                      | 
+  | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                | 
+  |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``float``              | logic                | Qualifies whether a writeback is to the floating-point register file or to integer register file?                |
-  |                        |                      | A coprocessor must signal ``float`` as 0 for non-accepted instructions.                                          | 
+  |                        |                      | A |coprocessor| must signal ``float`` as 0 for non-accepted instructions.                                        | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``dualwrite``          | logic                | Will the coprocessor perform a dual writeback in the core to ``rd`` and ``rd+1``?                                | 
-  |                        |                      | A coprocessor must signal ``dualwrite`` as 0 for non-accepted instructions.                                      | 
+  | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              | 
+  |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``dualread``           | logic                | Will the coprocessor require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                          | 
-  |                        |                      | A coprocessor must signal ``dualread`` as 0 for non-accepted instructions.                                       | 
+  | ``dualread``           | logic                | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        | 
+  |                        |                      | A |coprocessor| must signal ``dualread`` as 0 for non-accepted instructions.                                     | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``loadstore``          | logic                | Is the offloaded instruction a load/store instruction?                                                           | 
-  |                        |                      | A coprocessor must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is          | 
-  |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the coprocessor must perform one or     | 
+  |                        |                      | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        | 
+  |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   | 
   |                        |                      | more transactions via the memory group interface.                                                                | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception?                                            | 
-  |                        |                      | A coprocessor must signal ``exc`` as 0 for non-accepted instructions.                                            | 
+  |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
 
 The core will attempt to offload instructions via the issue interface for the following two main scenarios:
 
 * The instruction is originally non-compressed and it is not recognized as a valid instruction by the core's non-compressed instruction decoder.
-* The instruction is originally compressed and the coprocessor accepted the compressed instruction and provided a 32-bit uncompressed instruction.
+* The instruction is originally compressed and the |coprocessor| accepted the compressed instruction and provided a 32-bit uncompressed instruction.
   In this case the 32-bit uncompressed instruction will be attempted for offload even if it matches in the core's non-compressed instruction decoder.
 
-Apart from the above two main scenarios |corev| might also attempt to offload
-(compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the core and the coprocessor accept the same instruction as being valid,
+Apart from the above two main scenarios |processor| might also attempt to offload
+(compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the core and the |coprocessor| accept the same instruction as being valid,
 the instruction will cause an illegal instruction fault.
 
-A coprocessor can (only) accept an offloaded instruction when:
+A |coprocessor| can (only) accept an offloaded instruction when:
 
 * It can handle the instruction (based on decoding ``instr``).
 * The required source registers are marked valid by the offloading core  (``x_issue_valid_o`` is 1 and required bit(s) ``rs_valid`` are 1).
@@ -319,13 +319,17 @@ The signals in ``x_issue_resp_i`` are valid when ``x_issue_req_o`` and ``x_issue
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_commit_valid_o``      | logic           | output          | Commit request valid. Indicates that |corev| has valid commit or kill information for an offloaded instruction.              |
-  |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The coprocessor must be ready                         |
+  | ``x_commit_valid_o``      | logic           | output          | Commit request valid. Indicates that |processor| has valid commit or kill information for an offloaded instruction.          |
+  |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| shall be ready                      |
   |                           |                 |                 | to observe the ``x_commit_valid_o`` and ``x_commit_kill`` signals at any time coincident or after an issue transaction       |
   |                           |                 |                 | initiation.                                                                                                                  |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_commit_o``            | x_commit_t      | output          | Commit packet.                                                                                                               |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+
+.. note::
+
+   The commit transaction is also performed for offloaded instructions that are not accepted by a |coprocessor| and can then simply be ignored by the |coprocessor|.
 
 :numref:`Commit packet type` describes the ``x_commit_t`` type.
 
@@ -338,24 +342,24 @@ The signals in ``x_issue_resp_i`` are valid when ``x_issue_req_o`` and ``x_issue
   | ``x_commit_kill``  | logic                  | Shall an offloaded instruction be killed? If ``x_commit_valid_o`` is 1 and ``x_commit_kill`` is 0, then the core guarantees  |
   |                    |                        | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
   |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``x_commit_valid_o`` is 1 and ``x_commit_kill`` is |
-  |                    |                        | 1, then the offloaded instruction (``id``) shall be killed in the coprocessor and the coprocessor must guarantee that the    |
+  |                    |                        | 1, then the offloaded instruction (``id``) shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the|
   |                    |                        | related instruction does/did not change architectural state.                                                                 |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
 
-The ``x_commit_valid_o`` signal will be 1 exactly one ``clk_i`` cycle for every offloaded instruction by the coprocessor (whether accepted or not). The ``id`` value indicates which offloaded
+The ``x_commit_valid_o`` signal will be 1 exactly one ``clk_i`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``id`` value indicates which offloaded
 instruction is allowed to be committed or is supposed to be killed. The ``id`` values of subsequent commit transactions will increment (and wrap around)
 
 For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``x_commit_valid_o`` is 1
 and ``x_commit_kill`` is 0) or that the instruction must be killed (``x_commit_valid_o`` is 1 and ``x_commit_kill`` is 1). 
 
-A coprocessor does not have to wait for ``x_commit_valid_o`` to
+A |coprocessor| does not have to wait for ``x_commit_valid_o`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
-then the coprocessor must undo any of its internal architectural state changes that are due to the killed instruction. 
+then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
 
-A coprocessor is allowed to perform speculative memory request transactions, but then must be aware that |corev| can signal a failure for speculative memory request transactions to
-certain memory regions. A coprocessor shall never perform memory request transactions for instructions that have already been killed at least a ``clk_i`` cycle earlier.
+A |coprocessor| is allowed to perform speculative memory request transactions, but then must be aware that |processor| can signal a failure for speculative memory request transactions to
+certain memory regions. A |coprocessor| shall never perform memory request transactions for instructions that have already been killed at least a ``clk_i`` cycle earlier.
 
-A coprocessor is not allowed to perform speculative result transactions. A coprocessor shall never perform result  transactions for instructions that have already been killed at least a ``clk_i`` cycle earlier.
+A |coprocessor| is not allowed to perform speculative result transactions. A |coprocessor| shall never perform result  transactions for instructions that have already been killed at least a ``clk_i`` cycle earlier.
 
 The signals in ``x_commit_o`` are valid when ``x_commit_valid_o`` is 1.
 
@@ -367,10 +371,10 @@ The signals in ``x_commit_o`` are valid when ``x_commit_valid_o`` is 1.
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_valid_i``         | logic           | input           | Memory (request/response) valid. Indicates that the coprocessor wants to perform a memory transaction for an                 |
+  | ``x_mem_valid_i``         | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an               |
   |                           |                 |                 | offloaded instruction.                                                                                                       |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_ready_o``         | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``x_mem_req_i`` is accepted by |corev| when      |
+  | ``x_mem_ready_o``         | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``x_mem_req_i`` is accepted by |processor| when  |
   |                           |                 |                 | ``x_mem_valid_i`` and  ``x_mem_ready_o`` are both 1.                                                                         |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_mem_req_i``           | x_mem_req_t     | input           | Memory request packet.                                                                                                       |
@@ -403,8 +407,8 @@ The signals in ``x_commit_o`` are valid when ``x_commit_valid_o`` is 1.
   | ``spec``     | logic                      | Is the memory transaction speculative?                                                                          |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The memory request interface can be used by the coprocessor to initiate data side memory read or memory write transactions. All memory transactions, no matter if
-they are initiated by |corev| itself or by a coprocessor via the memory request interface, are treated equally. Specifically this equal treatment applies to:
+The memory request interface can be used by the |coprocessor| to initiate data side memory read or memory write transactions. All memory transactions, no matter if
+they are initiated by |processor| itself or by a |coprocessor| via the memory request interface, are treated equally. Specifically this equal treatment applies to:
 
 * PMA checks and attribution
 * PMU usage
@@ -413,7 +417,7 @@ they are initiated by |corev| itself or by a coprocessor via the memory request 
 * Write buffer usage
 
 As for non-offloaded load or store instructions it is assumed that execute permission is never required for offloaded load or store instructions.
-If desired a coprocessor can avoid performing speculative loads or stores (as indicated by ``spec`` is 1) as well
+If desired a |coprocessor| can avoid performing speculative loads or stores (as indicated by ``spec`` is 1) as well
 by waiting for the commit interface to signal that the offloaded instruction is no longer speculative before issuing the memory request.
 
 A memory request transaction is defined as the combination of all ``x_mem_req_i`` signals during which ``x_mem_valid_i`` is 1 and the ``id`` remains unchanged. I.e. a new
@@ -438,11 +442,12 @@ These signals remain stable during a memory request transaction until the actual
 
 The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``x_mem_req_i``. In case of a synchronous exception
 no corresponding transaction will be performed over the memory result (``x_mem_result_valid_o``) interface.
-A synchronous exception will lead to a trap in |corev| unless the corresponding instruction is killed.
+A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
+code bitfield of the ``mcause`` CSR.
 
 The signals in ``x_mem_resp_o`` are valid when ``x_mem_valid_i`` and  ``x_mem_ready_o`` are both 1. There are no stability requirements.
 
-In case the memory request transaction results in a misaligned load/store operation, it is up to |corev| how/whether misaligned load/store operations are supported.
+In case the memory request transaction results in a misaligned load/store operation, it is up to |processor| how/whether misaligned load/store operations are supported.
 The memory response and hence the request/response handshake may get delayed.
 If the first access results in a synchronous exception, the handshake can be performed immediately.
 Otherwise, the handshake is performed once its known whether the second access results in a synchronous exception or not.
@@ -457,8 +462,8 @@ The memory (request/response) interface is optional. If it is included, then the
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_result_valid_o``  | logic           | output          | Memory result valid. Indicates that |corev| has a valid memory result for the corresponding memory request.                  |
-  |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The coprocessor must be ready to accept               |
+  | ``x_mem_result_valid_o``  | logic           | output          | Memory result valid. Indicates that |processor| has a valid memory result for the corresponding memory request.              |
+  |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| must be ready to accept             |
   |                           |                 |                 | ``x_mem_result_o`` whenever ``x_mem_result_valid_o`` is 1.                                                                   |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_mem_result_o``        | x_mem_result_t  | output          | Memory result packet.                                                                                                        |
@@ -479,7 +484,7 @@ The memory (request/response) interface is optional. If it is included, then the
   | ``err``       | logic                     | Did the instruction cause a bus error?                                                                          |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The memory result interface is used to provide a result from |corev| to the coprocessor for every memory transaction (i.e. for both read and write transactions).
+The memory result interface is used to provide a result from |processor| to the |coprocessor| for every memory transaction (i.e. for both read and write transactions).
 No memory result transaction is performed for instructions that led to a synchronous exception as signaled via the memory (request/response) interface. If a
 memory (request/response) transaction was not killed, then the corresponding memory result transaction will not be killed either.
 Memory result transactions are provided by the core in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
@@ -497,7 +502,7 @@ The memory result interface is optional. If it is included, then the memory (req
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_result_valid_i``      | logic           | input           | Result request valid. Indicates that the coprocessor has a valid result (write data or exception) for an offloaded           |
+  | ``x_result_valid_i``      | logic           | input           | Result request valid. Indicates that the |coprocessor| has a valid result (write data or exception) for an offloaded         |
   |                           |                 |                 | instruction.                                                                                                                 |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_result_ready_o``      | logic           | output          | Result request ready. The result signaled via ``x_result_i`` is accepted by the core when                                    |
@@ -506,35 +511,42 @@ The memory result interface is optional. If it is included, then the memory (req
   | ``x_result_i``            | x_result_t      | input           | Result packet.                                                                                                               |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
-The coprocessor shall provide results to the core via the result interface. A coprocessor is allowed to provide results to the core in an out of order fashion. A coprocessor is only
+The |coprocessor| shall provide results to the core via the result interface. A |coprocessor| is allowed to provide results to the core in an out of order fashion. A |coprocessor| is only
 allowed to provide a result for an instruction once the core has indicated (via the commit interface) that this instruction is allowed to be committed. Each accepted offloaded (committed and not killed) instruction shall
-have exactly one result group transaction (even if no data needs to be written back to the core's register file).
+have exactly one result group transaction (even if no data needs to be written back to the |processor|'s register file).
 
 :numref:`Result packet type` describes the ``x_result_t`` type.
 
 .. table:: Result packet type
   :name: Result packet type
 
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**    | **Type**                  | **Description**                                                                                                 |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``        | logic [X_ID_WIDTH-1:0]    | Identification of the offloaded instruction.                                                                    |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``data``      | logic [X_RFW_WIDTH-1:0]   | Register file write data value(s).                                                                              |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rd ``       | logic [4:0]               | Register file destination address(es).                                                                          |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``we``        | logic                     | Register file write enable(s).                                                                                  |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``float``     | logic                     | Floating-point register file or integer register file?                                                          |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``exc``       | logic                     | Did the instruction cause a synchronous exception?                                                              |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``exccode``   | logic [5:0]               | Excecption code.                                                                                                |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | **Signal**    | **Type**                        | **Description**                                                                                                 |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``id``        | logic [X_ID_WIDTH-1:0]          | Identification of the offloaded instruction.                                                                    |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``data``      | logic [X_RFW_WIDTH-1:0]         | Register file write data value(s).                                                                              |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rd ``       | logic [4:0]                     | Register file destination address(es).                                                                          |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``we``        | logic [X_RFW_WIDTH-XLEN:0]      | Register file write enable(s).                                                                                  |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``float``     | logic                           | Floating-point register file or integer register file?                                                          |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``exc``       | logic                           | Did the instruction cause a synchronous exception?                                                              |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``exccode``   | logic [5:0]                     | Excecption code.                                                                                                |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction is defined as the combination of all ``x_result_i`` signals during which ``x_result_valid_i`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
+
+The ``exc`` is used to signal synchronous exceptions. 
+A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
+code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
+
+``we`` is 2 bits wide when `XLEN`` = 32 and ``X_RFR_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
+dual writeback).
 
 The signals in ``x_result_i`` are valid when ``x_result_valid_i`` is 1. These signals remain stable during a result transaction.
 
@@ -578,7 +590,7 @@ The only rule related to valid and ready signals is that:
 
 Specifically note the following:
 
-* The valid signal is allowed to be retracted (e.g. in case that the related instruction is killed in the core's pipeline before the corresponding ready is signaled).
+* The valid signal is allowed to be retracted (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ready is signaled).
   This does not hold for ``x_mem_valid_i``: once asserted it must remain asserted until the handshake with ``x_mem_ready_o`` has been performed.
 * A new transaction can be started by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
 * The ready signal is allowed to be 1 when the corresponding valid signal is not asserted.
@@ -586,7 +598,7 @@ Specifically note the following:
 Signal dependencies
 -------------------
 
-|corev| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. A coprocessor is allowed (and expected) to
+|processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. A |coprocessor| is allowed (and expected) to
 have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals.
 
 .. note::
@@ -600,9 +612,9 @@ CPU recommendations
 Coprocessor recommendations
 ---------------------------
 
-A |coproc| is recommended (but not required) to follow the following suggestions to maximize its re-use potential:
+A |coprocessor| is recommended (but not required) to follow the following suggestions to maximize its re-use potential:
 
 * Avoid using opcodes that are reserved or already used by RISC-V International unless for supporting a standard RISC-V extension.
-* Make it easy to change opcode assignments such that a |coproc| can easily be updated if it conflicts with another |coproc|.
+* Make it easy to change opcode assignments such that a |coprocessor| can easily be updated if it conflicts with another |coprocessor|.
 * Clearly document the supported parameter values.
-* Clearly document the usage of features which are optional |corev| (TBD, e.g. ``dualwrite``, ``dualread``).
+* Clearly document the usage of features which are optional |processor| (TBD, e.g. ``dualwrite``, ``dualread``).
