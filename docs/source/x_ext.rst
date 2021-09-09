@@ -435,6 +435,9 @@ The signals in ``x_mem_req_i`` are valid when ``x_mem_valid_i`` is 1.
 These signals remain stable during a memory request transaction until the actual handshake is performed with both ``x_mem_valid_i`` and ``x_mem_ready_o`` being 1.
 ``wdata`` is only required to remain stable during memory request transactions in which ``we`` is 1.
 
+A |coprocessor| is required to (only) perform a memory request transaction(s) for non-killed instructions that it earlier accepted via the issue interface as load/store
+instructions (i.e. ``loadstore`` is 1).
+
 :numref:`Memory request type` describes the ``x_mem_resp_t`` type.
 
 .. table:: Memory response type
@@ -495,8 +498,18 @@ The memory (request/response) interface is optional. If it is included, then the
 The memory result interface is used to provide a result from |processor| to the |coprocessor| for every memory transaction (i.e. for both read and write transactions).
 No memory result transaction is performed for instructions that led to a synchronous exception as signaled via the memory (request/response) interface. If a
 memory (request/response) transaction was not killed, then the corresponding memory result transaction will not be killed either.
-Memory result transactions are provided by the core in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
+Memory result transactions are provided by the |processor| in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
 signals whether a bus error occurred. If so, then an NMI is signaled, just like for bus errors caused by non-offloaded loads and stores. 
+
+From a |processor|'s point of view each memory request transaction has an associated memory result transaction. The same is not true for a |coprocessor| as it can receive
+memory result transactions for instructions that it did not accept and for which it did not issue a memory request transaction. Such memory result transactions shall
+be ignored by a |coprocessor|. In case that a |coprocessor| did issue a memory request transaction, then it is guaranteed to receive a corresponding memory result
+transaction (which it must be ready to accept).
+
+.. note::
+
+   The above asymmetry can only occur at system level when multiple coprocessors are connected to a processor via some interconnect network. ``CORE-V-XIF`` in itself
+   is a point-to-point connection, but its definition is written with ``CORE-V-XIF`` interconnect network(s) in mind.
 
 The signals in ``x_mem_result_o`` are valid when ``x_mem_result_valid_o`` is 1.
 
@@ -573,7 +586,8 @@ The following rules apply to the relative ordering of the interface handshakes:
   on the issue interface.
 * A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated.
 * A memory (request/response) interface handshake cannot be initiated before the corresponding issue interface handshake is initiated.
-* A memory result interface handshake cannot be initiated before the corresponding memory request interface handshake is completed.
+* A memory result interface transactions cannot be initiated before the corresponding memory request interface handshake is completed. Note that a |coprocessor|
+  shall be able to tolerate memory result transactions for which it did not perform the corresponding memory request handshake itself.
 * A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated.
 * A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit).
 * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
