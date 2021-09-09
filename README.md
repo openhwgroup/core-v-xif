@@ -1,14 +1,7 @@
 # CORE-V X-Interface
 
-The CORE-V X-Interface (core-v-xif) is a RISC-V extension interface that provides a generalized framework suitable to implement custom co-processors and ISA extensions for existing RISC-V CPU cores.
-It features independent channels for accelerator-agnostic offloading of instructions and writeback of the result, pseudo dual-issue behaviour and configurable sharing granularity of external functional units.
-A more thourough documentation can be found in the [doc](doc/index.md) folder.
+The CORE-V X-Interface (core-v-xif) is a RISC-V eXtension interface that provides a generalized framework suitable to implement custom coprocessors and ISA extensions for existing RISC-V processors.
 
-## List of Modules
+It features independent channels for accelerator-agnostic offloading of instructions and writeback of the result(s).
 
-| Name               | Description                                                                 | Status        |
-| ----               | -----------                                                                 | ------        |
-| `acc_intf`         | Systemverilog interface definition of the `X/C-` and `XMem/CMem-Interface`. | active (v0.1) |
-| `acc_interconnect` | Instruction offload and response interconnect.                              | active (v0.1) |
-| `acc_adapter`      | Accelerator-agnostic offloading adapter.                                    | active (v0.1) |
-| `acc_predecoder`   | Accelerator-specific instruction predecoder.                                | active (v0.1) |
+A more thorough documentation can be found in the docs folder.
