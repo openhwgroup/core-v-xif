@@ -192,15 +192,17 @@ then a new compressed request transaction started).
   | ``mode``               | logic [1:0]          | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 | 
-  |                        |                      | If the compressed instruction is not accepted, then the core will cause an illegal instruction trap unless this | 
-  |                        |                      | instruction is killed in the core's pipeline.                                                                   | 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
 
 The signals in ``x_compressed_resp_i`` are valid when ``x_compressed_valid_o`` and ``x_compressed_ready_i`` are both 1. There are no stability requirements.
 
 |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
-compressed instructions that it does recognize as legal instructions itself. In case that both the core and the |coprocessor| accept the same instruction as being valid,
-the instruction will cause an illegal instruction fault.
+compressed instructions that it does recognize as legal instructions itself. 
+
+The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
+
+* is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
+* is considered neither to be valid by the |processor| nor accepted by the |coprocessor| (``accept`` = 0).
 
 Typically an accepted transaction over the compressed interface will be followed by a corresponding transaction over the issue interface, but there is no requirement
 on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative).
@@ -274,9 +276,7 @@ odd register file index is provided in the upper 32 bits.
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | **Signal**             | **Type**             | **Description**                                                                                                  | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|? If                                          | 
-  |                        |                      | the instruction is not accepted, then the core will cause an illegal instruction trap unless this offloaded      | 
-  |                        |                      | instruction is killed.                                                                                           | 
+  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                | 
   |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    | 
@@ -299,23 +299,28 @@ odd register file index is provided in the upper 32 bits.
   |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
 
-The core will attempt to offload instructions via the issue interface for the following two main scenarios:
+The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
 
-* The instruction is originally non-compressed and it is not recognized as a valid instruction by the core's non-compressed instruction decoder.
+* The instruction is originally non-compressed and it is not recognized as a valid instruction by the |processor|'s non-compressed instruction decoder.
 * The instruction is originally compressed and the |coprocessor| accepted the compressed instruction and provided a 32-bit uncompressed instruction.
-  In this case the 32-bit uncompressed instruction will be attempted for offload even if it matches in the core's non-compressed instruction decoder.
+  In this case the 32-bit uncompressed instruction will be attempted for offload even if it matches in the |processor|'s non-compressed instruction decoder.
 
-Apart from the above two main scenarios |processor| might also attempt to offload
-(compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the core and the |coprocessor| accept the same instruction as being valid,
-the instruction will cause an illegal instruction fault.
+Apart from the above two main scenarios a |processor| may also attempt to offload
+(compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the |processor| and the |coprocessor| accept the same instruction as being valid,
+the instruction will cause an illegal instruction fault upon execution.
+
+The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
+
+* is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
+* is considered neither to be valid by the |processor| nor accepted by the |coprocessor| (``accept`` = 0).
 
 A |coprocessor| can (only) accept an offloaded instruction when:
 
 * It can handle the instruction (based on decoding ``instr``).
 * The required source registers are marked valid by the offloading core  (``x_issue_valid_o`` is 1 and required bit(s) ``rs_valid`` are 1).
 
-A transaction is considered offloaded/accepted on the positive edge of ``clk_i`` when ``x_issue_valid_o``, ``x_issue_ready_i`` and ``accept`` are aserted.
-A transaction is considered rejected on the positive edge of ``clk_i`` when ``x_issue_valid_o`` and ``x_issue_ready_i`` are asserted while ``accept`` is deaserted.
+A transaction is considered offloaded/accepted on the positive edge of ``clk_i`` when ``x_issue_valid_o``, ``x_issue_ready_i`` are asserted and ``accept`` is 1.
+A transaction is considered not offloaded/rejected on the positive edge of ``clk_i`` when ``x_issue_valid_o`` and ``x_issue_ready_i`` are asserted while ``accept`` is 0.
 
 The signals in ``x_issue_resp_i`` are valid when ``x_issue_req_o`` and ``x_issue_ready_i`` are both 1. There are no stability requirements.
 
@@ -337,7 +342,7 @@ The signals in ``x_issue_resp_i`` are valid when ``x_issue_req_o`` and ``x_issue
 
 .. note::
 
-   The commit transaction is also performed for offloaded instructions that are not accepted by a |coprocessor| and can then simply be ignored by the |coprocessor|.
+   The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction.
 
 :numref:`Commit packet type` describes the ``x_commit_t`` type.
 
