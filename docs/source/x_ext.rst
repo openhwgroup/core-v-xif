@@ -625,13 +625,23 @@ Specifically note the following:
 Signal dependencies
 -------------------
 
-|processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. A |coprocessor| is allowed (and expected) to
-have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals.
+|processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
+
+* paths from ``x_result_valid_i``, ``x_result_i`` to ``rs``, ``rs_valid``, ``frs``, ``frs_valid``.
 
 .. note::
 
    The above implies that the non-compressed instruction ``instr[31:0]`` received via the compressed interface is not allowed
    to combinatorially feed into the issue interface's ``instr[31:0]`` instruction.
+
+A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
+
+* paths from ``rs``, ``rs_valid``, ``frs``, ``frs_valid`` to ``x_result_valid_i``, ``x_result_i``.
+
+.. note::
+
+   The above implies that a |coprocessor| has a pipeline stage separating the register file operands from its result generating circuit (similar to
+   the separation between decode stage and execute stage found in many CPUs).
 
 CPU recommendations
 -------------------
