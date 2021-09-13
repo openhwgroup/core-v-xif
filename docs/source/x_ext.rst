@@ -17,20 +17,20 @@ The eXtension interface enables extension of |processor| with:
 * Custom load/store type instructions.
 * Custom CSRs and related instructions.
 
-Branch type instructions are not supported via the eXtension interface.
+Control-Tranfer type instructions (e.g. branches and jumps) are not supported via the eXtension interface.
 
 CORE-V-XIF
 ----------
 
-The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-IF specification contains the following parameters:
+The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-XIF specification contains the following parameters:
 
-* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the core, so for  |processor| ``X_DATAWIDTH`` = 32.
+* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the core, e.g. ``X_DATAWIDTH`` = 32 for RV32 CPUs.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
 * ``X_MEM_WIDTH`` specifies the memory access width for loads/stores via the eXtension interface. (Legal values are TBD.)
-* ``X_RFR_WIDTH`` specifies the register file read access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64. If XLEN = 64, then the legal value is (only) 64.
-* ``X_RFW_WIDTH`` specifies the register file write access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64. If XLEN = 64, then the legal value is (only) 64.
+* ``X_RFR_WIDTH`` specifies the register file read access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is (only) 64.
+* ``X_RFW_WIDTH`` specifies the register file write access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is (only) 64.
 
 Parameters
 ----------
@@ -38,6 +38,8 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | Name                         | Type/Range             | Default       | Description                                                        |
 +==============================+========================+===============+====================================================================+
+| ``X_DATAWIDTH``              | int (32, 64)           | 32            | Width of an integer register in bits. Must be equal to XLEN.       |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
@@ -103,14 +105,14 @@ CORE-V-XIF consists of six interfaces:
 Operating principle
 -------------------
 
-|processor| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself. In case of a
-compressed instruction the |coprocessor| must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
+|processor| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself. 
+In case of a compressed instruction the |coprocessor| must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
 This non-compressed instruction is then attempted for offload via the issue interface.
 
 Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface. 
 The external |coprocessor| can decide to accept or reject the instruction offload. In case of acceptation the |coprocessor|
-will further handle the instruction. In case of rejection the core will raise an illegal instruction exception (unless the instruction does not reach the
-commit stage). As part of the issue interface transaction the core provides the instruction and required register file operand(s) to the |coprocessor|. If
+will further handle the instruction. In case of rejection the core will raise an illegal instruction exception. 
+As part of the issue interface transaction the core provides the instruction and required register file operand(s) to the |coprocessor|. If
 an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
 ``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
 The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store, to which register(s) in the register file it will writeback, and
@@ -124,7 +126,7 @@ is no longer speculative and is allowed to be commited.
 
 In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
 or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
-will use its PMA to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
+will use its PMP/PMA to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
 provide the result (e.g. load data and/or fault status) back to the |coprocessor| via the memory result interface.
 
 The final result of an accepted offloaded instruction can be written back into the |coprocessor| itself or into the core's register file. Either way, the
@@ -453,7 +455,7 @@ instructions (i.e. ``loadstore`` is 1).
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exc``                | logic            | Did the memory request cause a synchronous exception?                                                           |
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``exccode``            | logic [5:0]      | Excecption code.                                                                                                |
+  | ``exccode``            | logic [5:0]      | Exception code.                                                                                                 |
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``x_mem_req_i``. In case of a synchronous exception
@@ -553,7 +555,7 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``data``      | logic [X_RFW_WIDTH-1:0]         | Register file write data value(s).                                                                              |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rd ``       | logic [4:0]                     | Register file destination address(es).                                                                          |
+  | ``rd``        | logic [4:0]                     | Register file destination address(es).                                                                          |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``        | logic [X_RFW_WIDTH-XLEN:0]      | Register file write enable(s).                                                                                  |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -561,7 +563,7 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exc``       | logic                           | Did the instruction cause a synchronous exception?                                                              |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``exccode``   | logic [5:0]                     | Excecption code.                                                                                                |
+  | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction is defined as the combination of all ``x_result_i`` signals during which ``x_result_valid_i`` is 1 and the ``id`` remains unchanged. I.e. a new
