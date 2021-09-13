@@ -4,4 +4,8 @@ The CORE-V X-Interface (core-v-xif) is a RISC-V eXtension interface that provide
 
 It features independent channels for accelerator-agnostic offloading of instructions and writeback of the result(s).
 
-A more thorough documentation can be found in the docs folder.
+## Documentation
+
+The CORE-V XIF user manual can be found in the _docs_ folder and it is
+captured in reStructuredText, rendered to html using [Sphinx](https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html).
+These documents are viewable using readthedocs and can be viewed [here](https://docs.openhwgroup.org/projects/openhw-group-core-v-xif/).
