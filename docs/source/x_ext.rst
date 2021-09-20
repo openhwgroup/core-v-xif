@@ -301,7 +301,7 @@ odd register file index is provided in the upper 32 bits.
   |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   | 
   |                        |                      | more transactions via the memory group interface.                                                                | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception?                                            | 
+  | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception in the coprocessor?                         | 
   |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
 
