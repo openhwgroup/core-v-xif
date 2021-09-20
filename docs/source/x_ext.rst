@@ -137,6 +137,8 @@ before a ``WFI`` instruction have fully completed (so that sleep mode can be ent
 In short: From a functional perspective it should not matter whether an instruction is handled inside the core or inside a |coprocessor|. In both cases
 the instructions need to obey the same instruction dependency rules, memory consistency rules, load/store address checks, fences, etc.
 
+Compressed interface
+~~~~~~~~~~~~~~~~~~~~
 :numref:`Compressed interface signals` describes the compressed interface signals.
 
 .. table:: Compressed interface signals
@@ -209,6 +211,8 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 Typically an accepted transaction over the compressed interface will be followed by a corresponding transaction over the issue interface, but there is no requirement
 on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative).
 
+Issue interface
+~~~~~~~~~~~~~~~
 :numref:`Issue interface signals` describes the issue interface signals.
 
 .. table:: Issue interface signals
@@ -326,6 +330,8 @@ A transaction is considered not offloaded/rejected on the positive edge of ``clk
 
 The signals in ``x_issue_resp_i`` are valid when ``x_issue_req_o`` and ``x_issue_ready_i`` are both 1. There are no stability requirements.
 
+Commit interface
+~~~~~~~~~~~~~~~~
 :numref:`Commit interface signals` describes the commit interface signals.
 
 .. table:: Commit interface signals
@@ -378,6 +384,8 @@ A |coprocessor| is not allowed to perform speculative result transactions. A |co
 
 The signals in ``x_commit_o`` are valid when ``x_commit_valid_o`` is 1.
 
+Memory (request/response) interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :numref:`Memory (request/response) interface signals` describes the memory (request/response) interface signals.
 
 .. table:: Memory (request/response) interface signals
@@ -472,6 +480,8 @@ Otherwise, the handshake is performed once its known whether the second access r
 
 The memory (request/response) interface is optional. If it is included, then the memory result interface shall also be included.
 
+Memory result interface
+~~~~~~~~~~~~~~~~~~~~~~~
 :numref:`Memory result interface signals` describes the memory result interface signals.
 
 .. table:: Memory result interface signals
@@ -522,6 +532,8 @@ The signals in ``x_mem_result_o`` are valid when ``x_mem_result_valid_o`` is 1.
 
 The memory result interface is optional. If it is included, then the memory (request/response) interface shall also be included.
 
+Result interface
+~~~~~~~~~~~~~~~~
 :numref:`Result interface signals` describes the result interface signals.
 
 .. table:: Result interface signals
