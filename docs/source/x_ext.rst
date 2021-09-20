@@ -24,7 +24,7 @@ CORE-V-XIF
 
 The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-XIF specification contains the following parameters:
 
-* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the core, e.g. ``X_DATAWIDTH`` = 32 for RV32 CPUs.
+* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the |processor|, e.g. ``X_DATAWIDTH`` = 32 for RV32 CPUs.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
@@ -44,7 +44,9 @@ Parameters
 |                              |                        |               | eXtension interface.                                               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_NUM_FRS``                | int (2..3)             | 2             | Number of floating-point register file read ports that can be used |
-|                              |                        |               | by the eXtension interface.                                        |
+|                              |                        |               | by the eXtension interface. In case that the F extension is not    |
+|                              |                        |               | supported by a |processor|, then the related signals               |
+|                              |                        |               | (i.e. ``frs`` and ``frs_valid``) shall be tied to 0.               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_ID_WIDTH``               | int (1..32)            | 4             | Identification width for the eXtension interface.                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
@@ -167,6 +169,8 @@ Compressed interface
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``instr``              | logic [15:0]            | Offloaded compressed instruction.                                                                               |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``mode``               | logic [1:0]             | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
+  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``                 | logic [X_ID_WIDTH-1:0]  | Identification number of the offloaded compressed instruction.                                                  |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
 
@@ -193,14 +197,12 @@ then a new compressed request transaction started).
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
   | ``instr``              | logic [31:0]         | Uncompressed instruction.                                                                                       |
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | logic [1:0]          | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
-  +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 | 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
 
 The signals in ``x_compressed_resp_i`` are valid when ``x_compressed_valid_o`` and ``x_compressed_ready_i`` are both 1. There are no stability requirements.
 
-|processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
+The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
 compressed instructions that it does recognize as legal instructions itself. 
 
 The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
@@ -301,7 +303,7 @@ odd register file index is provided in the upper 32 bits.
   |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   | 
   |                        |                      | more transactions via the memory group interface.                                                                | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception?                                            | 
+  | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception in the |coprocessor| itself?                |
   |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
 
@@ -328,7 +330,7 @@ A |coprocessor| can (only) accept an offloaded instruction when:
 A transaction is considered offloaded/accepted on the positive edge of ``clk_i`` when ``x_issue_valid_o``, ``x_issue_ready_i`` are asserted and ``accept`` is 1.
 A transaction is considered not offloaded/rejected on the positive edge of ``clk_i`` when ``x_issue_valid_o`` and ``x_issue_ready_i`` are asserted while ``accept`` is 0.
 
-The signals in ``x_issue_resp_i`` are valid when ``x_issue_req_o`` and ``x_issue_ready_i`` are both 1. There are no stability requirements.
+The signals in ``x_issue_resp_i`` are valid when ``x_issue_valid_o`` and ``x_issue_ready_i`` are both 1. There are no stability requirements.
 
 Commit interface
 ~~~~~~~~~~~~~~~~
