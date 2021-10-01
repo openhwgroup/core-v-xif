@@ -344,7 +344,7 @@ Commit interface
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_commit_valid_o``      | logic           | output          | Commit request valid. Indicates that |processor| has valid commit or kill information for an offloaded instruction.          |
   |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| shall be ready                      |
-  |                           |                 |                 | to observe the ``x_commit_valid_o`` and ``x_commit_kill`` signals at any time coincident or after an issue transaction       |
+  |                           |                 |                 | to observe the ``x_commit_valid_o`` and ``commit_kill`` signals at any time coincident or after an issue transaction         |
   |                           |                 |                 | initiation.                                                                                                                  |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``x_commit_o``            | x_commit_t      | output          | Commit packet.                                                                                                               |
@@ -362,9 +362,9 @@ Commit interface
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``id``             | logic [X_ID_WIDTH-1:0] | Identification of the offloaded instruction. Valid when ``x_commit_valid_o`` is 1.                                           |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_commit_kill``  | logic                  | Shall an offloaded instruction be killed? If ``x_commit_valid_o`` is 1 and ``x_commit_kill`` is 0, then the core guarantees  |
+  | ``commit_kill``    | logic                  | Shall an offloaded instruction be killed? If ``x_commit_valid_o`` is 1 and ``commit_kill`` is 0, then the core guarantees    |
   |                    |                        | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
-  |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``x_commit_valid_o`` is 1 and ``x_commit_kill`` is |
+  |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``x_commit_valid_o`` is 1 and ``commit_kill`` is   |
   |                    |                        | 1, then the offloaded instruction (``id``) shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the|
   |                    |                        | related instruction does/did not change architectural state.                                                                 |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
@@ -373,7 +373,7 @@ The ``x_commit_valid_o`` signal will be 1 exactly one ``clk_i`` cycle for every 
 instruction is allowed to be committed or is supposed to be killed. The ``id`` values of subsequent commit transactions will increment (and wrap around)
 
 For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``x_commit_valid_o`` is 1
-and ``x_commit_kill`` is 0) or that the instruction must be killed (``x_commit_valid_o`` is 1 and ``x_commit_kill`` is 1). 
+and ``commit_kill`` is 0) or that the instruction must be killed (``x_commit_valid_o`` is 1 and ``commit_kill`` is 1). 
 
 A |coprocessor| does not have to wait for ``x_commit_valid_o`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
