@@ -142,11 +142,51 @@ the instructions need to obey the same instruction dependency rules, memory cons
 Interfaces
 ----------
 
-This section describes the six interfaces of CORE-V-XIF. Port directions are described as seen from the perspective of the |processor|. The |coprocessor| will have opposite pin directions.
+This section describes the six interfaces of CORE-V-XIF. Port directions are described as seen from the perspective of the |processor|.
+The |coprocessor| will have opposite pin directions.
+Stated signals names are not mandatory, but it is highly recommended to at least include the stated names as part of actual signal names. It is for example allowed to add prefixes and/or postfixes (e.g. ``x_`` prefix or ``_i``, ``_o`` postfixes) or to use different capitalization. A name mapping should be provided if non obvious renaming is applied.
 
 SystemVerilog example
 ~~~~~~~~~~~~~~~~~~~~~
-The description in this specification is based on the SystemVerilog interface syntax of which an example implementation is shown here. A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/master/rtl/if_xif.sv.
+The description in this specification is based on SystemVerilog interfaces. Of course the use of SystemVerilog (interfaces) is not mandatory.
+
+A |processor| using the eXtension interface could have the following interface:
+
+.. code-block:: verilog
+
+  module cpu;
+  (
+    // eXtension interface
+    if_xif.cpu_compressed       xif_compressed_if,
+    if_xif.cpu_issue            xif_issue_if,
+    if_xif.cpu_commit           xif_commit_if,
+    if_xif.cpu_mem              xif_mem_if,
+    if_xif.cpu_mem_result       xif_mem_result_if,
+    if_xif.cpu_result           xif_result_if,
+
+    ... // Other ports omitted
+  );
+
+A full example of a |processor| with an eXtension interface is the **CV32E40X**, which can be found at https://github.com/openhwgroup/cv32e40x. 
+
+A |coprocessor| using the eXtension interface could have the following interface:
+
+.. code-block:: verilog
+
+  module coproc;
+  (
+    // eXtension interface
+    if_xif.coproc_compressed    xif_compressed_if,
+    if_xif.coproc_issue         xif_issue_if,
+    if_xif.coproc_commit        xif_commit_if,
+    if_xif.coproc_mem           xif_mem_if,
+    if_xif.coproc_mem_result    xif_mem_result_if,
+    if_xif.coproc_result        xif_result_if,
+
+    ... // Other ports omitted
+  );
+
+A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
 
 .. code-block:: verilog
 
@@ -211,7 +251,7 @@ The description in this specification is based on the SystemVerilog interface sy
 
   endinterface : if_xif
 
-The stated signals names are the minimal required names. It is allowed to add prefixes and/or postfixes (e.g. ``x_`` prefix or ``_i``, ``_o`` postfixes). Of course the use of SystemVerilog is not mandatory.
+A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/master/rtl/if_xif.sv.
 
 Compressed interface
 ~~~~~~~~~~~~~~~~~~~~
