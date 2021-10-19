@@ -24,7 +24,8 @@ CORE-V-XIF
 
 The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-XIF specification contains the following parameters:
 
-* ``X_DATA_WIDTH`` is the width of an integer register in bits and needs to match the XLEN of the |processor|, e.g. ``X_DATA_WIDTH`` = 32 for RV32 CPUs.
+* ``X_REG_WIDTH`` is the width of an integer register in bits and needs to match the XLEN of the |processor|, e.g. ``X_REG_WIDTH`` = 32 for RV32 CPUs.
+* ``X_FREG_WIDTH`` is the (maximum) width of a floating point register in bits and needs to match the FLEN of the |processor|.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
@@ -38,7 +39,9 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | Name                         | Type/Range             | Default       | Description                                                        |
 +==============================+========================+===============+====================================================================+
-| ``X_DATA_WIDTH``             | int (32, 64)           | 32            | Width of an integer register in bits. Must be equal to XLEN.       |
+| ``X_REG_WIDTH``              | int (32, 64)           | 32            | Width of an integer register in bits. Must be equal to XLEN.       |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_FREG_WIDTH``             | int (32, 64, 128)      | 32            | Width of a floating point register in bits. Must be equal to FLEN. |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
@@ -154,7 +157,7 @@ A |processor| using the eXtension interface could have the following interface:
 
 .. code-block:: verilog
 
-  module cpu;
+  module cpu
   (
     // eXtension interface
     if_xif.cpu_compressed       xif_compressed_if,
@@ -173,7 +176,7 @@ A |coprocessor| using the eXtension interface could have the following interface
 
 .. code-block:: verilog
 
-  module coproc;
+  module coproc
   (
     // eXtension interface
     if_xif.coproc_compressed    xif_compressed_if,
@@ -190,9 +193,13 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
 
 .. code-block:: verilog
 
-  interface if_xif;
+  interface if_xif
   #(
+    parameter int          X_REG_WIDTH     =  32, // Width of an integer register in bits. Must be equal to XLEN.
+    parameter int          X_FREG_WIDTH    =  32, // Width of a floating point register in bits. Must be equal to FLEN.
     parameter int          X_NUM_RS        =  2,  // Number of register file read ports that can be used by the eXtension interface
+    parameter int          X_NUM_FRS       =  2,  // Number of floating-point register file read ports that can be used by the eXtension interface
+    parameter int          X_ID_WIDTH      =  4,  // Identification width for the eXtension interface
     parameter int          X_MEM_WIDTH     =  32, // Memory access width for loads/stores via the eXtension interface
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
@@ -354,27 +361,27 @@ Issue interface
 .. table:: Issue request type
   :name: Issue request type
 
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**             | **Type**                | **Description**                                                                                                 |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``instr``              | logic [31:0]            | Offloaded instruction.                                                                                          |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | logic [1:0]             | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``                 | logic [X_ID_WIDTH-1:0]  | Identification of the offloaded instruction.                                                                    |
-  |                        |                         |                                                                                                                 |
-  |                        |                         |                                                                                                                 |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0] | Register file source operands for the offloaded instruction.                                                    |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs_valid``           | logic [X_NUM_RS-1:0]    | Validity of the register file source operand(s).                                                                |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``frs[X_NUM_FRS-1:0]`` | logic [FLEN-1:0]        | Floating-point register file source operands for the offloaded instruction. Tied to 0 if no floating-point      |
-  |                        |                         | register file is present.                                                                                       |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``frs_valid``          | logic [X_NUM_FRS-1:0]   | Validity of the floating-point register file source operand(s). Tied to 0 if no floating-point                  |
-  |                        |                         | register file is present.                                                                                       |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**                 | **Description**                                                                                                 |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``instr``              | logic [31:0]             | Offloaded instruction.                                                                                          |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``mode``               | logic [1:0]              | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``id``                 | logic [X_ID_WIDTH-1:0]   | Identification of the offloaded instruction.                                                                    |
+  |                        |                          |                                                                                                                 |
+  |                        |                          |                                                                                                                 |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs_valid``           | logic [X_NUM_RS-1:0]     | Validity of the register file source operand(s).                                                                |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``frs[X_NUM_FRS-1:0]`` | logic [X_FREG_WIDTH-1:0] | Floating-point register file source operands for the offloaded instruction. Tied to 0 if no floating-point      |
+  |                        |                          | register file is present.                                                                                       |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``frs_valid``          | logic [X_NUM_FRS-1:0]    | Validity of the floating-point register file source operand(s). Tied to 0 if no floating-point                  |
+  |                        |                          | register file is present.                                                                                       |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
