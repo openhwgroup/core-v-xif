@@ -24,7 +24,8 @@ CORE-V-XIF
 
 The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-XIF specification contains the following parameters:
 
-* ``X_DATAWIDTH`` is the width of an integer register in bits and needs to match the XLEN of the |processor|, e.g. ``X_DATAWIDTH`` = 32 for RV32 CPUs.
+* ``X_REG_WIDTH`` is the width of an integer register in bits and needs to match the XLEN of the |processor|, e.g. ``X_REG_WIDTH`` = 32 for RV32 CPUs.
+* ``X_FREG_WIDTH`` is the (maximum) width of a floating point register in bits and needs to match the FLEN of the |processor|.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
@@ -38,7 +39,9 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | Name                         | Type/Range             | Default       | Description                                                        |
 +==============================+========================+===============+====================================================================+
-| ``X_DATAWIDTH``              | int (32, 64)           | 32            | Width of an integer register in bits. Must be equal to XLEN.       |
+| ``X_REG_WIDTH``              | int (32, 64)           | 32            | Width of an integer register in bits. Must be equal to XLEN.       |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_FREG_WIDTH``             | int (32, 64, 128)      | 32            | Width of a floating point register in bits. Must be equal to FLEN. |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
@@ -139,6 +142,124 @@ before a ``WFI`` instruction have fully completed (so that sleep mode can be ent
 In short: From a functional perspective it should not matter whether an instruction is handled inside the core or inside a |coprocessor|. In both cases
 the instructions need to obey the same instruction dependency rules, memory consistency rules, load/store address checks, fences, etc.
 
+Interfaces
+----------
+
+This section describes the six interfaces of CORE-V-XIF. Port directions are described as seen from the perspective of the |processor|.
+The |coprocessor| will have opposite pin directions.
+Stated signals names are not mandatory, but it is highly recommended to at least include the stated names as part of actual signal names. It is for example allowed to add prefixes and/or postfixes (e.g. ``x_`` prefix or ``_i``, ``_o`` postfixes) or to use different capitalization. A name mapping should be provided if non obvious renaming is applied.
+
+SystemVerilog example
+~~~~~~~~~~~~~~~~~~~~~
+The description in this specification is based on SystemVerilog interfaces. Of course the use of SystemVerilog (interfaces) is not mandatory.
+
+A |processor| using the eXtension interface could have the following interface:
+
+.. code-block:: verilog
+
+  module cpu
+  (
+    // eXtension interface
+    if_xif.cpu_compressed       xif_compressed_if,
+    if_xif.cpu_issue            xif_issue_if,
+    if_xif.cpu_commit           xif_commit_if,
+    if_xif.cpu_mem              xif_mem_if,
+    if_xif.cpu_mem_result       xif_mem_result_if,
+    if_xif.cpu_result           xif_result_if,
+
+    ... // Other ports omitted
+  );
+
+A full example of a |processor| with an eXtension interface is the **CV32E40X**, which can be found at https://github.com/openhwgroup/cv32e40x. 
+
+A |coprocessor| using the eXtension interface could have the following interface:
+
+.. code-block:: verilog
+
+  module coproc
+  (
+    // eXtension interface
+    if_xif.coproc_compressed    xif_compressed_if,
+    if_xif.coproc_issue         xif_issue_if,
+    if_xif.coproc_commit        xif_commit_if,
+    if_xif.coproc_mem           xif_mem_if,
+    if_xif.coproc_mem_result    xif_mem_result_if,
+    if_xif.coproc_result        xif_result_if,
+
+    ... // Other ports omitted
+  );
+
+A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
+
+.. code-block:: verilog
+
+  interface if_xif
+  #(
+    parameter int          X_REG_WIDTH     =  32, // Width of an integer register in bits. Must be equal to XLEN.
+    parameter int          X_FREG_WIDTH    =  32, // Width of a floating point register in bits. Must be equal to FLEN.
+    parameter int          X_NUM_RS        =  2,  // Number of register file read ports that can be used by the eXtension interface
+    parameter int          X_NUM_FRS       =  2,  // Number of floating-point register file read ports that can be used by the eXtension interface
+    parameter int          X_ID_WIDTH      =  4,  // Identification width for the eXtension interface
+    parameter int          X_MEM_WIDTH     =  32, // Memory access width for loads/stores via the eXtension interface
+    parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
+    parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
+    parameter logic [31:0] X_MISA          =  '0  // MISA extensions implemented on the eXtension interface
+  );
+
+    ... // typedefs omitted
+
+    // Compressed interface
+    logic               compressed_valid;
+    logic               compressed_ready;
+    x_compressed_req_t  compressed_req;
+    x_compressed_resp_t compressed_resp;
+
+    // Issue interface
+    logic               issue_valid;
+    logic               issue_ready;
+    x_issue_req_t       issue_req;
+    x_issue_resp_t      issue_resp;
+
+    // Commit interface
+    logic               commit_valid;
+    x_commit_t          commit;
+
+    // Memory (request/response) interface
+    logic               mem_valid;
+    logic               mem_ready;
+    x_mem_req_t         mem_req;
+    x_mem_resp_t        mem_resp;
+
+    // Memory result interface
+    logic               mem_result_valid;
+    x_mem_result_t      mem_result;
+
+    // Result interface
+    logic               result_valid;
+    logic               result_ready;
+    x_result_t          result;
+
+    // Modports
+    modport cpu_issue (
+      output            issue_valid,
+      input             issue_ready,
+      output            issue_req,
+      input             issue_resp
+    );
+
+    modport coproc_issue (
+      input             issue_valid,
+      output            issue_ready,
+      input             issue_req,
+      output            issue_resp
+    );
+
+    ... // Further modports omitted
+
+  endinterface : if_xif
+
+A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/master/rtl/if_xif.sv.
+
 Compressed interface
 ~~~~~~~~~~~~~~~~~~~~
 :numref:`Compressed interface signals` describes the compressed interface signals.
@@ -148,15 +269,16 @@ Compressed interface
 
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**            | **Direction**   | **Description**                                                                                                              |
+  |                           |                     | (|processor|)   |                                                                                                                              |
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_compressed_valid_o``  | logic               | output          | Compressed request valid. Request to uncompress a compressed instruction.                                                    |
+  | ``compressed_valid``      | logic               | output          | Compressed request valid. Request to uncompress a compressed instruction.                                                    |
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_compressed_ready_i``  | logic               | input           | Compressed request ready. The transactions signaled via ``x_compressed_req_o`` and ``x_compressed_resp_i`` are accepted when |
-  |                           |                     |                 | ``x_compressed_valid_o`` and  ``x_compressed_ready_i`` are both 1.                                                           |
+  | ``compressed_ready``      | logic               | input           | Compressed request ready. The transactions signaled via ``compressed_req`` and ``compressed_resp`` are accepted when         |
+  |                           |                     |                 | ``compressed_valid`` and  ``compressed_ready`` are both 1.                                                                   |
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_compressed_req_o``    | x_compressed_req_t  | output          | Compressed request packet.                                                                                                   |
+  | ``compressed_req``        | x_compressed_req_t  | output          | Compressed request packet.                                                                                                   |
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_compressed_resp_i``   | x_compressed_resp_t | input           | Compressed response packet.                                                                                                  |
+  | ``compressed_resp``       | x_compressed_resp_t | input           | Compressed response packet.                                                                                                  |
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
 :numref:`Compressed request type` describes the ``x_compressed_req_t`` type.
@@ -181,10 +303,10 @@ The ``id`` is a unique identification number for offloaded instructions. An ``id
 has fully completed (i.e. because it was not accepted for offload, because it was killed or because it retired). The same ``id`` value will be used for all transaction
 packets on all interfaces that logically relate to the same instruction.
 
-A compressed request transaction is defined as the combination of all ``x_compressed_req_o`` signals during which ``x_compressed_valid_o`` is 1 and the ``id`` remains unchanged. I.e. a new
-transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted (even if ``x_compressed_ready_i`` remained 0).
+A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
+transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted (even if ``compressed_ready`` remained 0).
 
-The signals in ``x_compressed_req_o`` are valid when ``x_compressed_valid_o`` is 1. These signals remain stable during a compressed request transaction (if ``id`` changes while ``x_compressed_valid_o`` remains 1,
+The signals in ``compressed_req`` are valid when ``compressed_valid`` is 1. These signals remain stable during a compressed request transaction (if ``id`` changes while ``compressed_valid`` remains 1,
 then a new compressed request transaction started).
 
 :numref:`Compressed response type` describes the ``x_compressed_resp_t`` type.
@@ -200,7 +322,7 @@ then a new compressed request transaction started).
   | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 | 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
 
-The signals in ``x_compressed_resp_i`` are valid when ``x_compressed_valid_o`` and ``x_compressed_ready_i`` are both 1. There are no stability requirements.
+The signals in ``compressed_resp`` are valid when ``compressed_valid`` and ``compressed_ready`` are both 1. There are no stability requirements.
 
 The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
 compressed instructions that it does recognize as legal instructions itself. 
@@ -222,15 +344,16 @@ Issue interface
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+  |                           |                 | (|processor|)   |                                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_issue_valid_o``       | logic           | output          | Issue request valid. Indicates that |processor| wants to offload an instruction.                                             |
+  | ``issue_valid``           | logic           | output          | Issue request valid. Indicates that |processor| wants to offload an instruction.                                             |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_issue_ready_i``       | logic           | input           | Issue request ready. The transaction signaled via ``x_issue_req_o`` and ``x_issue_resp_i`` is accepted when                  |
-  |                           |                 |                 | ``x_issue_valid_o`` and  ``x_issue_ready_i`` are both 1.                                                                     |
+  | ``issue_ready``           | logic           | input           | Issue request ready. The transaction signaled via ``issue_req`` and ``issue_resp`` is accepted when                          |
+  |                           |                 |                 | ``issue_valid`` and  ``issue_ready`` are both 1.                                                                             |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_issue_req_o``         | x_issue_req_t   | output          | Issue request packet.                                                                                                        |
+  | ``issue_req``             | x_issue_req_t   | output          | Issue request packet.                                                                                                        |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_issue_resp_i``        | x_issue_resp_t  | input           | Issue response packet.                                                                                                       |
+  | ``issue_resp``            | x_issue_resp_t  | input           | Issue response packet.                                                                                                       |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
 :numref:`Issue request type` describes the ``x_issue_req_t`` type.
@@ -238,32 +361,32 @@ Issue interface
 .. table:: Issue request type
   :name: Issue request type
 
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**             | **Type**                | **Description**                                                                                                 |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``instr``              | logic [31:0]            | Offloaded instruction.                                                                                          |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | logic [1:0]             | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``                 | logic [X_ID_WIDTH-1:0]  | Identification of the offloaded instruction.                                                                    |
-  |                        |                         |                                                                                                                 |
-  |                        |                         |                                                                                                                 |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0] | Register file source operands for the offloaded instruction.                                                    |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs_valid``           | logic [X_NUM_RS-1:0]    | Validity of the register file source operand(s).                                                                |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``frs[X_NUM_FRS-1:0]`` | logic [FLEN-1:0]        | Floating-point register file source operands for the offloaded instruction. Tied to 0 if no floating-point      |
-  |                        |                         | register file is present.                                                                                       |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``frs_valid``          | logic [X_NUM_FRS-1:0]   | Validity of the floating-point register file source operand(s). Tied to 0 if no floating-point                  |
-  |                        |                         | register file is present.                                                                                       |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**                 | **Description**                                                                                                 |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``instr``              | logic [31:0]             | Offloaded instruction.                                                                                          |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``mode``               | logic [1:0]              | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``id``                 | logic [X_ID_WIDTH-1:0]   | Identification of the offloaded instruction.                                                                    |
+  |                        |                          |                                                                                                                 |
+  |                        |                          |                                                                                                                 |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs_valid``           | logic [X_NUM_RS-1:0]     | Validity of the register file source operand(s).                                                                |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``frs[X_NUM_FRS-1:0]`` | logic [X_FREG_WIDTH-1:0] | Floating-point register file source operands for the offloaded instruction. Tied to 0 if no floating-point      |
+  |                        |                          | register file is present.                                                                                       |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``frs_valid``          | logic [X_NUM_FRS-1:0]    | Validity of the floating-point register file source operand(s). Tied to 0 if no floating-point                  |
+  |                        |                          | register file is present.                                                                                       |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-A issue request transaction is defined as the combination of all ``x_issue_req_o`` signals during which ``x_issue_valid_o`` is 1 and the ``id`` remains unchanged. I.e. a new
+A issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
 
-The ``instr``, ``mode``, ``id`` and ``rs_valid`` signals are valid when ``x_issue_valid_o`` is 1. The ``rs`` is only considered valid when ``x_issue_valid_o`` is 1 and the corresponding
+The ``instr``, ``mode``, ``id`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. The ``rs`` is only considered valid when ``issue_valid`` is 1 and the corresponding
 bit in ``rs_valid`` is 1 as well.
 
 The ``instr`` and ``mode`` signals remain stable during an issue request transaction. The ``rs_valid`` bits are not required to be stable during the transaction. Each bit
@@ -325,12 +448,12 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 A |coprocessor| can (only) accept an offloaded instruction when:
 
 * It can handle the instruction (based on decoding ``instr``).
-* The required source registers are marked valid by the offloading core  (``x_issue_valid_o`` is 1 and required bit(s) ``rs_valid`` are 1).
+* The required source registers are marked valid by the offloading core  (``issue_valid`` is 1 and required bit(s) ``rs_valid`` are 1).
 
-A transaction is considered offloaded/accepted on the positive edge of ``clk_i`` when ``x_issue_valid_o``, ``x_issue_ready_i`` are asserted and ``accept`` is 1.
-A transaction is considered not offloaded/rejected on the positive edge of ``clk_i`` when ``x_issue_valid_o`` and ``x_issue_ready_i`` are asserted while ``accept`` is 0.
+A transaction is considered offloaded/accepted on the positive edge of ``clk`` when ``issue_valid``, ``issue_ready`` are asserted and ``accept`` is 1.
+A transaction is considered not offloaded/rejected on the positive edge of ``clk`` when ``issue_valid`` and ``issue_ready`` are asserted while ``accept`` is 0.
 
-The signals in ``x_issue_resp_i`` are valid when ``x_issue_valid_o`` and ``x_issue_ready_i`` are both 1. There are no stability requirements.
+The signals in ``issue_resp`` are valid when ``issue_valid`` and ``issue_ready`` are both 1. There are no stability requirements.
 
 Commit interface
 ~~~~~~~~~~~~~~~~
@@ -341,13 +464,14 @@ Commit interface
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+  |                           |                 | (|processor|)   |                                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_commit_valid_o``      | logic           | output          | Commit request valid. Indicates that |processor| has valid commit or kill information for an offloaded instruction.          |
+  | ``commit_valid``          | logic           | output          | Commit request valid. Indicates that |processor| has valid commit or kill information for an offloaded instruction.          |
   |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| shall be ready                      |
-  |                           |                 |                 | to observe the ``x_commit_valid_o`` and ``commit_kill`` signals at any time coincident or after an issue transaction         |
+  |                           |                 |                 | to observe the ``commit_valid`` and ``commit_kill`` signals at any time coincident or after an issue transaction             |
   |                           |                 |                 | initiation.                                                                                                                  |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_commit_o``            | x_commit_t      | output          | Commit packet.                                                                                                               |
+  | ``commit``                | x_commit_t      | output          | Commit packet.                                                                                                               |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
 .. note::
@@ -360,31 +484,31 @@ Commit interface
   :name: Commit packet type
 
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``id``             | logic [X_ID_WIDTH-1:0] | Identification of the offloaded instruction. Valid when ``x_commit_valid_o`` is 1.                                           |
+  | ``id``             | logic [X_ID_WIDTH-1:0] | Identification of the offloaded instruction. Valid when ``commit_valid`` is 1.                                               |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``commit_kill``    | logic                  | Shall an offloaded instruction be killed? If ``x_commit_valid_o`` is 1 and ``commit_kill`` is 0, then the core guarantees    |
+  | ``commit_kill``    | logic                  | Shall an offloaded instruction be killed? If ``commit_valid`` is 1 and ``commit_kill`` is 0, then the core guarantees        |
   |                    |                        | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
-  |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``x_commit_valid_o`` is 1 and ``commit_kill`` is   |
+  |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``commit_valid`` is 1 and ``commit_kill`` is       |
   |                    |                        | 1, then the offloaded instruction (``id``) shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the|
   |                    |                        | related instruction does/did not change architectural state.                                                                 |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
 
-The ``x_commit_valid_o`` signal will be 1 exactly one ``clk_i`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``id`` value indicates which offloaded
+The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``id`` value indicates which offloaded
 instruction is allowed to be committed or is supposed to be killed. The ``id`` values of subsequent commit transactions will increment (and wrap around)
 
-For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``x_commit_valid_o`` is 1
-and ``commit_kill`` is 0) or that the instruction must be killed (``x_commit_valid_o`` is 1 and ``commit_kill`` is 1). 
+For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``commit_valid`` is 1
+and ``commit_kill`` is 0) or that the instruction must be killed (``commit_valid`` is 1 and ``commit_kill`` is 1). 
 
-A |coprocessor| does not have to wait for ``x_commit_valid_o`` to
+A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
 then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
 
 A |coprocessor| is allowed to perform speculative memory request transactions, but then must be aware that |processor| can signal a failure for speculative memory request transactions to
-certain memory regions. A |coprocessor| shall never perform memory request transactions for instructions that have already been killed at least a ``clk_i`` cycle earlier.
+certain memory regions. A |coprocessor| shall never perform memory request transactions for instructions that have already been killed at least a ``clk`` cycle earlier.
 
-A |coprocessor| is not allowed to perform speculative result transactions. A |coprocessor| shall never perform result  transactions for instructions that have already been killed at least a ``clk_i`` cycle earlier.
+A |coprocessor| is not allowed to perform speculative result transactions. A |coprocessor| shall never perform result  transactions for instructions that have already been killed at least a ``clk`` cycle earlier.
 
-The signals in ``x_commit_o`` are valid when ``x_commit_valid_o`` is 1.
+The signals in ``commit`` are valid when ``commit_valid`` is 1.
 
 Memory (request/response) interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -395,16 +519,17 @@ Memory (request/response) interface
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+  |                           |                 | (|processor|)   |                                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_valid_i``         | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an               |
+  | ``mem_valid``             | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an               |
   |                           |                 |                 | offloaded instruction.                                                                                                       |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_ready_o``         | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``x_mem_req_i`` is accepted by |processor| when  |
-  |                           |                 |                 | ``x_mem_valid_i`` and  ``x_mem_ready_o`` are both 1.                                                                         |
+  | ``mem_ready``             | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``mem_req`` is accepted by |processor| when      |
+  |                           |                 |                 | ``mem_valid`` and  ``mem_ready`` are both 1.                                                                                 |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_req_i``           | x_mem_req_t     | input           | Memory request packet.                                                                                                       |
+  | ``mem_req``               | x_mem_req_t     | input           | Memory request packet.                                                                                                       |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_resp_o``          | x_mem_resp_t    | output          | Memory response packet. Response to memory request (e.g. PMA check response). Note that this is not the memory result.       |
+  | ``mem_resp``              | x_mem_resp_t    | output          | Memory response packet. Response to memory request (e.g. PMA check response). Note that this is not the memory result.       |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
 :numref:`Memory request type` describes the ``x_mem_req_t`` type.
@@ -445,11 +570,11 @@ As for non-offloaded load or store instructions it is assumed that execute permi
 If desired a |coprocessor| can avoid performing speculative loads or stores (as indicated by ``spec`` is 1) as well
 by waiting for the commit interface to signal that the offloaded instruction is no longer speculative before issuing the memory request.
 
-A memory request transaction is defined as the combination of all ``x_mem_req_i`` signals during which ``x_mem_valid_i`` is 1 and the ``id`` remains unchanged. I.e. a new
+A memory request transaction is defined as the combination of all ``mem_req`` signals during which ``mem_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
 
-The signals in ``x_mem_req_i`` are valid when ``x_mem_valid_i`` is 1.
-These signals remain stable during a memory request transaction until the actual handshake is performed with both ``x_mem_valid_i`` and ``x_mem_ready_o`` being 1.
+The signals in ``mem_req`` are valid when ``mem_valid`` is 1.
+These signals remain stable during a memory request transaction until the actual handshake is performed with both ``mem_valid`` and ``mem_ready`` being 1.
 ``wdata`` is only required to remain stable during memory request transactions in which ``we`` is 1.
 
 A |coprocessor| is required to (only) perform a memory request transaction(s) for non-killed instructions that it earlier accepted via the issue interface as load/store
@@ -468,12 +593,12 @@ instructions (i.e. ``loadstore`` is 1).
   | ``exccode``            | logic [5:0]      | Exception code.                                                                                                 |
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``x_mem_req_i``. In case of a synchronous exception
-no corresponding transaction will be performed over the memory result (``x_mem_result_valid_o``) interface.
+The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``. In case of a synchronous exception
+no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR.
 
-The signals in ``x_mem_resp_o`` are valid when ``x_mem_valid_i`` and  ``x_mem_ready_o`` are both 1. There are no stability requirements.
+The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are both 1. There are no stability requirements.
 
 In case the memory request transaction results in a misaligned load/store operation, it is up to |processor| how/whether misaligned load/store operations are supported.
 The memory response and hence the request/response handshake may get delayed.
@@ -491,12 +616,13 @@ Memory result interface
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+  |                           |                 | (|processor|)   |                                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_result_valid_o``  | logic           | output          | Memory result valid. Indicates that |processor| has a valid memory result for the corresponding memory request.              |
+  | ``mem_result_valid``      | logic           | output          | Memory result valid. Indicates that |processor| has a valid memory result for the corresponding memory request.              |
   |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| must be ready to accept             |
-  |                           |                 |                 | ``x_mem_result_o`` whenever ``x_mem_result_valid_o`` is 1.                                                                   |
+  |                           |                 |                 | ``mem_result`` whenever ``mem_result_valid`` is 1.                                                                           |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_mem_result_o``        | x_mem_result_t  | output          | Memory result packet.                                                                                                        |
+  | ``mem_result``            | x_mem_result_t  | output          | Memory result packet.                                                                                                        |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
 :numref:`Memory result type` describes the ``x_mem_result_t`` type.
@@ -530,7 +656,7 @@ transaction (which it must be ready to accept).
    The above asymmetry can only occur at system level when multiple coprocessors are connected to a processor via some interconnect network. ``CORE-V-XIF`` in itself
    is a point-to-point connection, but its definition is written with ``CORE-V-XIF`` interconnect network(s) in mind.
 
-The signals in ``x_mem_result_o`` are valid when ``x_mem_result_valid_o`` is 1.
+The signals in ``mem_result`` are valid when ``mem_result_valid`` is 1.
 
 The memory result interface is optional. If it is included, then the memory (request/response) interface shall also be included.
 
@@ -543,14 +669,15 @@ Result interface
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+  |                           |                 | (|processor|)   |                                                                                                                              |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_result_valid_i``      | logic           | input           | Result request valid. Indicates that the |coprocessor| has a valid result (write data or exception) for an offloaded         |
+  | ``result_valid``          | logic           | input           | Result request valid. Indicates that the |coprocessor| has a valid result (write data or exception) for an offloaded         |
   |                           |                 |                 | instruction.                                                                                                                 |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_result_ready_o``      | logic           | output          | Result request ready. The result signaled via ``x_result_i`` is accepted by the core when                                    |
-  |                           |                 |                 | ``x_result_valid_i`` and  ``x_result_ready_o`` are both 1.                                                                   |
+  | ``result_ready``          | logic           | output          | Result request ready. The result signaled via ``result`` is accepted by the core when                                        |
+  |                           |                 |                 | ``result_valid`` and  ``result_ready`` are both 1.                                                                           |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``x_result_i``            | x_result_t      | input           | Result packet.                                                                                                               |
+  | ``result``                | x_result_t      | input           | Result packet.                                                                                                               |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
 The |coprocessor| shall provide results to the core via the result interface. A |coprocessor| is allowed to provide results to the core in an out of order fashion. A |coprocessor| is only
@@ -580,7 +707,7 @@ have exactly one result group transaction (even if no data needs to be written b
   | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-A result transaction is defined as the combination of all ``x_result_i`` signals during which ``x_result_valid_i`` is 1 and the ``id`` remains unchanged. I.e. a new
+A result transaction is defined as the combination of all ``result`` signals during which ``result_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
 
 The ``exc`` is used to signal synchronous exceptions. 
@@ -590,7 +717,7 @@ code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coproce
 ``we`` is 2 bits wide when `XLEN`` = 32 and ``X_RFR_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).
 
-The signals in ``x_result_i`` are valid when ``x_result_valid_i`` is 1. These signals remain stable during a result transaction.
+The signals in ``result`` are valid when ``result_valid`` is 1. These signals remain stable during a result transaction.
 
 Interface dependencies
 ----------------------
@@ -620,21 +747,21 @@ Handshake rules
 
 The following handshake pairs exist on the eXtension interface:
 
-* ``x_compressed_valid_o`` with ``x_compressed_ready_i``.
-* ``x_issue_valid_o`` with ``x_issue_ready_i``.
-* ``x_commit_valid_o`` with implicit always ready signal.
-* ``x_mem_valid_i`` with ``x_mem_ready_o``.
-* ``x_mem_result_valid_o`` with implicit always ready signal.
-* ``x_result_valid_i`` with ``x_result_ready_o``.
+* ``compressed_valid`` with ``compressed_ready``.
+* ``issue_valid`` with ``issue_ready``.
+* ``commit_valid`` with implicit always ready signal.
+* ``mem_valid`` with ``mem_ready``.
+* ``mem_result_valid`` with implicit always ready signal.
+* ``result_valid`` with ``result_ready``.
 
 The only rule related to valid and ready signals is that:
 
-* A transaction is considered accepted on the positive ``clk_i`` edge when both valid and (implicit or explicit) ready are 1.
+* A transaction is considered accepted on the positive ``clk`` edge when both valid and (implicit or explicit) ready are 1.
 
 Specifically note the following:
 
 * The valid signals are allowed to be retracted by a |processor| (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ready is signaled).
-* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``x_mem_valid_i`` is asserted it must remain asserted until the handshake with ``x_mem_ready_o`` has been performed).
+* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``mem_valid`` is asserted it must remain asserted until the handshake with ``mem_ready`` has been performed).
 * A new transaction can be started by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
 * The ready signal is allowed to be 1 when the corresponding valid signal is not asserted.
 
@@ -643,7 +770,7 @@ Signal dependencies
 
 |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
-* paths from ``x_result_valid_i``, ``x_result_i`` to ``rs``, ``rs_valid``, ``frs``, ``frs_valid``.
+* paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``, ``frs``, ``frs_valid``.
 
 .. note::
 
@@ -652,7 +779,7 @@ Signal dependencies
 
 A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
 
-* paths from ``rs``, ``rs_valid``, ``frs``, ``frs_valid`` to ``x_result_valid_i``, ``x_result_i``.
+* paths from ``rs``, ``rs_valid``, ``frs``, ``frs_valid`` to ``result_valid``, ``result``.
 
 .. note::
 
