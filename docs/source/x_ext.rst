@@ -3,12 +3,12 @@
 eXtension Interface
 ===================
 
-The eXtension interface enables extending |processor| with custom instructions without the need to change the RTL
-of |processor| itself. Custom extensions can be provided in separate modules external to |processor| and are integrated
+The eXtension interface enables extending |processor| with (custom or standardized) instructions without the need to change the RTL
+of |processor| itself. Extensions can be provided in separate modules external to |processor| and are integrated
 at system level by connecting them to the eXtension interface.
 
 The eXtension interface provides low latency (tightly integrated) read and write access to the |processor| register file.
-All opcodes which are not used (i.e. considered to be invalid) by |processor| can be used for custom extensions. It is recommended
+All opcodes which are not used (i.e. considered to be invalid) by |processor| can be used for extensions. It is recommended
 however that custom instructions do not use opcodes that are reserved/used by RISC-V International.
 
 The eXtension interface enables extension of |processor| with:
@@ -56,33 +56,34 @@ Parameters
 | ``X_MEM_WIDTH``              | int (32, 64, 128, 256) | 32            | Memory access width for loads/stores via the eXtension interface.  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_RFR_WIDTH``              | int (32, 64)           | 32            | Register file read access width for the eXtension interface.       |
+|                              |                        |               | Must be at least XLEN.                                             |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_RFW_WIDTH``              | int (32, 64)           | 32            | Register file write access width for the eXtension interface.      |
-|                              |                        |               | Must be at least FLEN.                                             |
+|                              |                        |               | Must be at least XLEN.                                             |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 The major features of CORE-V-XIF are:
 
-* Minimal requirements on custom instruction encoding.
+* Minimal requirements on extension instruction encoding.
 
-  If a custom instruction relies on reading from or writing to the core's general purpose register file, then the standard
+  If an extension instruction relies on reading from or writing to the core's general purpose register file, then the standard
   RISC-V bitfield locations for rs1, rs2, rs3, rd as used for non-compressed instructions ([RISC-V-UNPRIV]_) must be used.
-  Bitfields for unused read or write operands can be fully repurposed. Custom instructions can either use the compressed
+  Bitfields for unused read or write operands can be fully repurposed. Extension instructions can either use the compressed
   or uncompressed instruction format. For offloading compressed instructions the |coprocessor| must provide the core with
   the related non-compressed instructions.
 
 * Support for dual writeback instructions.
 
-  CORE-V-XIF optionally supports implementation of custom ISA extensions mandating dual register file writebacks. Dual writeback
+  CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n <> 0`` and ``Xn`` extracted from instruction bits ``[11:7]``.
 
   Dual register file writeback is only supported if XLEN = 32.
 
 * Support for dual read instructions (per source operand).
 
-  CORE-V-XIF optionally supports implementation of custom ISA extensions mandating dual register file reads. Dual read
+  CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` and ``Xn`` extracted from instruction bits `[19:15]``,
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide six 32-bit operands
   per instruction.
