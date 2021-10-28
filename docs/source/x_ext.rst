@@ -24,10 +24,7 @@ CORE-V-XIF
 
 The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-XIF specification contains the following parameters:
 
-* ``X_REG_WIDTH`` is the width of an integer register in bits and needs to match the XLEN of the |processor|, e.g. ``X_REG_WIDTH`` = 32 for RV32 CPUs.
-* ``X_FREG_WIDTH`` is the (maximum) width of a floating point register in bits and needs to match the FLEN of the |processor|.
 * ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
-* ``X_NUM_FRS`` specifies the number of floating-point register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
 * ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
 * ``X_MEM_WIDTH`` specifies the memory access width for loads/stores via the eXtension interface. (Legal values are TBD.)
 * ``X_RFR_WIDTH`` specifies the register file read access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is (only) 64.
@@ -39,17 +36,8 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | Name                         | Type/Range             | Default       | Description                                                        |
 +==============================+========================+===============+====================================================================+
-| ``X_REG_WIDTH``              | int (32, 64)           | 32            | Width of an integer register in bits. Must be equal to XLEN.       |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_FREG_WIDTH``             | int (32, 64, 128)      | 32            | Width of a floating point register in bits. Must be equal to FLEN. |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_NUM_FRS``                | int (2..3)             | 2             | Number of floating-point register file read ports that can be used |
-|                              |                        |               | by the eXtension interface. In case that the F extension is not    |
-|                              |                        |               | supported by a |processor|, then the related signals               |
-|                              |                        |               | (i.e. ``frs`` and ``frs_valid``) shall be tied to 0.               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_ID_WIDTH``               | int (1..32)            | 4             | Identification width for the eXtension interface.                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
@@ -196,10 +184,7 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
 
   interface if_xif
   #(
-    parameter int          X_REG_WIDTH     =  32, // Width of an integer register in bits. Must be equal to XLEN.
-    parameter int          X_FREG_WIDTH    =  32, // Width of a floating point register in bits. Must be equal to FLEN.
     parameter int          X_NUM_RS        =  2,  // Number of register file read ports that can be used by the eXtension interface
-    parameter int          X_NUM_FRS       =  2,  // Number of floating-point register file read ports that can be used by the eXtension interface
     parameter int          X_ID_WIDTH      =  4,  // Identification width for the eXtension interface
     parameter int          X_MEM_WIDTH     =  32, // Memory access width for loads/stores via the eXtension interface
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
@@ -377,12 +362,6 @@ Issue interface
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rs_valid``           | logic [X_NUM_RS-1:0]     | Validity of the register file source operand(s).                                                                |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``frs[X_NUM_FRS-1:0]`` | logic [X_FREG_WIDTH-1:0] | Floating-point register file source operands for the offloaded instruction. Tied to 0 if no floating-point      |
-  |                        |                          | register file is present.                                                                                       |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``frs_valid``          | logic [X_NUM_FRS-1:0]    | Validity of the floating-point register file source operand(s). Tied to 0 if no floating-point                  |
-  |                        |                          | register file is present.                                                                                       |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
@@ -412,9 +391,6 @@ odd register file index is provided in the upper 32 bits.
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                | 
   |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``float``              | logic                | Qualifies whether a writeback is to the floating-point register file or to integer register file?                |
-  |                        |                      | A |coprocessor| must signal ``float`` as 0 for non-accepted instructions.                                        | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              | 
   |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    | 
@@ -701,8 +677,6 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``        | logic [X_RFW_WIDTH-XLEN:0]      | Register file write enable(s).                                                                                  |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``float``     | logic                           | Floating-point register file or integer register file?                                                          |
-  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exc``       | logic                           | Did the instruction cause a synchronous exception?                                                              |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
@@ -771,7 +745,7 @@ Signal dependencies
 
 |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
-* paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``, ``frs``, ``frs_valid``.
+* paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``.
 
 .. note::
 
@@ -780,7 +754,7 @@ Signal dependencies
 
 A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
 
-* paths from ``rs``, ``rs_valid``, ``frs``, ``frs_valid`` to ``result_valid``, ``result``.
+* paths from ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
 
 .. note::
 
