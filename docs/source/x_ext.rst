@@ -773,3 +773,16 @@ A |coprocessor| is recommended (but not required) to follow the following sugges
 * Make it easy to change opcode assignments such that a |coprocessor| can easily be updated if it conflicts with another |coprocessor|.
 * Clearly document the supported parameter values.
 * Clearly document the usage of features which are optional |processor| (TBD, e.g. ``dualwrite``, ``dualread``).
+
+
+Timing recommendations
+----------------------
+
+The integration of the eXtension interface will vary from |processor| to |processor|, and thus require its own set of timing constraints.
+
+`CV32E40X eXtension timing budget <https://cv32e40x-user-manual.readthedocs.io/en/latest/x_ext.html#timing>`_ shows the recommended timing budgets
+for the coprocessor and (optional) interconnect for the case in which a coprocessor is paired with the CV32E40X (https://github.com/openhwgroup/cv32e40x) processor.
+As is shown in that timing budget, the coprocessor only receives a small part of the timing budget on the paths through ``xif_issue_if.issue_req.rs*``.
+This enables the coprocessor to source its operands directly from the CV32E40X register file bypass network, thereby preventing stall cycles in case an
+offloaded instruction depends on the result of a preceding non-offloaded instruction. This implies that, if a coprocessor is intended for pairing with the CV32E40X,
+it will be beneficial timing wise if the coprocessor does not directly operate on the ``rs*`` source inputs, but registers them instead. To maximize utilization of a coprocessor with various CPUs, such registers could be made optional via a parameter.
