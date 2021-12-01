@@ -571,11 +571,14 @@ instructions (i.e. ``loadstore`` is 1).
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exccode``            | logic [5:0]      | Exception code.                                                                                                 |
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``dbg``                | logic            | Did the memory request cause a debug trigger match with ``mcontrol.timing`` = 0?                                |
+  +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``. In case of a synchronous exception
-no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
+The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``.
+The ``dbg`` is used to signal a debug trigger match resulting with ``mcontrol.timing`` = 0 from the memory request transaction defined in ``mem_req``.
+In case of a synchronous exception or debug trigger match with *before* timing no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
-code bitfield of the ``mcause`` CSR.
+code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
 
 The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are both 1. There are no stability requirements.
 
@@ -618,12 +621,15 @@ Memory result interface
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``err``       | logic                     | Did the instruction cause a bus error?                                                                          |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``dbg``       | logic                     | Did the read data cause a debug trigger match with ``mcontrol.timing`` = 0?                                     |
+  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The memory result interface is used to provide a result from |processor| to the |coprocessor| for every memory transaction (i.e. for both read and write transactions).
 No memory result transaction is performed for instructions that led to a synchronous exception as signaled via the memory (request/response) interface. If a
 memory (request/response) transaction was not killed, then the corresponding memory result transaction will not be killed either.
 Memory result transactions are provided by the |processor| in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
-signals whether a bus error occurred. If so, then an NMI is signaled, just like for bus errors caused by non-offloaded loads and stores. 
+signals whether a bus error occurred. If so, then an NMI is signaled, just like for bus errors caused by non-offloaded loads and stores. The ``dbg`` signal
+signals whether a debug trigger match with *before* timing occurred ``rdata`` (for a read transaction only).
 
 From a |processor|'s point of view each memory request transaction has an associated memory result transaction. The same is not true for a |coprocessor| as it can receive
 memory result transactions for instructions that it did not accept and for which it did not issue a memory request transaction. Such memory result transactions shall
