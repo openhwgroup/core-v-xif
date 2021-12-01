@@ -287,7 +287,8 @@ in response to receiving this.
 
 The ``id`` is a unique identification number for offloaded instructions. An ``id`` value can be reused after an earlier instruction related to the same ``id`` value
 has fully completed (i.e. because it was not accepted for offload, because it was killed or because it retired). The same ``id`` value will be used for all transaction
-packets on all interfaces that logically relate to the same instruction.
+packets on all interfaces that logically relate to the same instruction. The ``id`` values for in-flight offloaded instructions are only required to be unique; they
+are for example not required to be incremental.
 
 A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted (even if ``compressed_ready`` remained 0).
@@ -453,7 +454,8 @@ Commit interface
 
 .. note::
 
-   The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction.
+   The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction. A |coprocessor| can ignore the
+   ``commit_kill`` signal for instructions that it did not accept. A |processor| can signal either ``commit_kill`` = 0 or ``commit_kill``  = 1 for non-accepted instructions.
 
 :numref:`Commit packet type` describes the ``x_commit_t`` type.
 
@@ -471,7 +473,7 @@ Commit interface
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
 
 The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``id`` value indicates which offloaded
-instruction is allowed to be committed or is supposed to be killed. The ``id`` values of subsequent commit transactions will increment (and wrap around)
+instruction is allowed to be committed or is supposed to be killed.
 
 For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``commit_valid`` is 1
 and ``commit_kill`` is 0) or that the instruction must be killed (``commit_valid`` is 1 and ``commit_kill`` is 1). 
@@ -707,12 +709,13 @@ The following rules apply to the relative ordering of the interface handshakes:
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
   if no writeback needs to happen to the core's register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
   on the issue interface.
-* A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated.
-* A memory (request/response) interface handshake cannot be initiated before the corresponding issue interface handshake is initiated.
-* A memory result interface transactions cannot be initiated before the corresponding memory request interface handshake is completed. Note that a |coprocessor|
-  shall be able to tolerate memory result transactions for which it did not perform the corresponding memory request handshake itself.
-* A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated.
-* A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit).
+* A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+* A memory (request/response) interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+* Memory result interface transactions cannot be initiated before the corresponding memory request interface handshake is completed. They are allowed to be initiated at the same time as
+  or after completion of the memory request interface handshake. Note that a |coprocessor| shall be able to tolerate memory result transactions for which it did not perform the corresponding
+  memory request handshake itself.
+* A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+* A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.
 * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
 * A memory result interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
