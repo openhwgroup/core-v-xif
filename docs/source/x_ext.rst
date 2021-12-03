@@ -39,7 +39,7 @@ Parameters
 | ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ID_WIDTH``               | int (1..32)            | 4             | Identification width for the eXtension interface.                  |
+| ``X_ID_WIDTH``               | int (3..32)            | 4             | Identification width for the eXtension interface.                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_MEM_WIDTH``              | int (32, 64, 128, 256) | 32            | Memory access width for loads/stores via the eXtension interface.  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
@@ -286,8 +286,9 @@ The ``instr[15:0]`` signal is used to signal compressed instructions that are co
 in response to receiving this.
 
 The ``id`` is a unique identification number for offloaded instructions. An ``id`` value can be reused after an earlier instruction related to the same ``id`` value
-has fully completed (i.e. because it was not accepted for offload, because it was killed or because it retired). The same ``id`` value will be used for all transaction
-packets on all interfaces that logically relate to the same instruction. The ``id`` values for in-flight offloaded instructions are only required to be unique; they
+has fully completed (i.e. because it was not accepted for offload and the related commit handshake has been performed, because it was killed or because it performed
+the related result handshake). The same ``id`` value will be used for all transaction packets on all interfaces that logically relate to the same instruction.
+The ``id`` values for in-flight offloaded instructions are only required to be unique; they
 are for example not required to be incremental.
 
 A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
