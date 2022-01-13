@@ -684,7 +684,7 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rd``        | logic [4:0]                     | Register file destination address(es).                                                                          |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``we``        | logic [X_RFW_WIDTH-XLEN:0]      | Register file write enable(s).                                                                                  |
+  | ``we``        | logic [X_RFW_WIDTH/XLEN-1:0]    | Register file write enable(s).                                                                                  |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exc``       | logic                           | Did the instruction cause a synchronous exception?                                                              |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -698,7 +698,7 @@ The ``exc`` is used to signal synchronous exceptions.
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
 
-``we`` is 2 bits wide when `XLEN`` = 32 and ``X_RFR_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
+``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).
 
 The signals in ``result`` are valid when ``result_valid`` is 1. These signals remain stable during a result transaction.
