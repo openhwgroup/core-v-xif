@@ -489,7 +489,9 @@ certain memory regions. A |coprocessor| shall never *initiate* memory request tr
 transaction or memory result transaction is already in progress at the time that the |processor| signals ``commit_kill`` = 1, then these transaction(s) will complete as normal (although the
 information contained within the memory response and memory result shall be ignored by the |coprocessor|).
 
-A |coprocessor| is not allowed to perform speculative result transactions. A |coprocessor| shall never perform result transactions for instructions that have already been killed at least a ``clk`` cycle earlier.
+A |coprocessor| is not allowed to perform speculative result transactions and shall therefore never initiate a result transaction for instructions that have not yet received a commit transaction
+with ``commit_kill`` = 0. The earliest point at which a |coprocessor| can initiate a result handshake for an instruction is therefore the cycle in which ``commit_valid`` = 1 and ``commit_kill`` = 0
+for that instruction.
 
 The signals in ``commit`` are valid when ``commit_valid`` is 1.
 
