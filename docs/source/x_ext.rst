@@ -772,8 +772,7 @@ Specifically note the following:
 
 * The valid signals are allowed to be retracted by a |processor| (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ready is signaled).
 * A new transaction can be started by a |processor| by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
-* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``mem_valid`` is asserted it must remain asserted until the handshake with ``mem_ready`` has been performed).
-* A new transaction can not be started by a |coprocessor| by changing the ``id`` signal and keeping the valid signal asserted.
+* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``mem_valid`` is asserted it must remain asserted until the handshake with ``mem_ready`` has been performed). A new transaction can therefore not be started by a |coprocessor| by just changing the ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction. The cycle after receiving the ready signal, a next (back-to-back) transaction is allowed to be started by just keeping the valid signal high and changing the ``id`` to that of the next transaction.
 * The ready signals is allowed to be 1 when the corresponding valid signal is not asserted.
 
 Signal dependencies
