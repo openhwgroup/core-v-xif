@@ -707,7 +707,7 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``        | logic [X_RFW_WIDTH/XLEN-1:0]    | Register file write enable(s).                                                                                  |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecswe``     | logic                           | Write enable for ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``.                                                |
+  | ``ecswe``     | logic [2:0]                     | Write enables for ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``.                                                |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``ecsdata``   | logic [5:0]                     | Write data value for {``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}.                                          |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -726,7 +726,10 @@ code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coproce
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).
 
-If `ecswe`` is 1, then the value in ``ecsdata`` is written to {``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``} while taking into account the WARL rules that might exist for these bitfields in the |processor|.
+If `ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is written to ``mstatus.xs``.
+If `ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
+If `ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
+The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
 
 The signals in ``result`` are valid when ``result_valid`` is 1. These signals remain stable during a result transaction.
 
