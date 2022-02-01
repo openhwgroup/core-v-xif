@@ -51,7 +51,7 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Default value for ``mstatus.vs``.                                  |
+| ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Default value for ``mstatus.xs``.                                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 The major features of CORE-V-XIF are:
@@ -192,7 +192,7 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
     parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
-    parameter logic [ 1:0] X_ECS_XS        =  '0  // Default value for ``mstatus.vs``
+    parameter logic [ 1:0] X_ECS_XS        =  '0  // Default value for ``mstatus.xs``
   );
 
     ... // typedefs omitted
