@@ -289,7 +289,8 @@ The ``instr[15:0]`` signal is used to signal compressed instructions that are co
 in response to receiving this.
 
 The ``id`` is a unique identification number for offloaded instructions. An ``id`` value can be reused after an earlier instruction related to the same ``id`` value
-has fully completed (i.e. because it was not accepted for offload and the related commit handshake has been performed, because it was killed or because it performed
+has fully completed (i.e. because it was not accepted for offload and the related commit handshake has been performed, because it was killed and has no memory
+request/response handshake or memory result hanshake that are in progress or still need to be performed, or because it performed
 the related result handshake). The same ``id`` value will be used for all transaction packets on all interfaces that logically relate to the same instruction.
 The ``id`` values for in-flight offloaded instructions are only required to be unique; they
 are for example not required to be incremental.
@@ -477,7 +478,7 @@ Commit interface
 .. note::
 
    The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction. A |coprocessor| can ignore the
-   ``commit_kill`` signal for instructions that it did not accept. A |processor| can signal either ``commit_kill`` = 0 or ``commit_kill``  = 1 for non-accepted instructions.
+   ``commit_kill`` signal for instructions that it did not accept. A |processor| can signal either ``commit_kill`` = 0 or ``commit_kill`` = 1 for non-accepted instructions.
 
 :numref:`Commit packet type` describes the ``x_commit_t`` type.
 
@@ -504,10 +505,14 @@ A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
 then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
 
-A |coprocessor| is allowed to perform speculative memory request transactions, but then must be aware that |processor| can signal a failure for speculative memory request transactions to
-certain memory regions. A |coprocessor| shall never perform memory request transactions for instructions that have already been killed at least a ``clk`` cycle earlier.
+A |coprocessor| is allowed to perform speculative memory request transactions, but then it must be aware that |processor| can signal a failure for speculative memory request transactions to
+certain memory regions. A |coprocessor| shall never *initiate* memory request transactions for instructions that have already been killed at least a ``clk`` cycle earlier. If a memory request
+transaction or memory result transaction is already in progress at the time that the |processor| signals ``commit_kill`` = 1, then these transaction(s) will complete as normal (although the
+information contained within the memory response and memory result shall be ignored by the |coprocessor|).
 
-A |coprocessor| is not allowed to perform speculative result transactions. A |coprocessor| shall never perform result  transactions for instructions that have already been killed at least a ``clk`` cycle earlier.
+A |coprocessor| is not allowed to perform speculative result transactions and shall therefore never initiate a result transaction for instructions that have not yet received a commit transaction
+with ``commit_kill`` = 0. The earliest point at which a |coprocessor| can initiate a result handshake for an instruction is therefore the cycle in which ``commit_valid`` = 1 and ``commit_kill`` = 0
+for that instruction.
 
 The signals in ``commit`` are valid when ``commit_valid`` is 1.
 
@@ -568,20 +573,35 @@ they are initiated by |processor| itself or by a |coprocessor| via the memory re
 * Write buffer usage
 
 As for non-offloaded load or store instructions it is assumed that execute permission is never required for offloaded load or store instructions.
-If desired a |coprocessor| can avoid performing speculative loads or stores (as indicated by ``spec`` is 1) as well
+If desired a |coprocessor| can always avoid performing speculative loads or stores (as indicated by ``spec`` = 1)
 by waiting for the commit interface to signal that the offloaded instruction is no longer speculative before issuing the memory request.
 
-A memory request transaction is defined as the combination of all ``mem_req`` signals during which ``mem_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
-transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
+Whether a load or store is treated as being speculative or not by the |processor| shall only depend on the ``spec`` signal. Specifically, the |processor| shall
+ignore whatever value it might have communicated via ``commit_kill`` with respect to whether it treats a memory request as speculative or not. A |coprocessor|
+is allowed to signal ``spec`` = 1 without taking the commit transaction into account (so for example even after ``commit_kill`` = 0 has already been signaled).
 
-The signals in ``mem_req`` are valid when ``mem_valid`` is 1.
-These signals remain stable during a memory request transaction until the actual handshake is performed with both ``mem_valid`` and ``mem_ready`` being 1.
-``wdata`` is only required to remain stable during memory request transactions in which ``we`` is 1.
+A memory request transaction starts in the cycle that ``mem_valid`` = 1 and ends in the cycle that both ``mem_valid`` = 1 and ``mem_ready`` = 1. The signals in ``mem_req`` are
+valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable during a memory request transaction, except that ``wdata`` is only required to remain stable during
+memory request transactions in which ``we`` is 1. 
 
-A |coprocessor| is required to (only) perform a memory request transaction(s) for non-killed instructions that it earlier accepted via the issue interface as load/store
-instructions (i.e. ``loadstore`` is 1).
+A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
+shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id``. Normally a sequence of memory request transactions ends with a
+transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
+then it shall issue no further memory request transactions for the same instruction (``id``). Similarly, after having received `commit_kill`` = 1 no further memory request transactions shall
+be issued by a |coprocessor| for the same instruction (``id``). A sequence of memory request transactions therefore does not necessarily end with a transaction with ``last`` = 1.
 
-:numref:`Memory request type` describes the ``x_mem_resp_t`` type.
+A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
+A |coprocessor| shall never initiate a memory request transaction(s) for offloaded accepted non-load/store instructions (``loadstore`` = 0).
+A |coprocessor| shall never initiate a non-speculative memory request transaction(s) for offloaded accepted load/store instructions before receiving the commit transaction.
+A |coprocessor| may initiate a speculative memory request transaction(s) for offloaded accepted load/store instructions before receiving the commit transaction.
+A |coprocessor| may initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions in the same cycle as receiving ``commit_kill`` = 1.
+A |coprocessor| may initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions in the same cycle as receiving ``commit_kill`` = 0.
+A |coprocessor| shall never initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions after receiving ``commit_kill`` = 1 via the commit transaction.
+A |coprocessor| shall initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
+
+A |processor| shall always (eventually) complete any memory request transaction by signaling ``mem_ready`` = 1 (also for transactions that relate to killed instructions).
+
+:numref:`Memory response type` describes the ``x_mem_resp_t`` type.
 
 .. table:: Memory response type
   :name: Memory response type
@@ -604,8 +624,10 @@ code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *befor
 
 The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are both 1. There are no stability requirements.
 
-In case the memory request transaction results in a misaligned load/store operation, it is up to |processor| how/whether misaligned load/store operations are supported.
-The memory response and hence the request/response handshake may get delayed.
+If ``mem_resp`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_resp`` and the |coprocessor| shall ignore the value received via ``mem_resp``.
+
+In case the memory request transaction results in a misaligned load/store operation, it is up to |processor| how or whether misaligned load/store operations are supported.
+The memory response and hence the memory request/response handshake may get delayed.
 If the first access results in a synchronous exception, the handshake can be performed immediately.
 Otherwise, the handshake is performed once its known whether the second access results in a synchronous exception or not.
 
@@ -646,14 +668,18 @@ Memory result interface
   | ``dbg``       | logic                     | Did the read data cause a debug trigger match with ``mcontrol.timing`` = 0?                                     |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The memory result interface is used to provide a result from |processor| to the |coprocessor| for every memory transaction (i.e. for both read and write transactions).
-No memory result transaction is performed for instructions that led to a synchronous exception as signaled via the memory (request/response) interface. If a
-memory (request/response) transaction was not killed, then the corresponding memory result transaction will not be killed either.
+The memory result interface is used to provide a result from |processor| to the |coprocessor| for *every* memory transaction (i.e. for both read and write transactions).
+No memory result transaction is performed for instructions that led to a synchronous exception or debug trigger match with *before* timing as signaled via the memory (request/response) interface.
+Otherwise, one memory result transaction is performed per memory (request/response) transaction (even for killed instructions).
+
 Memory result transactions are provided by the |processor| in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
 signals whether a bus error occurred. If so, then an NMI is signaled, just like for bus errors caused by non-offloaded loads and stores. The ``dbg`` signal
 signals whether a debug trigger match with *before* timing occurred ``rdata`` (for a read transaction only).
 
-From a |processor|'s point of view each memory request transaction has an associated memory result transaction. The same is not true for a |coprocessor| as it can receive
+If ``mem_result`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_result`` and the |coprocessor| shall ignore the value received via ``mem_result``.
+
+From a |processor|'s point of view each memory request transaction has an associated memory result transaction (except if a synchronous exception or debug trigger match with *before* timing
+is signaled via the memory (request/response) interface). The same is not true for a |coprocessor| as it can receive
 memory result transactions for instructions that it did not accept and for which it did not issue a memory request transaction. Such memory result transactions shall
 be ignored by a |coprocessor|. In case that a |coprocessor| did issue a memory request transaction, then it is guaranteed to receive a corresponding memory result
 transaction (which it must be ready to accept).
@@ -716,8 +742,9 @@ have exactly one result group transaction (even if no data needs to be written b
   | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-A result transaction is defined as the combination of all ``result`` signals during which ``result_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
-transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
+A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
+valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction, except that ``data`` is only required to remain stable during
+result transactions in which ``we`` is not 0.
 
 The ``exc`` is used to signal synchronous exceptions. 
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
@@ -754,7 +781,7 @@ The following rules apply to the relative ordering of the interface handshakes:
 * A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
 * A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.
 * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
-* A memory result interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
+* A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
 
 Handshake rules
@@ -776,9 +803,9 @@ The only rule related to valid and ready signals is that:
 Specifically note the following:
 
 * The valid signals are allowed to be retracted by a |processor| (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ready is signaled).
-* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``mem_valid`` is asserted it must remain asserted until the handshake with ``mem_ready`` has been performed).
-* A new transaction can be started by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
-* The ready signal is allowed to be 1 when the corresponding valid signal is not asserted.
+* A new transaction can be started by a |processor| by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
+* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``mem_valid`` is asserted it must remain asserted until the handshake with ``mem_ready`` has been performed). A new transaction can therefore not be started by a |coprocessor| by just changing the ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction. The cycle after receiving the ready signal, a next (back-to-back) transaction is allowed to be started by just keeping the valid signal high and changing the ``id`` to that of the next transaction.
+* The ready signals is allowed to be 1 when the corresponding valid signal is not asserted.
 
 Signal dependencies
 -------------------
@@ -786,6 +813,7 @@ Signal dependencies
 |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
 * paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``.
+* paths from ``mem_valid``, ``mem_req`` to ``mem_ready``, ``mem_resp``.
 
 .. note::
 
@@ -795,6 +823,7 @@ Signal dependencies
 A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
 
 * paths from ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
+* paths from ``mem_ready``, ``mem_resp`` to ``mem_valid``, ``mem_req``.
 
 .. note::
 
