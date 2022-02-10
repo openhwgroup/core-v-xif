@@ -51,6 +51,8 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Default value for ``mstatus.xs``.                                  |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 The major features of CORE-V-XIF are:
 
@@ -189,7 +191,8 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     parameter int          X_MEM_WIDTH     =  32, // Memory access width for loads/stores via the eXtension interface
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
-    parameter logic [31:0] X_MISA          =  '0  // MISA extensions implemented on the eXtension interface
+    parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
+    parameter logic [ 1:0] X_ECS_XS        =  '0  // Default value for ``mstatus.xs``
   );
 
     ... // typedefs omitted
@@ -321,8 +324,14 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 * is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
 * is considered neither to be valid by the |processor| nor accepted by the |coprocessor| (``accept`` = 0).
 
+The ``accept`` signal of the *compressed* interface merely indicates that the |coprocessor| accepts the compressed instruction as an instruction that it implements and translates into
+its uncompressed counterpart.
 Typically an accepted transaction over the compressed interface will be followed by a corresponding transaction over the issue interface, but there is no requirement
-on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative).
+on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative). Only when an ``accept``
+is signaled over the *issue* interface, then an instruction is considered *accepted for offload*. 
+
+The |coprocessor| shall not take the ``mstatus`` based extension context status into account when generating the ``accept`` signal on its *compressed* interface (but it shall take
+it into account when generating the ``accept`` signal on its *issue* interface).
 
 Issue interface
 ~~~~~~~~~~~~~~~
@@ -365,22 +374,31 @@ Issue interface
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rs_valid``           | logic [X_NUM_RS-1:0]     | Validity of the register file source operand(s).                                                                |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
 transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
 
-The ``instr``, ``mode``, ``id`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. The ``rs`` is only considered valid when ``issue_valid`` is 1 and the corresponding
-bit in ``rs_valid`` is 1 as well.
+The ``instr``, ``mode``, ``id``,  ``ecs``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. 
+The ``rs`` signal is only considered valid when ``issue_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
+The ``ecs`` signal is only considered valid when ``issue_valid`` is 1 and ``ecs_valid`` is 1 as well.
 
 The ``instr`` and ``mode`` signals remain stable during an issue request transaction. The ``rs_valid`` bits are not required to be stable during the transaction. Each bit
 can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction. The ``rs`` signals are only required to be stable during the part
-of a transaction in which these signals are considered to be valid.
+of a transaction in which these signals are considered to be valid. The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from
+0 to 1, but is not allowed to transition back to 0 during a transaction. The ``ecs`` signal is only required to be stable during the part of a transaction in which
+this signals is considered to be valid.
 
 The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |coprocessor|. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
 odd register file index is provided in the upper 32 bits.
+
+The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
 
 :numref:`Issue response type` describes the ``x_issue_resp_t`` type.
 
@@ -405,6 +423,9 @@ odd register file index is provided in the upper 32 bits.
   |                        |                      | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        | 
   |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   | 
   |                        |                      | more transactions via the memory group interface.                                                                | 
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
+  | ``ecswrite``           | logic                | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        | 
+  |                        |                      | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception in the |coprocessor| itself?                |
   |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          | 
@@ -712,6 +733,10 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``        | logic [X_RFW_WIDTH/XLEN-1:0]    | Register file write enable(s).                                                                                  |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecswe``     | logic [2:0]                     | Write enables for ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``.                                               |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecsdata``   | logic [5:0]                     | Write data value for {``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}.                                          |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exc``       | logic                           | Did the instruction cause a synchronous exception?                                                              |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
@@ -727,6 +752,13 @@ code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coproce
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).
+
+If `ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is written to ``mstatus.xs``.
+If `ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
+If `ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
+The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
+
+The signals in ``result`` are valid when ``result_valid`` is 1. These signals remain stable during a result transaction.
 
 Interface dependencies
 ----------------------
