@@ -570,15 +570,19 @@ valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable du
 memory request transactions in which ``we`` is 1. 
 
 A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
-shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id``. Normally a sequence of memory request transactions ends with a
+shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id`` and it shall signal
+``last`` = 1 otherwise. Once a |coprocessor| signals ``last`` = 1 for a memory request transaction it shall not issue further memory
+request transactions for the same ``id``.
+
+Normally a sequence of memory request transactions ends with a
 transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
 then it shall issue no further memory request transactions for the same instruction (``id``). Similarly, after having received `commit_kill`` = 1 no further memory request transactions shall
-be issued by a |coprocessor| for the same instruction (``id``). A sequence of memory request transactions therefore does not necessarily end with a transaction with ``last`` = 1.
+be issued by a |coprocessor| for the same instruction (``id``).
 
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
 A |coprocessor| shall never initiate a non-speculative memory request transaction(s) unless on or after a cycle of receiving a commit transaction with ``commit_kill`` = 0.
-A |coprocessor| shall never initiate a speculative memory request transaction(s) after receiving ``commit_kill`` = 1 via the commit transaction.
+A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cyle in which it receives ``commit_kill`` = 1 via the commit transaction.
 A |coprocessor| shall initiate memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
 
 A |processor| shall always (eventually) complete any memory request transaction by signaling ``mem_ready`` = 1 (also for transactions that relate to killed instructions).
