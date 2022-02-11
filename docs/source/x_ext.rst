@@ -295,8 +295,11 @@ the related result handshake). The same ``id`` value will be used for all transa
 The ``id`` values for in-flight offloaded instructions are only required to be unique; they
 are for example not required to be incremental.
 
-A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
-transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted (even if ``compressed_ready`` remained 0).
+A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged.
+A |processor| is allowed to retract its compressed request transaction before it is accepted with ``compressed_ready`` = 1 and it can do so in the following ways:
+
+* Set ``compressed_valid`` = 0.
+* Keep ``compressed_valid`` = 1, but change the ``id`` signal (and if desired change the other signals in ``compressed_req``).
 
 The signals in ``compressed_req`` are valid when ``compressed_valid`` is 1. These signals remain stable during a compressed request transaction (if ``id`` changes while ``compressed_valid`` remains 1,
 then a new compressed request transaction started).
@@ -379,8 +382,11 @@ Issue interface
   | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-A issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged. I.e. a new
-transaction can be started by just changing the ``id`` signal and keeping the valid signal asserted.
+An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged.
+A |processor| is allowed to retract its issue request transaction before it is accepted with ``issue_ready`` = 1 and it can do so in the following ways:
+
+* Set ``issue_valid`` = 0.
+* Keep ``issue_valid`` = 1, but change the ``id`` signal (and if desired change the other signals in ``issue_req``).
 
 The ``instr``, ``mode``, ``id``,  ``ecs``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. 
 The ``rs`` signal is only considered valid when ``issue_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
@@ -585,19 +591,20 @@ valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable du
 memory request transactions in which ``we`` is 1. 
 
 A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
-shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id``. Normally a sequence of memory request transactions ends with a
+shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id`` and it shall signal
+``last`` = 1 otherwise. Once a |coprocessor| signals ``last`` = 1 for a memory request transaction it shall not issue further memory
+request transactions for the same ``id``.
+
+Normally a sequence of memory request transactions ends with a
 transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
 then it shall issue no further memory request transactions for the same instruction (``id``). Similarly, after having received `commit_kill`` = 1 no further memory request transactions shall
-be issued by a |coprocessor| for the same instruction (``id``). A sequence of memory request transactions therefore does not necessarily end with a transaction with ``last`` = 1.
+be issued by a |coprocessor| for the same instruction (``id``).
 
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
-A |coprocessor| shall never initiate a memory request transaction(s) for offloaded accepted non-load/store instructions (``loadstore`` = 0).
-A |coprocessor| shall never initiate a non-speculative memory request transaction(s) for offloaded accepted load/store instructions before receiving the commit transaction.
-A |coprocessor| may initiate a speculative memory request transaction(s) for offloaded accepted load/store instructions before receiving the commit transaction.
-A |coprocessor| may initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions in the same cycle as receiving ``commit_kill`` = 1.
-A |coprocessor| may initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions in the same cycle as receiving ``commit_kill`` = 0.
-A |coprocessor| shall never initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions after receiving ``commit_kill`` = 1 via the commit transaction.
-A |coprocessor| shall initiate a (speculative or non-speculative) memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
+A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
+A |coprocessor| shall never initiate a non-speculative memory request transaction(s) unless in the same cycle or after the cycle of receiving a commit transaction with ``commit_kill`` = 0.
+A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cyle in which it receives ``commit_kill`` = 1 via the commit transaction.
+A |coprocessor| shall initiate memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
 
 A |processor| shall always (eventually) complete any memory request transaction by signaling ``mem_ready`` = 1 (also for transactions that relate to killed instructions).
 
@@ -810,7 +817,7 @@ Specifically note the following:
 Signal dependencies
 -------------------
 
-|processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
+A |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
 * paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``.
 * paths from ``mem_valid``, ``mem_req`` to ``mem_ready``, ``mem_resp``.
@@ -829,6 +836,10 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
 
    The above implies that a |coprocessor| has a pipeline stage separating the register file operands from its result generating circuit (similar to
    the separation between decode stage and execute stage found in many CPUs).
+
+.. note::
+   As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
+   depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``id``).
 
 CPU recommendations
 -------------------
