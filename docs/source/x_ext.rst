@@ -54,6 +54,12 @@ Parameters
 | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Default value for ``mstatus.xs``.                                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
+.. note::
+
+   A |processor| shall clearly document which ``X_MISA`` values it can support and there is no requirement that a |processor| can support
+   all possible ``X_MISA`` values. For example, if a |processor| only supports machine mode, then it is not reasonable to expect that the
+   |processor| will additionally support user mode by just setting the ``X_MISA[20]`` (``U`` bit) to 1.
+
 The major features of CORE-V-XIF are:
 
 * Minimal requirements on extension instruction encoding.
@@ -603,7 +609,7 @@ be issued by a |coprocessor| for the same instruction (``id``).
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
 A |coprocessor| shall never initiate a non-speculative memory request transaction(s) unless in the same cycle or after the cycle of receiving a commit transaction with ``commit_kill`` = 0.
-A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cyle in which it receives ``commit_kill`` = 1 via the commit transaction.
+A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cycle in which it receives ``commit_kill`` = 1 via the commit transaction.
 A |coprocessor| shall initiate memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
 
 A |processor| shall always (eventually) complete any memory request transaction by signaling ``mem_ready`` = 1 (also for transactions that relate to killed instructions).
