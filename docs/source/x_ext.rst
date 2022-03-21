@@ -841,6 +841,19 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
    As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
    depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``id``).
 
+Handshake dependencies
+----------------------
+
+In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
+
+* The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
+* Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows: Compressed transaction, issue transaction, commit transaction, memory (request/response) transaction, memory result transaction, result transaction.
+* Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``issue_ready`` = 1
+because it first wants to see ``result_ready`` = 1 for an older instruction).
+
+.. note::
+   The use of the words *depend* and *dependent* relate to logical relationships, which is broader than combinatorial relationships.
+
 CPU recommendations
 -------------------
 
