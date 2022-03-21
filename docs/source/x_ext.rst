@@ -53,6 +53,13 @@ Parameters
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Default value for ``mstatus.xs``.                                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_DUALREAD``               | int (0..3)             | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
+|                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
+|                              |                        |               | Legal values are determined by the |processor|.                    |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_DUALWRITE``              | int (0..1)             | 0             | Is dual write supported? 0: No, 1: Yes.                            |
+|                              |                        |               | Legal values are determined by the |processor|.                    |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 The major features of CORE-V-XIF are:
 
@@ -64,21 +71,21 @@ The major features of CORE-V-XIF are:
   or uncompressed instruction format. For offloading compressed instructions the |coprocessor| must provide the core with
   the related non-compressed instructions.
 
-* Support for dual writeback instructions.
+* Support for dual writeback instructions (optional, based on ``X_DUALWRITE``).
 
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n <> 0`` and ``Xn`` extracted from instruction bits ``[11:7]``.
 
-  Dual register file writeback is only supported if XLEN = 32.
+  Dual register file writeback is only supported for ``XLEN`` = 32.
 
-* Support for dual read instructions (per source operand).
+* Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
-  is supported for even-odd register pairs (``Xn`` and ``Xn+1`` and ``Xn`` extracted from instruction bits `[19:15]``,
-  ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide six 32-bit operands
+  is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``Xn`` extracted from instruction bits `[19:15]``,
+  ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
 
-  Dual register file read is only supported if XLEN = 32.
+  Dual register file read is only supported for XLEN = 32.
 
 * Support for ternary operations.
 
@@ -192,7 +199,9 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
     parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
-    parameter logic [ 1:0] X_ECS_XS        =  '0  // Default value for ``mstatus.xs``
+    parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for ``mstatus.xs``
+    parameter logic        X_DUALREAD      =  0,  // Dual register file read
+    parameter logic        X_DUALWRITE     =  0   // Dual register file write
   );
 
     ... // typedefs omitted
@@ -402,7 +411,8 @@ The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |co
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
-odd register file index is provided in the upper 32 bits.
+odd register file index is provided in the upper 32 bits. The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources
+it is supported.
 
 The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
 
@@ -420,9 +430,16 @@ The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CS
   |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              | 
+  |                        |                      | Only allowed if ``X_DUALWRITE`` = 1, instruction bits ``[11:7]`` are even and not 0.                             | 
   |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``dualread``           | logic                | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        | 
+  | ``dualread``           | logic [2:0]          | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        | 
+  |                        |                      | ``dualread[0]`` = 1 signals that dual read is required from ``rs1`` and ``rs1+1`` (only allowed if               | 
+  |                        |                      | ``X_DUALREAD`` > 0 and instruction bits  ``[19:15]`` are even).                                                  | 
+  |                        |                      | ``dualread[1]`` = 1 signals that dual read is required from ``rs2`` and ``rs2+1`` (only allowed if               | 
+  |                        |                      | ``X_DUALREAD`` > 1 and instruction bits  ``[24:20]`` are even).                                                  | 
+  |                        |                      | ``dualread[2]`` = 1 signals that dual read is required from ``rs3`` and ``rs3+1`` (only allowed if               | 
+  |                        |                      | ``X_DUALREAD`` > 2 and instruction bits  ``[31:27]`` are even).                                                  | 
   |                        |                      | A |coprocessor| must signal ``dualread`` as 0 for non-accepted instructions.                                     | 
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
   | ``loadstore``          | logic                | Is the offloaded instruction a load/store instruction?                                                           | 
@@ -851,9 +868,8 @@ A |coprocessor| is recommended (but not required) to follow the following sugges
 
 * Avoid using opcodes that are reserved or already used by RISC-V International unless for supporting a standard RISC-V extension.
 * Make it easy to change opcode assignments such that a |coprocessor| can easily be updated if it conflicts with another |coprocessor|.
-* Clearly document the supported parameter values.
-* Clearly document the usage of features which are optional |processor| (TBD, e.g. ``dualwrite``, ``dualread``).
-
+* Clearly document the supported and required parameter values.
+* Clearly document the supported and required interfaces (the memory (request/response) interface and memory result interface are optional).
 
 Timing recommendations
 ----------------------
