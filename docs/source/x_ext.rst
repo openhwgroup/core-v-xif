@@ -645,7 +645,7 @@ A |processor| shall always (eventually) complete any memory request transaction 
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``.
-The ``dbg`` is used to signal a debug trigger match resulting with ``mcontrol.timing`` = 0 from the memory request transaction defined in ``mem_req``.
+The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0 resulting from the memory request transaction defined in ``mem_req``.
 In case of a synchronous exception or debug trigger match with *before* timing no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
@@ -770,6 +770,8 @@ for instructions that have been killed.
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``dbg``       | logic                           | Did the instruction cause a debug trigger match with ``mcontrol.timing`` = 0?                                   |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
 valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction, except that ``data`` is only required to remain stable during
@@ -778,6 +780,9 @@ result transactions in which ``we`` is not 0.
 The ``exc`` is used to signal synchronous exceptions. 
 A synchronous exception will lead to a trap in |processor|. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
+
+The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0. This signal is only used to signal debug trigger matches received earlier via
+a corresponding memory (request/response) transaction or memory request transaction.
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).
