@@ -43,6 +43,7 @@ extensions = [
     'sphinx.ext.todo',
     'recommonmark',
     'sphinxcontrib.inkscapeconverter',
+    'sphinx_github_changelog',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

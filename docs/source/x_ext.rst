@@ -22,16 +22,12 @@ Control-Tranfer type instructions (e.g. branches and jumps) are not supported vi
 CORE-V-XIF
 ----------
 
-The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably. The CORE-V-XIF specification contains the following parameters:
-
-* ``X_NUM_RS`` specifies the number of register file read ports that can be used by CORE-V-XIF. Legal values are 2 and 3.
-* ``X_ID_WIDTH`` specifies the width of each of the ID signals of the eXtension interface. Legal values are 1-32.
-* ``X_MEM_WIDTH`` specifies the memory access width for loads/stores via the eXtension interface. (Legal values are TBD.)
-* ``X_RFR_WIDTH`` specifies the register file read access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is (only) 64.
-* ``X_RFW_WIDTH`` specifies the register file write access width for the eXtension interface. If XLEN = 32, then the legal values are 32 and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is (only) 64.
+The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably.
 
 Parameters
 ----------
+
+The CORE-V-XIF specification contains the following parameters:
 
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | Name                         | Type/Range             | Default       | Description                                                        |
@@ -39,19 +35,24 @@ Parameters
 | ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ID_WIDTH``               | int (3..32)            | 4             | Identification width for the eXtension interface.                  |
+| ``X_ID_WIDTH``               | int (3..32)            | 4             | Identification (``id``) width for the eXtension interface.         |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_MEM_WIDTH``              | int (32, 64, 128, 256) | 32            | Memory access width for loads/stores via the eXtension interface.  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_RFR_WIDTH``              | int (32, 64)           | 32            | Register file read access width for the eXtension interface.       |
-|                              |                        |               | Must be at least XLEN.                                             |
+|                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
+|                              |                        |               | and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is     |
+|                              |                        |               | (only) 64.                                                         |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_RFW_WIDTH``              | int (32, 64)           | 32            | Register file write access width for the eXtension interface.      |
-|                              |                        |               | Must be at least XLEN.                                             |
+|                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
+|                              |                        |               | and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is     |
+|                              |                        |               | (only) 64.                                                         |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
+|                              |                        |               | The |processor| determines the legal values for this parameter.    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Default value for ``mstatus.xs``.                                  |
+| ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_DUALREAD``               | int (0..3)             | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
 |                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
@@ -60,6 +61,9 @@ Parameters
 | ``X_DUALWRITE``              | int (0..1)             | 0             | Is dual write supported? 0: No, 1: Yes.                            |
 |                              |                        |               | Legal values are determined by the |processor|.                    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+
+Major features
+--------------
 
 The major features of CORE-V-XIF are:
 
@@ -258,6 +262,30 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
 
 A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/master/rtl/if_xif.sv.
 
+
+Identification
+~~~~~~~~~~~~~~
+
+The six interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
+The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
+An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
+The ``id`` values for in-flight offloaded instructions are only required to be unique; they are for example not required to be incremental.
+
+``id`` values can only be introduced by the compressed interface and/or the issue interface.
+
+An ``id`` becomes in-flight via the compressed interface in the first cycle that ``compressed_valid`` is 1 for that ``id`` or
+when in the first cycle that ``issue_valid`` is 1 for that ``id`` (only if the same ``id`` was not already in-flight via the
+compressed interface).
+
+An ``id`` ends being in-flight when one of the following scenarios apply:
+
+* the corresponding compressed request transaction is retracted.
+* the corresponding compressed request transaction is not accepted.
+* the corresponding issue request transaction is retracted.
+* the corresponding issue request transaction is not accepted and the corresponding commit handshake has been performed.
+* the corresponding commit transaction killed the offloaded instruction and no corresponding memory request transaction and/or corresponding memory result transactions is in progress or still needs to be performed.
+* the corresponding result transaction has been performed.
+
 Compressed interface
 ~~~~~~~~~~~~~~~~~~~~
 :numref:`Compressed interface signals` describes the compressed interface signals.
@@ -296,13 +324,6 @@ Compressed interface
 
 The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |processor| itself. A |coprocessor| can provide an uncompressed instruction
 in response to receiving this.
-
-The ``id`` is a unique identification number for offloaded instructions. An ``id`` value can be reused after an earlier instruction related to the same ``id`` value
-has fully completed (i.e. because it was not accepted for offload and the related commit handshake has been performed, because it was killed and has no memory
-request/response handshake or memory result hanshake that are in progress or still need to be performed, or because it performed
-the related result handshake). The same ``id`` value will be used for all transaction packets on all interfaces that logically relate to the same instruction.
-The ``id`` values for in-flight offloaded instructions are only required to be unique; they
-are for example not required to be incremental.
 
 A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged.
 A |processor| is allowed to retract its compressed request transaction before it is accepted with ``compressed_ready`` = 1 and it can do so in the following ways:
@@ -500,7 +521,7 @@ Commit interface
 
 .. note::
 
-   The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction. A |coprocessor| can ignore the
+   The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction. A |coprocessor| shall ignore the
    ``commit_kill`` signal for instructions that it did not accept. A |processor| can signal either ``commit_kill`` = 0 or ``commit_kill`` = 1 for non-accepted instructions.
 
 :numref:`Commit packet type` describes the ``x_commit_t`` type.
@@ -641,7 +662,7 @@ A |processor| shall always (eventually) complete any memory request transaction 
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``.
-The ``dbg`` is used to signal a debug trigger match resulting with ``mcontrol.timing`` = 0 from the memory request transaction defined in ``mem_req``.
+The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0 resulting from the memory request transaction defined in ``mem_req``.
 In case of a synchronous exception or debug trigger match with *before* timing no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
@@ -739,7 +760,8 @@ Result interface
 
 The |coprocessor| shall provide results to the core via the result interface. A |coprocessor| is allowed to provide results to the core in an out of order fashion. A |coprocessor| is only
 allowed to provide a result for an instruction once the core has indicated (via the commit interface) that this instruction is allowed to be committed. Each accepted offloaded (committed and not killed) instruction shall
-have exactly one result group transaction (even if no data needs to be written back to the |processor|'s register file).
+have exactly one result transaction (even if no data needs to be written back to the |processor|'s register file). No result transaction shall be performed for instructions which have not been accepted for offload or
+for instructions that have been killed.
 
 :numref:`Result packet type` describes the ``x_result_t`` type.
 
@@ -765,14 +787,19 @@ have exactly one result group transaction (even if no data needs to be written b
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``dbg``       | logic                           | Did the instruction cause a debug trigger match with ``mcontrol.timing`` = 0?                                   |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
 valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction, except that ``data`` is only required to remain stable during
 result transactions in which ``we`` is not 0.
 
 The ``exc`` is used to signal synchronous exceptions. 
-A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
+A synchronous exception will lead to a trap in |processor|. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
+
+The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0. This signal is only used to signal debug trigger matches received earlier via
+a corresponding memory (request/response) transaction or memory request transaction.
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).

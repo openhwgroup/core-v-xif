@@ -5,5 +5,6 @@ OpenHW Group eXtension Interface
    :maxdepth: 3
    :caption: Contents:
 
+   preface
    intro
    x_ext
