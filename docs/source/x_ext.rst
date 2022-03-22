@@ -204,8 +204,8 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
     parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
     parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for ``mstatus.xs``
-    parameter logic        X_DUALREAD      =  0,  // Dual register file read
-    parameter logic        X_DUALWRITE     =  0   // Dual register file write
+    parameter int          X_DUALREAD      =  0,  // Dual register file read
+    parameter int          X_DUALWRITE     =  0   // Dual register file write
   );
 
     ... // typedefs omitted
