@@ -205,7 +205,7 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
   #(
     parameter int          X_NUM_RS        =  2,  // Number of register file read ports that can be used by the eXtension interface
     parameter int          X_ID_WIDTH      =  4,  // Identification width for the eXtension interface
-    parameter int          X_MEM_WIDTH     =  32, // Memory access width for loads/stores via the eXtension interface
+    parameter int          X_MEM_WIDTH     =  32, // Maximum memory access width for loads/stores via the eXtension interface
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
     parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
@@ -604,7 +604,13 @@ Memory (request/response) interface
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``       | logic                      | Write enable of the memory transaction.                                                                         |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``size``     | logic [1:0]                | Size of the memory transaction. 0: byte, 1: halfword, 2: word.                                                  |
+  | ``size``     | logic [2:0]                | Size of the memory transaction. 0: byte, 1: 2 bytes (halfword), 2: 4 bytes (word), 3: 8 bytes (doubleword),     |
+  |              |                            | 4: 16 bytes, 5: 32 bytes, 6: Reserved, 7: Reserved.                                                             |
+  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``be``       | logic [X_MEM_WIDTH/8-1:0]  | Byte enables for memory transaction.                                                                            |
+  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``attr``     | logic [1:0]                | Memory transaction attributes. attr[0] = modifiable (0 = not modifiable, 1 = modifiable).                       |
+  |              |                            | attr[1] = unaligned (0 = aligned, 1 = unaligned).                                                               |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``wdata``    | logic [X_MEM_WIDTH-1:0]    | Write data of a store memory transaction.                                                                       |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -619,7 +625,7 @@ they are initiated by |processor| itself or by a |coprocessor| via the memory re
 * PMA checks and attribution
 * PMU usage
 * MMU usage
-* Misaligned load/store handling
+* Misaligned load/store exception handling
 * Write buffer usage
 
 As for non-offloaded load or store instructions it is assumed that execute permission is never required for offloaded load or store instructions.
@@ -629,6 +635,47 @@ by waiting for the commit interface to signal that the offloaded instruction is 
 Whether a load or store is treated as being speculative or not by the |processor| shall only depend on the ``spec`` signal. Specifically, the |processor| shall
 ignore whatever value it might have communicated via ``commit_kill`` with respect to whether it treats a memory request as speculative or not. A |coprocessor|
 is allowed to signal ``spec`` = 1 without taking the commit transaction into account (so for example even after ``commit_kill`` = 0 has already been signaled).
+
+The ``addr`` signal indicates the (byte) start address of the memory transaction. Transactions on the memory (request/response) interface cannot cross a X_MEM_WIDTH (bus width) boundary.
+The ``be`` signal indicates on what byte lanes to expect valid data for both read and write transactions. ``be[n]`` determines the validity of data bits ``8*N+7:8*N``.
+There are no limitations on the allowed ``be`` values.
+The ``size`` signal indicates the size of the memory transaction. ``size`` shall reflect a naturally aligned range of byte lanes to be used in a transaction.
+The size of a transaction shall not exceed the maximum mememory access width (memory bus width) as determined by ``X_MEM_WIDTH``.
+The ``addr`` signal shall be consistent with the ``be`` signal, i.e. if the maximum memory access width (memory bus width) is 2^N bytes (N=2,3,4,5) and the lowest set bit in
+``be`` is at index IDX, then ``addr[N-1:0]`` shall be at most IDX.
+
+When for example performing a transaction that uses the middle two bytes on a 32-bit wide memory interface, the following (equivalent) `be``, ``size``, ``addr[1:0]`` combinations can be used:
+
+* ``be`` = 4'b0110, ``size`` = 3'b010``, ``addr[1:0]`` = 2'b00.
+* ``be`` = 4'b0110, ``size`` = 3'b010``, ``addr[1:0]`` = 2'b01.
+
+Note that a word transfer is needed in this example because the two bytes transfered are not halfword aligned.
+
+Unaligned (i.e. non naturally aligned) transactions are supported over the memory (request/response) interface using the ``be`` signal. Not all unaligned memory operations
+can however be performed as single transactions on the memory (request/response) interface. Specifically if an unaligned memory operation crosses a X_MEM_WIDTH boundary, then it shall
+be broken into multiple transactions on the memory (request/response) interface by the |coprocessor|.
+
+The ``attr`` signal indicates the attributes of the memory transaction.
+
+``attr[0]`` indicates whether the transaction is a modifiable transaction. This bit shall be set if the
+transaction results from modifications already done in the |coprocessor| (e.g. merging, splitting, or using a transaction size larger than strictly needed (without changing the active byte lanes)) or
+if the |coprocessor| allows such modifications of this transaction at the system level. The |processor| shall check whether a modifiable transaction to the requested
+address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed). An example of a modified transaction is
+performing a (merged) word transaction as opposed of doing four byte transactions (assuming the natively intended memory operations are byte operations).
+
+``attr[1]`` indicates whether the natively intended memory operation(s) resulting in this transaction is naturally aligned or not (0: aligned, 1: unaligned).
+In case that an unaligned native memory operation requires multiple memory request interface transactions, then the |coprocessor| is responsible for splitting the unaligned native memory operation
+into multiple transactions on the memory request interface, each of them having both ``attr[0]`` = 1 and ``attr[0]`` = 1.
+The |processor| shall check whether an unaligned transaction to the requested
+address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed).
+
+.. note::
+
+   Even though the |coprocessor| is allowed, and sometimes even mandated, to split transacations, this does not mean that split transactions will not result in exceptions.
+   Whether a split transaction is allowed (and makes it onto the external |processor| bus interface) or will lead to an exception, is determined by the |processor| (e.g. by its PMA).
+   No matter if the |coprocessor| already split a transaction or not, further splitting might be required within the |processor| itself (depending on whether a transaction
+   on the memory (request/response) interface can be handled as single transaction on the |processor|'s native bus interface or not. In general a |processor| is allowed to make any modification
+   to a memory (request/response) interface transaction as long as it is in accordance with the modifiable physical memory attribute for the concerned address region.
 
 A memory request transaction starts in the cycle that ``mem_valid`` = 1 and ends in the cycle that both ``mem_valid`` = 1 and ``mem_ready`` = 1. The signals in ``mem_req`` are
 valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable during a memory request transaction, except that ``wdata`` is only required to remain stable during
@@ -677,10 +724,10 @@ The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are 
 
 If ``mem_resp`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_resp`` and the |coprocessor| shall ignore the value received via ``mem_resp``.
 
-In case the memory request transaction results in a misaligned load/store operation, it is up to |processor| how or whether misaligned load/store operations are supported.
-The memory response and hence the memory request/response handshake may get delayed.
-If the first access results in a synchronous exception, the handshake can be performed immediately.
-Otherwise, the handshake is performed once its known whether the second access results in a synchronous exception or not.
+The memory response and hence the memory request/response handshake may get delayed in case that the |processor| splits a memory (request/response) interface transaction
+into multiple transactions on its native bus interface.
+Once it is known that the first, or any following, access results in a synchronous exception, the handshake can be performed immediately.
+Otherwise, the handshake is performed only once it is known that none of the split transactions result in a synchronous exception.
 
 The memory (request/response) interface is optional. If it is included, then the memory result interface shall also be included.
 
