@@ -720,6 +720,11 @@ In case of a synchronous exception or debug trigger match with *before* timing n
 A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
 
+A |coprocessor| shall take care that an instruction that causes ``exc`` = 1 or ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of synchronous
+exceptions or debug trigger match with * before* timing. Furthermore, if a result interface handshake will occur for this same instruction, then the ``exc``, ``exccode``  and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) synchronous exception entry and debug entry with *before* timing
+is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline). A |coprocessor| shall not itself use the ``exc`` or ``dbg`` information to
+kill following instructions in its pipeline.
+
 The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are both 1. There are no stability requirements.
 
 If ``mem_resp`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_resp`` and the |coprocessor| shall ignore the value received via ``mem_resp``.
@@ -771,8 +776,14 @@ No memory result transaction is performed for instructions that led to a synchro
 Otherwise, one memory result transaction is performed per memory (request/response) transaction (even for killed instructions).
 
 Memory result transactions are provided by the |processor| in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
-signals whether a bus error occurred. If so, then an NMI is signaled, just like for bus errors caused by non-offloaded loads and stores. The ``dbg`` signal
+signals whether a bus error occurred. The ``dbg`` signal
 signals whether a debug trigger match with *before* timing occurred ``rdata`` (for a read transaction only).
+
+A |coprocessor| shall take care that an instruction that causes ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of
+debug trigger match with * before* timing. A |coprocessor| is allowed to treat ``err`` = 1 as an imprecise exception (i.e. it is not mandatory to prevent (|coprocessor| local)
+side effects based on the ``err`` signal).
+Furthermore, if a result interface handshake will occur for this same instruction, then the ``err`` and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) debug entry with *before* timing is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline). Upon receiving ``err`` = 1 via the result interface handshake the |processor| shall signal an (imprecise) NMI.
+A |coprocessor| shall not itself use the ``err`` or ``dbg`` information to kill following instructions in its pipeline.
 
 If ``mem_result`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_result`` and the |coprocessor| shall ignore the value received via ``mem_result``.
 
@@ -842,17 +853,25 @@ for instructions that have been killed.
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``dbg``       | logic                           | Did the instruction cause a debug trigger match with ``mcontrol.timing`` = 0?                                   |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``err``       | logic                           | Did the instruction cause a bus error?                                                                          |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
 valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction, except that ``data`` is only required to remain stable during
 result transactions in which ``we`` is not 0.
 
 The ``exc`` is used to signal synchronous exceptions. 
-A synchronous exception will lead to a trap in |processor|. ``exccode`` provides the least significant bits of the exception
+A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
+The |processor| shall kill potentially already offloaded instructions to guarantee precise exception behavior.
+
+The ``err`` is used to signal a bus error.
+A bus error shall lead to an (imprecise) NMI in the |processor|.
 
 The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0. This signal is only used to signal debug trigger matches received earlier via
 a corresponding memory (request/response) transaction or memory request transaction.
+The trigger match shall lead to a debug entry  in the |processor|.
+The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
 dual writeback).
