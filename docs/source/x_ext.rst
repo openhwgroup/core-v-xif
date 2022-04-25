@@ -636,11 +636,12 @@ Whether a load or store is treated as being speculative or not by the |processor
 ignore whatever value it might have communicated via ``commit_kill`` with respect to whether it treats a memory request as speculative or not. A |coprocessor|
 is allowed to signal ``spec`` = 1 without taking the commit transaction into account (so for example even after ``commit_kill`` = 0 has already been signaled).
 
-The ``addr`` signal indicates the (byte) start address of the memory transaction. Transactions on the memory (request/response) interface cannot cross a X_MEM_WIDTH (bus width) boundary.
+The ``addr`` signal indicates the (byte) start address of the memory transaction. Transactions on the memory (request/response) interface cannot cross a ``X_MEM_WIDTH`` (bus width) boundary.
+The byte lanes of the data signals (``wdata`` and ``rdata`` of the memory result) (and hence also the bits of the ``be`` signal) are aligned to the width of the memory interface ``X_MEM_WIDTH``.
 The ``be`` signal indicates on what byte lanes to expect valid data for both read and write transactions. ``be[n]`` determines the validity of data bits ``8*N+7:8*N``.
 There are no limitations on the allowed ``be`` values.
 The ``size`` signal indicates the size of the memory transaction. ``size`` shall reflect a naturally aligned range of byte lanes to be used in a transaction.
-The size of a transaction shall not exceed the maximum mememory access width (memory bus width) as determined by ``X_MEM_WIDTH``.
+The size of a transaction shall not exceed the maximum memory access width (memory bus width) as determined by ``X_MEM_WIDTH``.
 The ``addr`` signal shall be consistent with the ``be`` signal, i.e. if the maximum memory access width (memory bus width) is 2^N bytes (N=2,3,4,5) and the lowest set bit in
 ``be`` is at index IDX, then ``addr[N-1:0]`` shall be at most IDX.
 
@@ -658,8 +659,8 @@ be broken into multiple transactions on the memory (request/response) interface 
 The ``attr`` signal indicates the attributes of the memory transaction.
 
 ``attr[0]`` indicates whether the transaction is a modifiable transaction. This bit shall be set if the
-transaction results from modifications already done in the |coprocessor| (e.g. merging, splitting, or using a transaction size larger than strictly needed (without changing the active byte lanes)) or
-if the |coprocessor| allows such modifications of this transaction at the system level. The |processor| shall check whether a modifiable transaction to the requested
+transaction results from modifications already done in the |coprocessor| (e.g. merging, splitting, or using a transaction size larger than strictly needed (without changing the active byte lanes)).
+The |processor| shall check whether a modifiable transaction to the requested
 address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed). An example of a modified transaction is
 performing a (merged) word transaction as opposed of doing four byte transactions (assuming the natively intended memory operations are byte operations).
 
