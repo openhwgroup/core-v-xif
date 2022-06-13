@@ -84,16 +84,20 @@ The major features of CORE-V-XIF are:
 * Support for dual writeback instructions (optional, based on ``X_DUALWRITE``).
 
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
-  is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n <> 0`` and ``Xn`` extracted from instruction bits ``[11:7]``.
+  is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``.
+
+  When a dual writeback is performed with ``n`` = 0, the entire writes takes no effect, i.e. neither ``X0`` nor ``X1`` shall be written by the |processor|.
 
   Dual register file writeback is only supported for ``XLEN`` = 32.
 
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
-  is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``Xn`` extracted from instruction bits `[19:15]``,
+  is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``n`` being an even number extracted from instruction bits `[19:15]``,
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
+
+  When a dual read is performed with ``n`` = 0, the entire operand is 0, i.e. ``X1`` shall not need to be accessed by the |processor|.
 
   Dual register file read is only supported for XLEN = 32.
 
@@ -438,7 +442,8 @@ The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |co
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
-odd register file index is provided in the upper 32 bits. The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources
+odd register file index is provided in the upper 32 bits. When reading from the ``X0``, ``X1`` pair, then a value of 0 is returned for the entire operand.
+The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources
 it is supported.
 
 The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
@@ -448,38 +453,38 @@ The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CS
 .. table:: Issue response type
   :name: Issue response type
 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | **Signal**             | **Type**             | **Description**                                                                                                  | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                | 
-  |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              | 
-  |                        |                      | Only allowed if ``X_DUALWRITE`` = 1, instruction bits ``[11:7]`` are even and not 0.                             | 
-  |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``dualread``           | logic [2:0]          | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        | 
-  |                        |                      | ``dualread[0]`` = 1 signals that dual read is required from ``rs1`` and ``rs1+1`` (only allowed if               | 
-  |                        |                      | ``X_DUALREAD`` > 0 and instruction bits  ``[19:15]`` are even).                                                  | 
-  |                        |                      | ``dualread[1]`` = 1 signals that dual read is required from ``rs2`` and ``rs2+1`` (only allowed if               | 
-  |                        |                      | ``X_DUALREAD`` > 1 and instruction bits  ``[24:20]`` are even).                                                  | 
-  |                        |                      | ``dualread[2]`` = 1 signals that dual read is required from ``rs3`` and ``rs3+1`` (only allowed if               | 
-  |                        |                      | ``X_DUALREAD`` > 2 and instruction bits  ``[31:27]`` are even).                                                  | 
-  |                        |                      | A |coprocessor| must signal ``dualread`` as 0 for non-accepted instructions.                                     | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``loadstore``          | logic                | Is the offloaded instruction a load/store instruction?                                                           | 
-  |                        |                      | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        | 
-  |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   | 
-  |                        |                      | more transactions via the memory group interface.                                                                | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
-  | ``ecswrite``           | logic                | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        | 
-  |                        |                      | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**             | **Description**                                                                                                  |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
+  |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              |
+  |                        |                      | Only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.                                    |
+  |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``dualread``           | logic [2:0]          | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        |
+  |                        |                      | ``dualread[0]`` = 1 signals that dual read is required from ``rs1`` and ``rs1+1`` (only allowed if               |
+  |                        |                      | ``X_DUALREAD`` > 0 and instruction bits ``[19:15]`` are even).                                                   |
+  |                        |                      | ``dualread[1]`` = 1 signals that dual read is required from ``rs2`` and ``rs2+1`` (only allowed if               |
+  |                        |                      | ``X_DUALREAD`` > 1 and instruction bits ``[24:20]`` are even).                                                   |
+  |                        |                      | ``dualread[2]`` = 1 signals that dual read is required from ``rs3`` and ``rs3+1`` (only allowed if               |
+  |                        |                      | ``X_DUALREAD`` > 2 and instruction bits ``[31:27]`` are even).                                                   |
+  |                        |                      | A |coprocessor| must signal ``dualread`` as 0 for non-accepted instructions.                                     |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``loadstore``          | logic                | Is the offloaded instruction a load/store instruction?                                                           |
+  |                        |                      | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        |
+  |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
+  |                        |                      | more transactions via the memory group interface.                                                                |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``ecswrite``           | logic                | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
+  |                        |                      | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception in the |coprocessor| itself?                |
-  |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          | 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+ 
+  |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          |
+  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
 
 The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
 
