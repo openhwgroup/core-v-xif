@@ -32,19 +32,20 @@ The CORE-V-XIF specification contains the following parameters:
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | Name                         | Type/Range             | Default       | Description                                                        |
 +==============================+========================+===============+====================================================================+
-| ``X_NUM_RS``                 | int (2..3)             | 2             | Number of register file read ports that can be used by the         |
+| ``X_NUM_RS``                 | int unsigned (2..3)    | 2             | Number of register file read ports that can be used by the         |
 |                              |                        |               | eXtension interface.                                               |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ID_WIDTH``               | int (3..32)            | 4             | Identification (``id``) width for the eXtension interface.         |
+| ``X_ID_WIDTH``               | int unsigned (3..32)   | 4             | Identification (``id``) width for the eXtension interface.         |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_MEM_WIDTH``              | int (32, 64, 128, 256) | 32            | Memory access width for loads/stores via the eXtension interface.  |
+| ``X_MEM_WIDTH``              | int unsigned (32, 64,  | 32            | Memory access width for loads/stores via the eXtension interface.  |
+|                              | 128, 256)              |               |                                                                    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_RFR_WIDTH``              | int (32, 64)           | 32            | Register file read access width for the eXtension interface.       |
+| ``X_RFR_WIDTH``              | int unsigned (32, 64)  | 32            | Register file read access width for the eXtension interface.       |
 |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
 |                              |                        |               | and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is     |
 |                              |                        |               | (only) 64.                                                         |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_RFW_WIDTH``              | int (32, 64)           | 32            | Register file write access width for the eXtension interface.      |
+| ``X_RFW_WIDTH``              | int unsigned (32, 64)  | 32            | Register file write access width for the eXtension interface.      |
 |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
 |                              |                        |               | and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is     |
 |                              |                        |               | (only) 64.                                                         |
@@ -54,11 +55,11 @@ The CORE-V-XIF specification contains the following parameters:
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_DUALREAD``               | int (0..3)             | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
+| ``X_DUALREAD``               | int unsigned (0..3)    | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
 |                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
 |                              |                        |               | Legal values are determined by the |processor|.                    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_DUALWRITE``              | int (0..1)             | 0             | Is dual write supported? 0: No, 1: Yes.                            |
+| ``X_DUALWRITE``              | int unsigned (0..1)    | 0             | Is dual write supported? 0: No, 1: Yes.                            |
 |                              |                        |               | Legal values are determined by the |processor|.                    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
