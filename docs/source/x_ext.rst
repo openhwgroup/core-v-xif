@@ -86,8 +86,6 @@ The major features of CORE-V-XIF are:
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``.
 
-  When a dual writeback is performed with ``n`` = 0, the entire writes takes no effect, i.e. neither ``X0`` nor ``X1`` shall be written by the |processor|.
-
   Dual register file writeback is only supported for ``XLEN`` = 32.
 
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
@@ -459,10 +457,12 @@ The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CS
   | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
+  |                        |                      | Writeback to ``X0`` is allowed by the |coprocessor|, but will be ignored by the |processor|.                     |
   |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              |
   |                        |                      | Only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.                                    |
+  |                        |                      | Writeback to the ``X0``, ``X1`` pair is allowed by the |coprocessor|, but will be ignored by the |processor|.    |
   |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    |
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``dualread``           | logic [2:0]          | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        |
@@ -880,7 +880,8 @@ The trigger match shall lead to a debug entry  in the |processor|.
 The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
-dual writeback).
+dual writeback). The |processor| shall ignore writeback to ``X0``.  When a dual writeback is performed to the ``X0``, ``X1`` pair, the entire write shall be ignored, i.e. neither ``X0`` nor ``X1``
+shall be written by the |processor|.
 
 If `ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is written to ``mstatus.xs``.
 If `ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
@@ -970,8 +971,8 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 
 * The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
 * Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows: Compressed transaction, issue transaction, commit transaction, memory (request/response) transaction, memory result transaction, result transaction.
-* Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``issue_ready`` = 1
-because it first wants to see ``result_ready`` = 1 for an older instruction).
+* Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``mem_valid`` = 1
+because it first wants to see ``commit_valid`` = 1 or ``result_ready`` = 1 for a newer instruction).
 
 .. note::
    The use of the words *depend* and *dependent* relate to logical relationships, which is broader than combinatorial relationships.
