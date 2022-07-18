@@ -864,8 +864,7 @@ for instructions that have been killed.
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
-valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction, except that ``data`` is only required to remain stable during
-result transactions in which ``we`` is not 0.
+valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction.
 
 The ``exc`` is used to signal synchronous exceptions. 
 A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
