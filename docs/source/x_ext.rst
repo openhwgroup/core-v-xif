@@ -427,7 +427,7 @@ A |processor| is allowed to retract its issue request transaction before it is a
 * Set ``issue_valid`` = 0.
 * Keep ``issue_valid`` = 1, but change the ``id`` signal (and if desired change the other signals in ``issue_req``).
 
-The ``instr``, ``mode``, ``id``,  ``ecs``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. 
+The ``instr``, ``mode``, ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. 
 The ``rs`` signal is only considered valid when ``issue_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
 The ``ecs`` signal is only considered valid when ``issue_valid`` is 1 and ``ecs_valid`` is 1 as well.
 
@@ -672,7 +672,7 @@ performing a (merged) word transaction as opposed of doing four byte transaction
 
 ``attr[1]`` indicates whether the natively intended memory operation(s) resulting in this transaction is naturally aligned or not (0: aligned, 1: unaligned).
 In case that an unaligned native memory operation requires multiple memory request interface transactions, then the |coprocessor| is responsible for splitting the unaligned native memory operation
-into multiple transactions on the memory request interface, each of them having both ``attr[0]`` = 1 and ``attr[0]`` = 1.
+into multiple transactions on the memory request interface, each of them having both ``attr[0]`` = 1 and ``attr[1]`` = 1.
 The |processor| shall check whether an unaligned transaction to the requested
 address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed).
 
@@ -728,7 +728,7 @@ A synchronous exception will lead to a trap in |processor| unless the correspond
 code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
 
 A |coprocessor| shall take care that an instruction that causes ``exc`` = 1 or ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of synchronous
-exceptions or debug trigger match with * before* timing. Furthermore, if a result interface handshake will occur for this same instruction, then the ``exc``, ``exccode``  and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) synchronous exception entry and debug entry with *before* timing
+exceptions or debug trigger match with *before* timing. Furthermore, if a result interface handshake will occur for this same instruction, then the ``exc``, ``exccode``  and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) synchronous exception entry and debug entry with *before* timing
 is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline). A |coprocessor| shall not itself use the ``exc`` or ``dbg`` information to
 kill following instructions in its pipeline.
 
