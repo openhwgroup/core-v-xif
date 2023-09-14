@@ -972,7 +972,7 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 * The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
 * Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows: Compressed transaction, issue transaction, commit transaction, memory (request/response) transaction, memory result transaction, result transaction.
 * Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``mem_valid`` = 1
-because it first wants to see ``commit_valid`` = 1 or ``result_ready`` = 1 for a newer instruction).
+  because it first wants to see ``commit_valid`` = 1 or ``result_ready`` = 1 for a newer instruction).
 
 .. note::
    The use of the words *depend* and *dependent* relate to logical relationships, which is broader than combinatorial relationships.
