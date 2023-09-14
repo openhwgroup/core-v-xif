@@ -76,6 +76,10 @@ Additionally, the following derived parameters are defined to improve readabilit
 +==============================+========================+===============+====================================================================+
 | ``X_NUM_RXREGS``             | int unsigned (0..6)    | X_NUM_RS +    | Number of readable x registers. This depends upon the number of    |
 |                              |                        | X_DUALREAD    | read ports and their ability to read register pairs.               |
+|                              |                        |               | When used to define a vector, the bit positions map to registers   |
+|                              |                        |               | as follows:                                                        |
+|                              |                        |               | Low indices correspond to low operand numbers, and the even part   |
+|                              |                        |               | of the pair has the lower index than the odd one.                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 Major features
