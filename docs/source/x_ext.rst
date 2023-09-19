@@ -69,6 +69,19 @@ The CORE-V-XIF specification contains the following parameters:
    all possible ``X_MISA`` values. For example, if a |processor| only supports machine mode, then it is not reasonable to expect that the
    |processor| will additionally support user mode by just setting the ``X_MISA[20]`` (``U`` bit) to 1.
 
+Additionally, the following derived parameters are defined to improve readability:
+
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| Name                         | Type/Range             | Definition    | Description                                                        |
++==============================+========================+===============+====================================================================+
+| ``X_NUM_RXREGS``             | int unsigned (0..6)    | X_NUM_RS +    | Number of readable x registers. This depends upon the number of    |
+|                              |                        | X_DUALREAD    | read ports and their ability to read register pairs.               |
+|                              |                        |               | When used to define a vector, the bit positions map to registers   |
+|                              |                        |               | as follows:                                                        |
+|                              |                        |               | Low indices correspond to low operand numbers, and the even part   |
+|                              |                        |               | of the pair has the lower index than the odd one.                  |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+
 Major features
 --------------
 
@@ -414,7 +427,8 @@ Issue interface
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs_valid``           | logic [X_NUM_RS-1:0]     | Validity of the register file source operand(s).                                                                |
+  | ``rs_valid``           | logic [X_NUM_RXREGS-1:0] | Validity of the register file source operand(s). If register pairs are supported, the validty is signaled for   |
+  |                        |                          | each register within the pair individually.                                                                     |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -432,7 +446,9 @@ The ``rs`` signal is only considered valid when ``issue_valid`` is 1 and the cor
 The ``ecs`` signal is only considered valid when ``issue_valid`` is 1 and ``ecs_valid`` is 1 as well.
 
 The ``instr`` and ``mode`` signals remain stable during an issue request transaction. The ``rs_valid`` bits are not required to be stable during the transaction. Each bit
-can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction. The ``rs`` signals are only required to be stable during the part
+can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
+A coprocessor is not expected to wait for all ``rs_valid`` bits to be 1, but only for those registers it intends to read.
+The ``rs`` signals are only required to be stable during the part
 of a transaction in which these signals are considered to be valid. The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from
 0 to 1, but is not allowed to transition back to 0 during a transaction. The ``ecs`` signal is only required to be stable during the part of a transaction in which
 this signals is considered to be valid.
