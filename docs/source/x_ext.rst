@@ -69,18 +69,27 @@ The CORE-V-XIF specification contains the following parameters:
    all possible ``X_MISA`` values. For example, if a |processor| only supports machine mode, then it is not reasonable to expect that the
    |processor| will additionally support user mode by just setting the ``X_MISA[20]`` (``U`` bit) to 1.
 
-Additionally, the following derived parameters are defined to improve readability:
+Additionally, the following type definitions are defined to improve readability of the specification and ensure consistency between the interfaces:
 
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| Name                         | Type/Range             | Definition    | Description                                                        |
-+==============================+========================+===============+====================================================================+
-| ``X_NUM_RXREGS``             | int unsigned (0..6)    | X_NUM_RS +    | Number of readable x registers. This depends upon the number of    |
-|                              |                        | X_DUALREAD    | read ports and their ability to read register pairs.               |
-|                              |                        |               | When used to define a vector, the bit positions map to registers   |
-|                              |                        |               | as follows:                                                        |
-|                              |                        |               | Low indices correspond to low operand numbers, and the even part   |
-|                              |                        |               | of the pair has the lower index than the odd one.                  |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
++------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+| Name                                     | Definition                             | Description                                                        |
++==========================================+========================================+====================================================================+
+| .. _registerflags:                       | logic [X_NUM_RS+X_DUALREAD-1:0]        | Vector with a flag per possible register.                          |
+|                                          |                                        | This depends upon the number of                                    |
+| ``registerflags_t``                      |                                        | read ports and their ability to read register pairs.               |
+|                                          |                                        | The bit positions map to registers as follows:                     |
+|                                          |                                        | as follows:                                                        |
+|                                          |                                        | Low indices correspond to low operand numbers, and the even part   |
+|                                          |                                        | of the pair has the lower index than the odd one.                  |
++------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+| .. _mode:                                | logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0]  | Privilege level                                                    |
+|                                          |                                        | (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved,               |
+| ``mode_t``                               |                                        | 2'b11 = Machine).                                                  |
++------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+| .. _id:                                  | logic [X_ID_WIDTH-1:0]                 | Identification of the offloaded instruction.                       |
+|                                          |                                        | See `Identification`_ for details on the identifiers               |
+| ``id_t``                                 |                                        |                                                                    |
++------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
 
 Major features
 --------------
@@ -339,9 +348,9 @@ Compressed interface
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``instr``              | logic [15:0]            | Offloaded compressed instruction.                                                                               |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | logic [1:0]             | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
+  | ``mode``               | :ref:`mode_t <mode>`    | Privilege level                                                                                                 |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``                 | logic [X_ID_WIDTH-1:0]  | Identification number of the offloaded compressed instruction.                                                  |
+  | ``id``                 | :ref:`id_t <id>`        | Identification number of the offloaded compressed instruction.                                                  |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |processor| itself. A |coprocessor| can provide an uncompressed instruction
@@ -414,26 +423,27 @@ Issue interface
 .. table:: Issue request type
   :name: Issue request type
 
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**             | **Type**                 | **Description**                                                                                                 |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``instr``              | logic [31:0]             | Offloaded instruction.                                                                                          |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | logic [1:0]              | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``                 | logic [X_ID_WIDTH-1:0]   | Identification of the offloaded instruction.                                                                    |
-  |                        |                          |                                                                                                                 |
-  |                        |                          |                                                                                                                 |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs_valid``           | logic [X_NUM_RXREGS-1:0] | Validity of the register file source operand(s). If register pairs are supported, the validty is signaled for   |
-  |                        |                          | each register within the pair individually.                                                                     |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**                               | **Description**                                                                                                 |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``instr``              | logic [31:0]                           | Offloaded instruction.                                                                                          |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``mode``               | :ref:`mode_t <mode>`                   | Privilege level                                                                                                 |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``id``                 | :ref:`id_t <id>`                       | Identification of the offloaded instruction.                                                                    |
+  |                        |                                        |                                                                                                                 |
+  |                        |                                        |                                                                                                                 |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]                | Register file source operands for the offloaded instruction.                                                    |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs_valid``           | :ref:`registerflags_t <registerflags>` | Validity of the register file source operand(s). If register pairs are supported, the validty is signaled for   |
+  |                        |                                        | each register within the pair individually.                                                                     |
+  |                        |                                        |                                                                                                                 |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecs``                | logic [5:0]                            | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecs_valid``          | logic                                  | Validity of the Extension Context Status.                                                                       |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged.
 A |processor| is allowed to retract its issue request transaction before it is accepted with ``issue_ready`` = 1 and it can do so in the following ways:
@@ -558,7 +568,7 @@ Commit interface
   :name: Commit packet type
 
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``id``             | logic [X_ID_WIDTH-1:0] | Identification of the offloaded instruction. Valid when ``commit_valid`` is 1.                                               |
+  | ``id``             | :ref:`id_t <id>`       | Identification of the offloaded instruction. Valid when ``commit_valid`` is 1.                                               |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``commit_kill``    | logic                  | Shall an offloaded instruction be killed? If ``commit_valid`` is 1 and ``commit_kill`` is 0, then the core guarantees        |
   |                    |                        | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
@@ -618,7 +628,7 @@ Memory (request/response) interface
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**   | **Type**                   | **Description**                                                                                                 |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``       | logic [X_ID_WIDTH-1:0]     | Identification of the offloaded instruction.                                                                    |
+  | ``id``       | :ref:`id_t <id>`           | Identification of the offloaded instruction.                                                                    |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``addr``     | logic [31:0]               | Virtual address of the memory transaction.                                                                      |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -785,7 +795,7 @@ Memory result interface
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**    |          **Type**         | **Description**                                                                                                 |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``        | logic [X_ID_WIDTH-1:0]    | Identification of the offloaded instruction.                                                                    |
+  | ``id``        | :ref:`id_t <id>`          | Identification of the offloaded instruction.                                                                    |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rdata``     | logic [X_MEM_WIDTH-1:0]   | Read data of a read memory transaction. Only used for reads.                                                    |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -858,7 +868,7 @@ for instructions that have been killed.
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**    | **Type**                        | **Description**                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``        | logic [X_ID_WIDTH-1:0]          | Identification of the offloaded instruction.                                                                    |
+  | ``id``        | :ref:`id_t <id>`                | Identification of the offloaded instruction.                                                                    |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``data``      | logic [X_RFW_WIDTH-1:0]         | Register file write data value(s).                                                                              |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
