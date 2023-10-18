@@ -343,6 +343,9 @@ An ``id`` ends being in-flight when one of the following scenarios apply:
 * the corresponding commit transaction killed the offloaded instruction and no corresponding memory request transaction and/or corresponding memory result transactions is in progress or still needs to be performed.
 * the corresponding result transaction has been performed.
 
+For the purpose of relative identification, an instruction is considered to be preceding another instruction, if it was accepted in an issue transaction at an earlier time.
+The other instruction is thus succeeding the earlier one.
+
 Compressed interface
 ~~~~~~~~~~~~~~~~~~~~
 :numref:`Compressed interface signals` describes the compressed interface signals.
@@ -628,11 +631,6 @@ Commit interface
   | ``commit``                | x_commit_t      | output          | Commit packet.                                                                                                               |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
-.. note::
-
-   The |processor| shall perform a commit transaction for every issue transaction, independent of the ``accept`` value of the issue transaction. A |coprocessor| shall ignore the
-   ``commit_kill`` signal for instructions that it did not accept. A |processor| can signal either ``commit_kill`` = 0 or ``commit_kill`` = 1 for non-accepted instructions.
-
 :numref:`Commit packet type` describes the ``x_commit_t`` type.
 
 .. table:: Commit packet type
@@ -648,15 +646,33 @@ Commit interface
   |                    |                        | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
   |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``commit_valid`` is 1 and ``commit_kill`` is       |
   |                    |                        | 1, then the offloaded instruction (``id``) shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the|
-  |                    |                        | related instruction does/did not change architectural state.                                                                 |
+  |                    |                        | Shall an offloaded instruction be committed or killed?                                                                       |
+  |                    |                        | If ``commit_valid`` is 1 and ``commit_kill`` is 0,  then the core guarantees that the offloaded instruction (``id``) and any |
+  |                    |                        | older (i.e. preceding) instructions are no longer speculative, will not get killed (e.g. due to misspeculation or an         |
+  |                    |                        | exception in a preceding instruction), and are allowed to be committed.                                                      |
+  |                    |                        | If ``commit_valid`` is 1 and ``commit_kill`` is 1, then the offloaded instruction (``id``) and any newer (i.e. succeeding)   |
+  |                    |                        | instructions shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the related instructions do/did  |
+  |                    |                        | not change architectural state.                                                                                              |
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
 
-The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``id`` value indicates which offloaded
-instruction is allowed to be committed or is supposed to be killed.
+The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle.
+It is not required that a commit transaction is performed for each offloaded instruction individually.
+Instructions can be signalled to be non-speculative or to be killed in batch.
+E.g. signalling the oldest instruction to be killed is equivalent to requesting a flush of the |coprocessor|.
+The first instruction to be considered not-to-be-killed after a commit transaction with ``commit_kill`` as 1,
+is at earliest an instruction with successful issue transaction starting at least one clock cycle later.
 
-For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``commit_valid`` is 1
-and ``commit_kill`` is 0) or that the instruction must be killed (``commit_valid`` is 1 and ``commit_kill`` is 1). 
+.. note::
 
+  If an instruction is marked in the |coprocessor| as killed or committed, the |coprocessor| shall ignore any subsequent commit transaction related to that instruction.
+
+.. note::
+
+  A |coprocessor| may receive values of ``commit.id`` that it did not accept.
+  In this case, the |coprocessor| must still process the request by considering the relevant instructions (either preceeding or succeeding) as no longer speculative or to be killed.
+
+A |processor| is required to mark every offloaded and accepted instruction as either killed or non-speculative.
+  
 A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
 then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
