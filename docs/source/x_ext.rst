@@ -721,7 +721,7 @@ request transactions for the same ``id``.
 
 Normally a sequence of memory request transactions ends with a
 transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
-then it shall issue no further memory request transactions for the same instruction (``id``). Similarly, after having received `commit_kill`` = 1 no further memory request transactions shall
+then it shall issue no further memory request transactions for the same instruction (``id``). Similarly, after having received ``commit_kill`` = 1 no further memory request transactions shall
 be issued by a |coprocessor| for the same instruction (``id``).
 
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
