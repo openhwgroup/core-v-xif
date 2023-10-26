@@ -815,7 +815,9 @@ signals whether a debug trigger match with *before* timing occurred ``rdata`` (f
 A |coprocessor| shall take care that an instruction that causes ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of
 debug trigger match with * before* timing. A |coprocessor| is allowed to treat ``err`` = 1 as an imprecise exception (i.e. it is not mandatory to prevent (|coprocessor| local)
 side effects based on the ``err`` signal).
-Furthermore, if a result interface handshake will occur for this same instruction, then the ``err`` and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) debug entry with *before* timing is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline). Upon receiving ``err`` = 1 via the result interface handshake the |processor| shall signal an (imprecise) NMI.
+Furthermore, if a result interface handshake will occur for this same instruction, then the ``err`` and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) debug entry with *before* timing is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline).
+Upon receiving ``err`` = 1 via the result interface handshake the |processor| is expected to take action to handle the error.
+The error handling performed by the |processor| is implementation-defined and may include raising an (imprecise) NMI.
 A |coprocessor| shall not itself use the ``err`` or ``dbg`` information to kill following instructions in its pipeline.
 
 If ``mem_result`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_result`` and the |coprocessor| shall ignore the value received via ``mem_result``.
