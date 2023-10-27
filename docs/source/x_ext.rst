@@ -300,7 +300,8 @@ Identification
 The six interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
 The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
 An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
-The ``id`` values for in-flight offloaded instructions are only required to be unique; they are for example not required to be incremental.
+The ``id`` values for in-flight offloaded instructions are required to be unique.
+The ``id`` values are required to be incremental wrapping for sequential instructions, but do not necessarily need to be continuous.
 
 ``id`` values can only be introduced by the compressed interface and/or the issue interface.
 
