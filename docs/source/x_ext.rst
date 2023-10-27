@@ -107,14 +107,14 @@ The major features of CORE-V-XIF are:
 * Support for dual writeback instructions (optional, based on ``X_DUALWRITE``).
 
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
-  is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``.
+  is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``).
 
   Dual register file writeback is only supported for ``XLEN`` = 32.
 
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
   CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
-  is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``n`` being an even number extracted from instruction bits `[19:15]``,
+  is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``n`` being an even number extracted from instruction bits ``[19:15]``),
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
 
@@ -707,7 +707,7 @@ address is allowed or not (and respond with an appropriate synchronous exception
    Even though the |coprocessor| is allowed, and sometimes even mandated, to split transacations, this does not mean that split transactions will not result in exceptions.
    Whether a split transaction is allowed (and makes it onto the external |processor| bus interface) or will lead to an exception, is determined by the |processor| (e.g. by its PMA).
    No matter if the |coprocessor| already split a transaction or not, further splitting might be required within the |processor| itself (depending on whether a transaction
-   on the memory (request/response) interface can be handled as single transaction on the |processor|'s native bus interface or not. In general a |processor| is allowed to make any modification
+   on the memory (request/response) interface can be handled as single transaction on the |processor|'s native bus interface or not). In general a |processor| is allowed to make any modification
    to a memory (request/response) interface transaction as long as it is in accordance with the modifiable physical memory attribute for the concerned address region.
 
 A memory request transaction starts in the cycle that ``mem_valid`` = 1 and ends in the cycle that both ``mem_valid`` = 1 and ``mem_ready`` = 1. The signals in ``mem_req`` are
