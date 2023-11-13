@@ -349,8 +349,6 @@ Compressed interface
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``instr``              | logic [15:0]            | Offloaded compressed instruction.                                                                               |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | :ref:`mode_t <mode>`    | Privilege level                                                                                                 |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``                 | :ref:`id_t <id>`        | Identification number of the offloaded compressed instruction.                                                  |
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
 
@@ -429,7 +427,7 @@ Issue interface
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``instr``              | logic [31:0]                           | Offloaded instruction.                                                                                          |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | :ref:`mode_t <mode>`                   | Privilege level                                                                                                 |
+  | ``mode``               | :ref:`mode_t <mode>`                   | Effective privilege level, as used for load and store instructions.                                             |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``                 | :ref:`id_t <id>`                       | Identification of the offloaded instruction.                                                                    |
   |                        |                                        |                                                                                                                 |
@@ -463,6 +461,9 @@ The ``rs`` signals are only required to be stable during the part
 of a transaction in which these signals are considered to be valid. The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from
 0 to 1, but is not allowed to transition back to 0 during a transaction. The ``ecs`` signal is only required to be stable during the part of a transaction in which
 this signals is considered to be valid.
+
+``mode`` is the effective privilege level. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
+As coprocessors must be unprivileged, the mode signal may only be used in memory transactions.
 
 The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |coprocessor|. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
@@ -633,7 +634,7 @@ Memory (request/response) interface
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``addr``     | logic [31:0]               | Virtual address of the memory transaction.                                                                      |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``     | logic [1:0]                | Privilege level (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved, 2'b11 = Machine).                          |
+  | ``mode``     | logic [1:0]                | Effective privilege level                                                                                       |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``we``       | logic                      | Write enable of the memory transaction.                                                                         |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -683,7 +684,7 @@ When for example performing a transaction that uses the middle two bytes on a 32
 * ``be`` = 4'b0110, ``size`` = 3'b010``, ``addr[1:0]`` = 2'b00.
 * ``be`` = 4'b0110, ``size`` = 3'b010``, ``addr[1:0]`` = 2'b01.
 
-Note that a word transfer is needed in this example because the two bytes transfered are not halfword aligned.
+Note that a word transfer is needed in this example because the two bytes transferred are not halfword aligned.
 
 Unaligned (i.e. non naturally aligned) transactions are supported over the memory (request/response) interface using the ``be`` signal. Not all unaligned memory operations
 can however be performed as single transactions on the memory (request/response) interface. Specifically if an unaligned memory operation crosses a X_MEM_WIDTH boundary, then it shall
