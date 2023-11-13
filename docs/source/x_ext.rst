@@ -918,8 +918,6 @@ If `ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.
 If `ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
 The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
 
-The signals in ``result`` are valid when ``result_valid`` is 1. These signals remain stable during a result transaction.
-
 Interface dependencies
 ----------------------
 
