@@ -291,7 +291,7 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
 
   endinterface : if_xif
 
-A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/master/rtl/if_xif.sv.
+A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/master/rtl/cv32e40x_if_xif.sv.
 
 
 Identification
