@@ -55,8 +55,7 @@ The CORE-V-XIF specification contains the following parameters:
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_DUALREAD``               | int unsigned (0..3)    | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
-|                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
+| ``X_DUALREAD``               | int unsigned (0..1)    | 0             | Is dual read supported? 0: No, 1: Yes.                             |
 |                              |                        |               | Legal values are determined by the |processor|.                    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 | ``X_DUALWRITE``              | int unsigned (0..1)    | 0             | Is dual write supported? 0: No, 1: Yes.                            |
@@ -74,11 +73,10 @@ Additionally, the following type definitions are defined to improve readability 
 +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
 | Name                                     | Definition                             | Description                                                        |
 +==========================================+========================================+====================================================================+
-| .. _registerflags:                       | logic [X_NUM_RS+X_DUALREAD-1:0]        | Vector with a flag per possible register.                          |
+| .. _registerflags:                       | logic [X_NUM_RS*(1+X_DUALREAD)-1:0]    | Vector with a flag per possible register.                          |
 |                                          |                                        | This depends upon the number of                                    |
-| ``registerflags_t``                      |                                        | read ports and their ability to read register pairs.               |
+| ``registerflags_t``                      |                                        | read ports and the ability to read register pairs.                 |
 |                                          |                                        | The bit positions map to registers as follows:                     |
-|                                          |                                        | as follows:                                                        |
 |                                          |                                        | Low indices correspond to low operand numbers, and the even part   |
 |                                          |                                        | of the pair has the lower index than the odd one.                  |
 +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
@@ -129,7 +127,7 @@ The major features of CORE-V-XIF are:
 
 * Support for instruction speculation.
 
-  CORE-V-XIF indicates whether offloaded instructions are allowed to be commited (or should be killed).
+  CORE-V-XIF indicates whether offloaded instructions are allowed to be committed (or should be killed).
 
 CORE-V-XIF consists of six interfaces:
 
@@ -160,7 +158,7 @@ data dependencies between instructions, and to properly deal with exceptions cau
 Offloaded instructions are speculative; |processor| has not necessarily committed to them yet and might decide to kill them (e.g.
 because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
 core will inform the |coprocessor| about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
-is no longer speculative and is allowed to be commited.
+is no longer speculative and is allowed to be committed.
 
 In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
 or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
@@ -470,8 +468,7 @@ operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XL
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
 odd register file index is provided in the upper 32 bits. When reading from the ``X0``, ``X1`` pair, then a value of 0 is returned for the entire operand.
-The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources
-it is supported.
+The ``X_DUALREAD`` parameter defines whether dual read is supported.
 
 The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
 
@@ -495,12 +492,13 @@ The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CS
   |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    |
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``dualread``           | logic [2:0]          | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        |
+  |                        |                      | Only allowed if ``X_DUALREAD`` = 1.                                                                              |
   |                        |                      | ``dualread[0]`` = 1 signals that dual read is required from ``rs1`` and ``rs1+1`` (only allowed if               |
-  |                        |                      | ``X_DUALREAD`` > 0 and instruction bits ``[19:15]`` are even).                                                   |
+  |                        |                      | instruction bits ``[19:15]`` are even).                                                                          |
   |                        |                      | ``dualread[1]`` = 1 signals that dual read is required from ``rs2`` and ``rs2+1`` (only allowed if               |
-  |                        |                      | ``X_DUALREAD`` > 1 and instruction bits ``[24:20]`` are even).                                                   |
+  |                        |                      | instruction bits ``[24:20]`` are even).                                                                          |
   |                        |                      | ``dualread[2]`` = 1 signals that dual read is required from ``rs3`` and ``rs3+1`` (only allowed if               |
-  |                        |                      | ``X_DUALREAD`` > 2 and instruction bits ``[31:27]`` are even).                                                   |
+  |                        |                      | instruction bits ``[31:27]`` are even).                                                                          |
   |                        |                      | A |coprocessor| must signal ``dualread`` as 0 for non-accepted instructions.                                     |
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``loadstore``          | logic                | Is the offloaded instruction a load/store instruction?                                                           |
