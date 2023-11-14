@@ -153,9 +153,8 @@ will further handle the instruction. In case of rejection the core will raise an
 As part of the issue interface transaction the core provides the instruction and required register file operand(s) to the |coprocessor|. If
 an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
 ``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
-The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store, to which register(s) in the register file it will writeback, and
-whether the offloaded instruction can potentially cause a synchronous exception. |processor| uses this information to reserve the load/store unit, to track
-data dependencies between instructions, and to properly deal with exceptions caused by offloaded instructions.
+The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store, and to which register(s) in the register file it will writeback.
+|processor| uses this information to reserve the load/store unit and to track data dependencies between instructions.
 
 Offloaded instructions are speculative; |processor| has not necessarily committed to them yet and might decide to kill them (e.g.
 because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
@@ -510,9 +509,6 @@ The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CS
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
   | ``ecswrite``           | logic                | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
   |                        |                      | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``exc``                | logic                | Can the offloaded instruction possibly cause a synchronous exception in the |coprocessor| itself?                |
-  |                        |                      | A |coprocessor| must signal ``exc`` as 0 for non-accepted instructions.                                          |
   +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
 
 The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
@@ -897,6 +893,8 @@ A result transaction starts in the cycle that ``result_valid`` = 1 and ends in t
 valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction.
 
 The ``exc`` is used to signal synchronous exceptions. 
+An exception may only be signalled if a memory transaction resulted in ``mem_resp.exc`` asserted.
+The received ``exccode`` shall be passed unmodified.
 A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
 code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
 The |processor| shall kill potentially already offloaded instructions to guarantee precise exception behavior.
@@ -917,8 +915,6 @@ If `ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is written to ``mstatus.
 If `ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
 If `ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
 The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
-
-The signals in ``result`` are valid when ``result_valid`` is 1. These signals remain stable during a result transaction.
 
 Interface dependencies
 ----------------------
