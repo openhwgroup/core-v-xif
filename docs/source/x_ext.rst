@@ -241,7 +241,7 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
     parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
-    parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for ``mstatus.xs``
+    parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for mstatus.xs
     parameter int          X_DUALREAD      =  0,  // Dual register file read
     parameter int          X_DUALWRITE     =  0   // Dual register file write
   );
@@ -549,7 +549,7 @@ Register interface
   | ``rs_valid``           | :ref:`registerflags_t    | Validity of the register file source operand(s). If register pairs are supported, the validity is signaled for  |
   |                        | <registerflags>`         | each register within the pair individually.                                                                     |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
+  | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}).                                    |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -733,8 +733,8 @@ The ``addr`` signal shall be consistent with the ``be`` signal, i.e. if the maxi
 
 When for example performing a transaction that uses the middle two bytes on a 32-bit wide memory interface, the following (equivalent) `be``, ``size``, ``addr[1:0]`` combinations can be used:
 
-* ``be`` = 4'b0110, ``size`` = 3'b010``, ``addr[1:0]`` = 2'b00.
-* ``be`` = 4'b0110, ``size`` = 3'b010``, ``addr[1:0]`` = 2'b01.
+* ``be`` = 4'b0110, ``size`` = 3'b010, ``addr[1:0]`` = 2'b00.
+* ``be`` = 4'b0110, ``size`` = 3'b010, ``addr[1:0]`` = 2'b01.
 
 Note that a word transfer is needed in this example because the two bytes transferred are not halfword aligned.
 
