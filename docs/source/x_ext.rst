@@ -134,7 +134,7 @@ The major features of CORE-V-XIF are:
 
 * Support for instruction speculation.
 
-  CORE-V-XIF indicates whether offloaded instructions are allowed to be commited (or should be killed).
+  CORE-V-XIF indicates whether offloaded instructions are allowed to be committed (or should be killed).
 
 CORE-V-XIF consists of seven interfaces:
 
@@ -165,7 +165,7 @@ The |coprocessor| informs the core whether an accepted offloaded instruction is 
 Offloaded instructions are speculative; |processor| has not necessarily committed to them yet and might decide to kill them (e.g.
 because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
 core will inform the |coprocessor| about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
-is no longer speculative and is allowed to be commited.
+is no longer speculative and is allowed to be committed.
 
 In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
 or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
