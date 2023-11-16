@@ -62,6 +62,11 @@ The CORE-V-XIF specification contains the following parameters:
 | ``X_DUALWRITE``              | int unsigned (0..1)    | 0             | Is dual write supported? 0: No, 1: Yes.                            |
 |                              |                        |               | Legal values are determined by the |processor|.                    |
 +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+| ``X_ISSUE_REGISTER_SPLIT``   | int unsigned (0..1)    | 0             | Does the interface pipeline register interface? 0: No, 1: Yes.     |
+|                              |                        |               | Legal values are determined by the |processor|.                    |
+|                              |                        |               | If 1, registers are provided after the issue of the instruction.   |
+|                              |                        |               | If 0, registers are provided at the same time as issue.            |
++------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 .. note::
 
@@ -131,10 +136,11 @@ The major features of CORE-V-XIF are:
 
   CORE-V-XIF indicates whether offloaded instructions are allowed to be commited (or should be killed).
 
-CORE-V-XIF consists of six interfaces:
+CORE-V-XIF consists of seven interfaces:
 
 * **Compressed interface**. Signaling of compressed instruction to be offloaded.
-* **Issue (request/response) interface**. Signaling of the uncompressed instruction to be offloaded including its register file based operands.
+* **Issue (request/response) interface**. Signaling of the uncompressed instruction to be offloaded.
+* **Register interface**. Signaling of General Purpose Registers (GPRs) and CSRs.
 * **Commit interface**. Signaling of control signals related to whether instructions can be committed or should be killed.
 * **Memory (request/response) interface**. Signaling of load/store related signals (i.e. its transaction request signals). This interface is optional.
 * **Memory result interface**. Signaling of load/store related signals (i.e. its transaction result signals). This interface is optional.
@@ -150,8 +156,8 @@ This non-compressed instruction is then attempted for offload via the issue inte
 Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface. 
 The external |coprocessor| can decide to accept or reject the instruction offload. In case of acceptation the |coprocessor|
 will further handle the instruction. In case of rejection the core will raise an illegal instruction exception. 
-As part of the issue interface transaction the core provides the instruction and required register file operand(s) to the |coprocessor|. If
-an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
+The core provides the required register file operand(s) to the |coprocessor| via the register interface.
+If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
 ``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
 The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store, and to which register(s) in the register file it will writeback.
 |processor| uses this information to reserve the load/store unit and to track data dependencies between instructions.
@@ -194,6 +200,7 @@ A |processor| using the eXtension interface could have the following interface:
     // eXtension interface
     if_xif.cpu_compressed       xif_compressed_if,
     if_xif.cpu_issue            xif_issue_if,
+    if_xif.cpu_register         xif_register_if,
     if_xif.cpu_commit           xif_commit_if,
     if_xif.cpu_mem              xif_mem_if,
     if_xif.cpu_mem_result       xif_mem_result_if,
@@ -213,6 +220,7 @@ A |coprocessor| using the eXtension interface could have the following interface
     // eXtension interface
     if_xif.coproc_compressed    xif_compressed_if,
     if_xif.coproc_issue         xif_issue_if,
+    if_xif.coproc_register      xif_register_if,
     if_xif.coproc_commit        xif_commit_if,
     if_xif.coproc_mem           xif_mem_if,
     if_xif.coproc_mem_result    xif_mem_result_if,
@@ -251,6 +259,11 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     logic               issue_ready;
     x_issue_req_t       issue_req;
     x_issue_resp_t      issue_resp;
+
+    // Register interface
+    logic               register_valid;
+    logic               register_ready;
+    x_register_t        register;
 
     // Commit interface
     logic               commit_valid;
@@ -296,7 +309,7 @@ A full reference implementation of the SystemVerilog interface can be found at h
 Identification
 ~~~~~~~~~~~~~~
 
-The six interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
+The seven interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
 The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
 An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
 The ``id`` values for in-flight offloaded instructions are required to be unique.
@@ -432,16 +445,6 @@ Issue interface
   |                        |                                        |                                                                                                                 |
   |                        |                                        |                                                                                                                 |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]                | Register file source operands for the offloaded instruction.                                                    |
-  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs_valid``           | :ref:`registerflags_t <registerflags>` | Validity of the register file source operand(s). If register pairs are supported, the validty is signaled for   |
-  |                        |                                        | each register within the pair individually.                                                                     |
-  |                        |                                        |                                                                                                                 |
-  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs``                | logic [5:0]                            | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
-  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs_valid``          | logic                                  | Validity of the Extension Context Status.                                                                       |
-  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged.
 A |processor| is allowed to retract its issue request transaction before it is accepted with ``issue_ready`` = 1 and it can do so in the following ways:
@@ -449,67 +452,43 @@ A |processor| is allowed to retract its issue request transaction before it is a
 * Set ``issue_valid`` = 0.
 * Keep ``issue_valid`` = 1, but change the ``id`` signal (and if desired change the other signals in ``issue_req``).
 
-The ``instr``, ``mode``, ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``issue_valid`` is 1. 
-The ``rs`` signal is only considered valid when ``issue_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
-The ``ecs`` signal is only considered valid when ``issue_valid`` is 1 and ``ecs_valid`` is 1 as well.
-
-The ``instr`` and ``mode`` signals remain stable during an issue request transaction. The ``rs_valid`` bits are not required to be stable during the transaction. Each bit
-can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
-A coprocessor is not expected to wait for all ``rs_valid`` bits to be 1, but only for those registers it intends to read.
-The ``rs`` signals are only required to be stable during the part
-of a transaction in which these signals are considered to be valid. The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from
-0 to 1, but is not allowed to transition back to 0 during a transaction. The ``ecs`` signal is only required to be stable during the part of a transaction in which
-this signals is considered to be valid.
+The ``instr``, ``mode``, and ``id`` signals are valid when ``issue_valid`` is 1.
+The ``instr`` and ``mode`` signals remain stable during an issue request transaction.
 
 ``mode`` is the effective privilege level. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
 As coprocessors must be unprivileged, the mode signal may only be used in memory transactions.
-
-The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |coprocessor|. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
-operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
-``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
-in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
-odd register file index is provided in the upper 32 bits. When reading from the ``X0``, ``X1`` pair, then a value of 0 is returned for the entire operand.
-The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources
-it is supported.
-
-The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
 
 :numref:`Issue response type` describes the ``x_issue_resp_t`` type.
 
 .. table:: Issue response type
   :name: Issue response type
 
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | **Signal**             | **Type**             | **Description**                                                                                                  |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``accept``             | logic                | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``writeback``          | logic                | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
-  |                        |                      | Writeback to ``X0`` is allowed by the |coprocessor|, but will be ignored by the |processor|.                     |
-  |                        |                      | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``dualwrite``          | logic                | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              |
-  |                        |                      | Only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.                                    |
-  |                        |                      | Writeback to the ``X0``, ``X1`` pair is allowed by the |coprocessor|, but will be ignored by the |processor|.    |
-  |                        |                      | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``dualread``           | logic [2:0]          | Will the |coprocessor| require dual reads from ``rs1\rs2\rs3`` and ``rs1+1\rs2+1\rs3+1``?                        |
-  |                        |                      | ``dualread[0]`` = 1 signals that dual read is required from ``rs1`` and ``rs1+1`` (only allowed if               |
-  |                        |                      | ``X_DUALREAD`` > 0 and instruction bits ``[19:15]`` are even).                                                   |
-  |                        |                      | ``dualread[1]`` = 1 signals that dual read is required from ``rs2`` and ``rs2+1`` (only allowed if               |
-  |                        |                      | ``X_DUALREAD`` > 1 and instruction bits ``[24:20]`` are even).                                                   |
-  |                        |                      | ``dualread[2]`` = 1 signals that dual read is required from ``rs3`` and ``rs3+1`` (only allowed if               |
-  |                        |                      | ``X_DUALREAD`` > 2 and instruction bits ``[31:27]`` are even).                                                   |
-  |                        |                      | A |coprocessor| must signal ``dualread`` as 0 for non-accepted instructions.                                     |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``loadstore``          | logic                | Is the offloaded instruction a load/store instruction?                                                           |
-  |                        |                      | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        |
-  |                        |                      | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
-  |                        |                      | more transactions via the memory group interface.                                                                |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``ecswrite``           | logic                | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
-  |                        |                      | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     |
-  +------------------------+----------------------+------------------------------------------------------------------------------------------------------------------+
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**               | **Description**                                                                                                  |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``writeback``          | logic                  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
+  |                        |                        | Writeback to ``X0`` is allowed by the |coprocessor|, but will be ignored by the |processor|.                     |
+  |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``dualwrite``          | logic                  | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              |
+  |                        |                        | Only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.                                    |
+  |                        |                        | Writeback to the ``X0``, ``X1`` pair is allowed by the |coprocessor|, but will be ignored by the |processor|.    |
+  |                        |                        | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``register_read``      | :ref:`registerflags_t  | Will the |coprocessor| perform require specific registers to be read?                                            |
+  |                        | <registerflags>`       | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair      |
+  |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for non-accepted instructions.                                |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``loadstore``          | logic                  | Is the offloaded instruction a load/store instruction?                                                           |
+  |                        |                        | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        |
+  |                        |                        | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
+  |                        |                        | more transactions via the memory group interface.                                                                |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+  | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
+  |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     |
+  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
 The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
 
@@ -529,12 +508,87 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 A |coprocessor| can (only) accept an offloaded instruction when:
 
 * It can handle the instruction (based on decoding ``instr``).
-* The required source registers are marked valid by the offloading core  (``issue_valid`` is 1 and required bit(s) ``rs_valid`` are 1).
+* There are no structural hazards that would prevent execution
 
 A transaction is considered offloaded/accepted on the positive edge of ``clk`` when ``issue_valid``, ``issue_ready`` are asserted and ``accept`` is 1.
 A transaction is considered not offloaded/rejected on the positive edge of ``clk`` when ``issue_valid`` and ``issue_ready`` are asserted while ``accept`` is 0.
 
 The signals in ``issue_resp`` are valid when ``issue_valid`` and ``issue_ready`` are both 1. There are no stability requirements.
+
+Register interface
+~~~~~~~~~~~~~~~~~~
+:numref:`Register interface signals` describes the register interface signals.
+
+.. table:: Register interface signals
+  :name: Register interface signals
+
+  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+  | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+  |                           |                 | (|processor|)   |                                                                                                                              |
+  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+  | ``register_valid``        | logic           | output          | Register request valid. Indicates that |processor| provides register contents related to an instruction.                     |
+  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+  | ``register_ready``        | logic           | input           | Register request ready. The transaction signaled via ``register_req`` is accepted when                                       |
+  |                           |                 |                 | ``register_valid`` and  ``register_ready`` are both 1.                                                                       |
+  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+  | ``register``              | x_register_t    | output          | Register packet.                                                                                                             |
+  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+
+:numref:`Register type` describes the ``x_register_t`` type.
+
+.. table:: Register type
+  :name: Register type
+
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**                 | **Description**                                                                                                 |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``id``                 | :ref:`id_t <id>`         | Identification of the offloaded instruction.                                                                    |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``rs_valid``           | :ref:`registerflags_t    | Validity of the register file source operand(s). If register pairs are supported, the validity is signaled for  |
+  |                        | <registerflags>`         | each register within the pair individually.                                                                     |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``,``mstatus.fs``,``mstatus.vs``}).                                      |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+
+There are two main scenarios, in how the register interface will be used. They are selected by ``X_ISSUE_REGISTER_SPLIT``:
+
+1. ``X_ISSUE_REGISTER_SPLIT`` = 0: A register transaction can be started in the same clock cycle as the issue transaction (``issue_valid = register_valid``, ``issue_ready = register_ready`` and ``issue_req.id = register.id``).
+   In this case, the |processor| will speculatively provide all possible source registers via ``register.rs`` when they become available (signalled via the respective ``rs_valid`` signals). 
+   The |coprocessor| will delay accepting the instruction until all necessary registers are provided, and only then assert ``issue_ready`` and ``register_ready``.
+   The ``rs_valid`` bits are not required to be stable during the transaction.
+   Each bit can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
+   A |coprocessor| is not expected to wait for all ``rs_valid`` bits to be 1, but only for those registers it intends to read.
+   The ``rs`` signals are only required to be stable during the part of a transaction in which these signals are considered to be valid.
+   The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
+   The ``ecs`` signal is only required to be stable during the part of a transaction in which this signals is considered to be valid.
+
+2. ``X_ISSUE_REGISTER_SPLIT`` = 1: For a |processor| which splits the issue and register interface into subsequent pipeline stages (e.g. because it has a dedicated read registers (RR) stage), the registers will be provided after the issue transaction completed. 
+   The |processor| initiates the register transaction once all registers are available. 
+   If the |coprocessor| is able to accept multiple issue transactions before receiving the registers, the register transaction can occur in a different order.
+   This allows the |processor| to reorder instructions based on the availability of operands.
+   The |coprocessor| is always expected to be ready to retrieve its operands via the register interface after accepting the issue of an instruction.
+   Therefore, ``register_ready`` is tied to 1.
+   The ``register_valid`` signal will be 1 for one cycle, and ``rs_valid`` is guaranteed to be equal to the corresponding ``issue_resp.register_read``.
+   Thus, a |coprocessor| can ignore ``rs_valid`` in this case and a |processor| may chose to not implement the signal.
+   The same applies to the ``ecs`` and ``ecs_valid`` signals.
+
+In both scenarios, the following applies:
+The ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``register_valid`` is 1. 
+The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
+The ``ecs`` signal is only considered valid when ``register_valid`` is 1 and ``ecs_valid`` is 1 as well.
+
+The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |coprocessor|. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
+operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
+``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
+in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
+odd register file index is provided in the upper 32 bits. When reading from the ``X0``, ``X1`` pair, then a value of 0 is returned for the entire operand.
+The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources it is supported.
+
+The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
 
 Commit interface
 ~~~~~~~~~~~~~~~~
@@ -923,6 +977,7 @@ The following rules apply to the relative ordering of the interface handshakes:
 
 * The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
+* Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
 * Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.
 * If an offloaded instruction is accepted as a ``loadstore`` instruction and not killed, then for each such instruction one or more memory transaction must occur
   via the memory interface. The transaction ordering on the memory interface interface must correspond to the transaction ordering on the issue interface.
@@ -947,6 +1002,7 @@ The following handshake pairs exist on the eXtension interface:
 
 * ``compressed_valid`` with ``compressed_ready``.
 * ``issue_valid`` with ``issue_ready``.
+* ``register_valid`` with ``register_ready``.
 * ``commit_valid`` with implicit always ready signal.
 * ``mem_valid`` with ``mem_ready``.
 * ``mem_result_valid`` with implicit always ready signal.
