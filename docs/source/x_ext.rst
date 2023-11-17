@@ -29,44 +29,48 @@ Parameters
 
 The CORE-V-XIF specification contains the following parameters:
 
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| Name                         | Type/Range             | Default       | Description                                                        |
-+==============================+========================+===============+====================================================================+
-| ``X_NUM_RS``                 | int unsigned (2..3)    | 2             | Number of register file read ports that can be used by the         |
-|                              |                        |               | eXtension interface.                                               |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ID_WIDTH``               | int unsigned (3..32)   | 4             | Identification (``id``) width for the eXtension interface.         |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_MEM_WIDTH``              | int unsigned (32, 64,  | 32            | Memory access width for loads/stores via the eXtension interface.  |
-|                              | 128, 256)              |               |                                                                    |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_RFR_WIDTH``              | int unsigned (32, 64)  | 32            | Register file read access width for the eXtension interface.       |
-|                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
-|                              |                        |               | and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is     |
-|                              |                        |               | (only) 64.                                                         |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_RFW_WIDTH``              | int unsigned (32, 64)  | 32            | Register file write access width for the eXtension interface.      |
-|                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
-|                              |                        |               | and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is     |
-|                              |                        |               | (only) 64.                                                         |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
-|                              |                        |               | The |processor| determines the legal values for this parameter.    |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_DUALREAD``               | int unsigned (0..3)    | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
-|                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
-|                              |                        |               | Legal values are determined by the |processor|.                    |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_DUALWRITE``              | int unsigned (0..1)    | 0             | Is dual write supported? 0: No, 1: Yes.                            |
-|                              |                        |               | Legal values are determined by the |processor|.                    |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-| ``X_ISSUE_REGISTER_SPLIT``   | int unsigned (0..1)    | 0             | Does the interface pipeline register interface? 0: No, 1: Yes.     |
-|                              |                        |               | Legal values are determined by the |processor|.                    |
-|                              |                        |               | If 1, registers are provided after the issue of the instruction.   |
-|                              |                        |               | If 0, registers are provided at the same time as issue.            |
-+------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+.. table:: Interface parameters
+  :name: Interface parameters
+  :class: no-scrollbar-table
+    
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | Name                         | Type/Range             | Default       | Description                                                        |
+  +==============================+========================+===============+====================================================================+
+  | ``X_NUM_RS``                 | int unsigned (2..3)    | 2             | Number of register file read ports that can be used by the         |
+  |                              |                        |               | eXtension interface.                                               |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_ID_WIDTH``               | int unsigned (3..32)   | 4             | Identification (``id``) width for the eXtension interface.         |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_MEM_WIDTH``              | int unsigned (32, 64,  | 32            | Memory access width for loads/stores via the eXtension interface.  |
+  |                              | 128, 256)              |               |                                                                    |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_RFR_WIDTH``              | int unsigned (32, 64)  | 32            | Register file read access width for the eXtension interface.       |
+  |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
+  |                              |                        |               | and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is     |
+  |                              |                        |               | (only) 64.                                                         |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_RFW_WIDTH``              | int unsigned (32, 64)  | 32            | Register file write access width for the eXtension interface.      |
+  |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
+  |                              |                        |               | and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is     |
+  |                              |                        |               | (only) 64.                                                         |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
+  |                              |                        |               | The |processor| determines the legal values for this parameter.    |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_DUALREAD``               | int unsigned (0..3)    | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
+  |                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_DUALWRITE``              | int unsigned (0..1)    | 0             | Is dual write supported? 0: No, 1: Yes.                            |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_ISSUE_REGISTER_SPLIT``   | int unsigned (0..1)    | 0             | Does the interface pipeline register interface? 0: No, 1: Yes.     |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
+  |                              |                        |               | If 1, registers are provided after the issue of the instruction.   |
+  |                              |                        |               | If 0, registers are provided at the same time as issue.            |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 .. note::
 
@@ -76,25 +80,29 @@ The CORE-V-XIF specification contains the following parameters:
 
 Additionally, the following type definitions are defined to improve readability of the specification and ensure consistency between the interfaces:
 
-+------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
-| Name                                     | Definition                             | Description                                                        |
-+==========================================+========================================+====================================================================+
-| .. _registerflags:                       | logic [X_NUM_RS+X_DUALREAD-1:0]        | Vector with a flag per possible register.                          |
-|                                          |                                        | This depends upon the number of                                    |
-| ``registerflags_t``                      |                                        | read ports and their ability to read register pairs.               |
-|                                          |                                        | The bit positions map to registers as follows:                     |
-|                                          |                                        | as follows:                                                        |
-|                                          |                                        | Low indices correspond to low operand numbers, and the even part   |
-|                                          |                                        | of the pair has the lower index than the odd one.                  |
-+------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
-| .. _mode:                                | logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0]  | Privilege level                                                    |
-|                                          |                                        | (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved,               |
-| ``mode_t``                               |                                        | 2'b11 = Machine).                                                  |
-+------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
-| .. _id:                                  | logic [X_ID_WIDTH-1:0]                 | Identification of the offloaded instruction.                       |
-|                                          |                                        | See `Identification`_ for details on the identifiers               |
-| ``id_t``                                 |                                        |                                                                    |
-+------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+.. table:: Interface type definitions
+  :name: Interface type definitions
+  :class: no-scrollbar-table
+
+  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+  | Name                                     | Definition                             | Description                                                        |
+  +==========================================+========================================+====================================================================+
+  | .. _registerflags:                       | logic [X_NUM_RS+X_DUALREAD-1:0]        | Vector with a flag per possible register.                          |
+  |                                          |                                        | This depends upon the number of                                    |
+  | ``registerflags_t``                      |                                        | read ports and their ability to read register pairs.               |
+  |                                          |                                        | The bit positions map to registers as follows:                     |
+  |                                          |                                        | as follows:                                                        |
+  |                                          |                                        | Low indices correspond to low operand numbers, and the even part   |
+  |                                          |                                        | of the pair has the lower index than the odd one.                  |
+  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+  | .. _mode:                                | logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0]  | Privilege level                                                    |
+  |                                          |                                        | (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved,               |
+  | ``mode_t``                               |                                        | 2'b11 = Machine).                                                  |
+  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+  | .. _id:                                  | logic [X_ID_WIDTH-1:0]                 | Identification of the offloaded instruction.                       |
+  |                                          |                                        | See `Identification`_ for details on the identifiers               |
+  | ``id_t``                                 |                                        |                                                                    |
+  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
 
 Major features
 --------------
@@ -336,6 +344,7 @@ Compressed interface
 
 .. table:: Compressed interface signals
   :name: Compressed interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**            | **Direction**   | **Description**                                                                                                              |
@@ -355,6 +364,7 @@ Compressed interface
 
 .. table:: Compressed request type
   :name: Compressed request type
+  :class: no-scrollbar-table
 
   +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**             | **Type**                | **Description**                                                                                                 |
@@ -380,6 +390,7 @@ then a new compressed request transaction started).
 
 .. table:: Compressed response type
   :name: Compressed response type
+  :class: no-scrollbar-table
 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
   | **Signal**             | **Type**             | **Description**                                                                                                 | 
@@ -414,6 +425,7 @@ Issue interface
 
 .. table:: Issue interface signals
   :name: Issue interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
@@ -433,6 +445,7 @@ Issue interface
 
 .. table:: Issue request type
   :name: Issue request type
+  :class: no-scrollbar-table
 
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**             | **Type**                               | **Description**                                                                                                 |
@@ -462,6 +475,7 @@ As coprocessors must be unprivileged, the mode signal may only be used in memory
 
 .. table:: Issue response type
   :name: Issue response type
+  :class: no-scrollbar-table
 
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | **Signal**             | **Type**               | **Description**                                                                                                  |
@@ -521,6 +535,7 @@ Register interface
 
 .. table:: Register interface signals
   :name: Register interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
@@ -538,6 +553,7 @@ Register interface
 
 .. table:: Register type
   :name: Register type
+  :class: no-scrollbar-table
 
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**             | **Type**                 | **Description**                                                                                                 |
@@ -596,6 +612,7 @@ Commit interface
 
 .. table:: Commit interface signals
   :name: Commit interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
@@ -618,6 +635,7 @@ Commit interface
 
 .. table:: Commit packet type
   :name: Commit packet type
+  :class: no-scrollbar-table
 
   +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**         | **Type**               | **Description**                                                                                                              |
@@ -658,6 +676,7 @@ Memory (request/response) interface
 
 .. table:: Memory (request/response) interface signals
   :name: Memory (request/response) interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
@@ -678,6 +697,7 @@ Memory (request/response) interface
 
 .. table:: Memory request type
   :name: Memory request type
+  :class: no-scrollbar-table
 
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**   | **Type**                   | **Description**                                                                                                 |
@@ -790,6 +810,7 @@ A |processor| shall always (eventually) complete any memory request transaction 
 
 .. table:: Memory response type
   :name: Memory response type
+  :class: no-scrollbar-table
 
   +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**             | **Type**         | **Description**                                                                                                 |
@@ -829,6 +850,7 @@ Memory result interface
 
 .. table:: Memory result interface signals
   :name: Memory result interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
@@ -845,6 +867,7 @@ Memory result interface
 
 .. table:: Memory result type
   :name: Memory result type
+  :class: no-scrollbar-table
 
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**    |          **Type**         | **Description**                                                                                                 |
@@ -897,6 +920,7 @@ Result interface
 
 .. table:: Result interface signals
   :name: Result interface signals
+  :class: no-scrollbar-table
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
@@ -920,6 +944,7 @@ for instructions that have been killed.
 
 .. table:: Result packet type
   :name: Result packet type
+  :class: no-scrollbar-table
 
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**    | **Type**                        | **Description**                                                                                                 |
