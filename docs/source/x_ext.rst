@@ -54,6 +54,14 @@ The CORE-V-XIF specification contains the following parameters:
   |                              |                        |               | and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is     |
   |                              |                        |               | (only) 64.                                                         |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_NUM_HARTS``              | int unsigned           | 1             | Number of harts (hardware threads) associated with the interface.  |
+  |                              | (1..2^MXLEN)           |               | The |processor| determines the legal values for this parameter.    |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+  | ``X_HARTID_WIDTH``           | int unsigned           | 1             | Width of ``hartid`` signals.                                       |
+  |                              | (1..MXLEN)             |               | Must be at least 1. Limited by the RISC-V privileged specification |
+  |                              |                        |               | to MXLEN.                                                          |
+  |                              |                        |               | The |processor| determines the legal values for this parameter.    |
+  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
   |                              |                        |               | The |processor| determines the legal values for this parameter.    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
@@ -102,6 +110,12 @@ Additionally, the following type definitions are defined to improve readability 
   | .. _id:                                  | logic [X_ID_WIDTH-1:0]                 | Identification of the offloaded instruction.                       |
   |                                          |                                        | See `Identification`_ for details on the identifiers               |
   | ``id_t``                                 |                                        |                                                                    |
+  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+  | .. _hartid:                              | logic [X_HARTID_WIDTH-1:0]             | Identification of the hart offloading the instruction.             |
+  |                                          |                                        | Only relevant in multi-hart systems. Hart IDs are not required to  |
+  | ``hartid_t``                             |                                        | to be numbered continuously.                                       |
+  |                                          |                                        | The hart ID would usually correspond to ``mhartid``, but it is not |
+  |                                          |                                        | required to do so.                                                 |
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
 
 Major features
@@ -248,6 +262,8 @@ A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
     parameter int          X_MEM_WIDTH     =  32, // Maximum memory access width for loads/stores via the eXtension interface
     parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
     parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
+    parameter int          X_NUM_HARTS     =  1,  // Number of harts associated with the eXtension interface
+    parameter int          X_HARTID_WIDTH  =  1,  // Width of the hartid signals in the eXtension interface
     parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
     parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for mstatus.xs
     parameter int          X_DUALREAD      =  0,  // Dual register file read
@@ -338,6 +354,22 @@ An ``id`` ends being in-flight when one of the following scenarios apply:
 * the corresponding commit transaction killed the offloaded instruction and no corresponding memory request transaction and/or corresponding memory result transactions is in progress or still needs to be performed.
 * the corresponding result transaction has been performed.
 
+Multiple Harts
+--------------
+
+The interface can be used in systems with multiple harts (hardware threads).
+This includes scenarios with multiple |processors| and multi-threaded implementations of |processors|.
+RISC-V distinguishes between harts using t ``hartid``, which we also introduce to the interface.
+It is required to identify the source of the offloaded instruction, as multiple harts might be able to offload via a shared interface.
+No duplicates of the combination of ``hartid`` and ``id`` may be in flight at any time within one instance of the interface.
+Any state within the |coprocessor| (e.g. custom CSRs) must be duplicated according to the number of harts (indicated by the ``X_NUM_HARTS`` parameter).
+Execution units may be shared among threads of the |coprocessor|, and conflicts around such resources must be managed by the |coprocessor|.
+
+.. note::
+  The interface can be used in scenarios where the |processor| is superscalar, i.e. it can issue more than one instruction per cycle.
+  In such scenarios, the |coprocessor| is usually required to also be able to accept more than one instruction per cycle.
+  Our expectation is that implementers will duplicate the interface according to the issue width.
+
 Compressed interface
 ~~~~~~~~~~~~~~~~~~~~
 :numref:`Compressed interface signals` describes the compressed interface signals.
@@ -366,24 +398,24 @@ Compressed interface
   :name: Compressed request type
   :class: no-scrollbar-table
 
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**             | **Type**                | **Description**                                                                                                 |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``instr``              | logic [15:0]            | Offloaded compressed instruction.                                                                               |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``                 | :ref:`id_t <id>`        | Identification number of the offloaded compressed instruction.                                                  |
-  +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------+
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | **Signal**             | **Type**                 | **Description**                                                                                                 |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``instr``              | logic [15:0]             | Offloaded compressed instruction.                                                                               |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``hartid``             | :ref:`hartid_t <hartid>` | Identification of the hart offloading the instruction.                                                          |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |processor| itself. A |coprocessor| can provide an uncompressed instruction
 in response to receiving this.
 
-A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``id`` remains unchanged.
+A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``hartid`` remains unchanged.
 A |processor| is allowed to retract its compressed request transaction before it is accepted with ``compressed_ready`` = 1 and it can do so in the following ways:
 
 * Set ``compressed_valid`` = 0.
-* Keep ``compressed_valid`` = 1, but change the ``id`` signal (and if desired change the other signals in ``compressed_req``).
+* Keep ``compressed_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``compressed_req``).
 
-The signals in ``compressed_req`` are valid when ``compressed_valid`` is 1. These signals remain stable during a compressed request transaction (if ``id`` changes while ``compressed_valid`` remains 1,
+The signals in ``compressed_req`` are valid when ``compressed_valid`` is 1. These signals remain stable during a compressed request transaction (if ``hartid`` changes while ``compressed_valid`` remains 1,
 then a new compressed request transaction started).
 
 :numref:`Compressed response type` describes the ``x_compressed_resp_t`` type.
@@ -454,18 +486,20 @@ Issue interface
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``mode``               | :ref:`mode_t <mode>`                   | Effective privilege level, as used for load and store instructions.                                             |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``hartid``             | :ref:`hartid_t <hartid>`               | Identification of the hart offloading the instruction.                                                          |
+  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``                 | :ref:`id_t <id>`                       | Identification of the offloaded instruction.                                                                    |
   |                        |                                        |                                                                                                                 |
   |                        |                                        |                                                                                                                 |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``id`` remains unchanged.
+An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``hartid`` remains unchanged.
 A |processor| is allowed to retract its issue request transaction before it is accepted with ``issue_ready`` = 1 and it can do so in the following ways:
-
+ 
 * Set ``issue_valid`` = 0.
-* Keep ``issue_valid`` = 1, but change the ``id`` signal (and if desired change the other signals in ``issue_req``).
+* Keep ``issue_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``issue_req``).
 
-The ``instr``, ``mode``, and ``id`` signals are valid when ``issue_valid`` is 1.
+The ``instr``, ``mode``, ``hartid`` and ``id`` signals are valid when ``issue_valid`` is 1.
 The ``instr`` and ``mode`` signals remain stable during an issue request transaction.
 
 ``mode`` is the effective privilege level. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
@@ -558,6 +592,8 @@ Register interface
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**             | **Type**                 | **Description**                                                                                                 |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``hartid``             | :ref:`hartid_t <hartid>` | Identification of the hart offloading the instruction.                                                          |
+  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``                 | :ref:`id_t <id>`         | Identification of the offloaded instruction.                                                                    |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
@@ -572,7 +608,7 @@ Register interface
 
 There are two main scenarios, in how the register interface will be used. They are selected by ``X_ISSUE_REGISTER_SPLIT``:
 
-1. ``X_ISSUE_REGISTER_SPLIT`` = 0: A register transaction can be started in the same clock cycle as the issue transaction (``issue_valid = register_valid``, ``issue_ready = register_ready`` and ``issue_req.id = register.id``).
+1. ``X_ISSUE_REGISTER_SPLIT`` = 0: A register transaction can be started in the same clock cycle as the issue transaction (``issue_valid = register_valid``, ``issue_ready = register_ready``, ``issue_req.hartid = register.hartid`` and ``issue_req.id = register.id``).
    In this case, the |processor| will speculatively provide all possible source registers via ``register.rs`` when they become available (signalled via the respective ``rs_valid`` signals). 
    The |coprocessor| will delay accepting the instruction until all necessary registers are provided, and only then assert ``issue_ready`` and ``register_ready``.
    The ``rs_valid`` bits are not required to be stable during the transaction.
@@ -593,7 +629,7 @@ There are two main scenarios, in how the register interface will be used. They a
    The same applies to the ``ecs`` and ``ecs_valid`` signals.
 
 In both scenarios, the following applies:
-The ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``register_valid`` is 1. 
+The ``hartid``, ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``register_valid`` is 1. 
 The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
 The ``ecs`` signal is only considered valid when ``register_valid`` is 1 and ``ecs_valid`` is 1 as well.
 
@@ -637,19 +673,21 @@ Commit interface
   :name: Commit packet type
   :class: no-scrollbar-table
 
-  +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | **Signal**         | **Type**               | **Description**                                                                                                              |
-  +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``id``             | :ref:`id_t <id>`       | Identification of the offloaded instruction. Valid when ``commit_valid`` is 1.                                               |
-  +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``commit_kill``    | logic                  | Shall an offloaded instruction be killed? If ``commit_valid`` is 1 and ``commit_kill`` is 0, then the core guarantees        |
-  |                    |                        | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
-  |                    |                        | exception in a preceding instruction), and is allowed to be committed. If ``commit_valid`` is 1 and ``commit_kill`` is       |
-  |                    |                        | 1, then the offloaded instruction (``id``) shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the|
-  |                    |                        | related instruction does/did not change architectural state.                                                                 |
-  +--------------------+------------------------+------------------------------------------------------------------------------------------------------------------------------+
+  +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
+  | **Signal**         | **Type**                 | **Description**                                                                                                              |
+  +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
+  | ``hartid``         | :ref:`hartid_t <hartid>` | Identification of the hart offloading the instruction.                                                                       |
+  +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
+  | ``id``             | :ref:`id_t <id>`         | Identification of the offloaded instruction. Valid when ``commit_valid`` is 1.                                               |
+  +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
+  | ``commit_kill``    | logic                    | Shall an offloaded instruction be killed? If ``commit_valid`` is 1 and ``commit_kill`` is 0, then the core guarantees        |
+  |                    |                          | that the offloaded instruction (``id``) is no longer speculative, will not get killed (e.g. due to misspeculation or an      |
+  |                    |                          | exception in a preceding instruction), and is allowed to be committed. If ``commit_valid`` is 1 and ``commit_kill`` is       |
+  |                    |                          | 1, then the offloaded instruction (``id``) shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the|
+  |                    |                          | related instruction does/did not change architectural state.                                                                 |
+  +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
 
-The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``id`` value indicates which offloaded
+The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle for every offloaded instruction by the |coprocessor| (whether accepted or not). The ``hartid`` and ``id`` values indicates which offloaded
 instruction is allowed to be committed or is supposed to be killed.
 
 For each offloaded and accepted instruction the core is guaranteed to (eventually) signal that such an instruction is either no longer speculative and can be committed (``commit_valid`` is 1
@@ -701,6 +739,8 @@ Memory (request/response) interface
 
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**   | **Type**                   | **Description**                                                                                                 |
+  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``hartid``   | :ref:`hartid_t <hartid>`   | Identification of the hart offloading the instruction.                                                          |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``       | :ref:`id_t <id>`           | Identification of the offloaded instruction.                                                                    |
   +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -791,12 +831,12 @@ memory request transactions in which ``we`` is 1.
 A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
 shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id`` and it shall signal
 ``last`` = 1 otherwise. Once a |coprocessor| signals ``last`` = 1 for a memory request transaction it shall not issue further memory
-request transactions for the same ``id``.
+request transactions for the same combination of ``id`` and ``hartid``.
 
 Normally a sequence of memory request transactions ends with a
 transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
-then it shall issue no further memory request transactions for the same instruction (``id``). Similarly, after having received ``commit_kill`` = 1 no further memory request transactions shall
-be issued by a |coprocessor| for the same instruction (``id``).
+then it shall issue no further memory request transactions for the same instruction (``hartid`` + ``id``). Similarly, after having received ``commit_kill`` = 1 no further memory request transactions shall
+be issued by a |coprocessor| for the same instruction (``hartid`` + ``id``).
 
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
 A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
@@ -872,6 +912,8 @@ Memory result interface
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**    |          **Type**         | **Description**                                                                                                 |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``hartid``    | :ref:`hartid_t <hartid>`  | Identification of the hart offloading the instruction.                                                          |
+  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``        | :ref:`id_t <id>`          | Identification of the offloaded instruction.                                                                    |
   +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rdata``     | logic [X_MEM_WIDTH-1:0]   | Read data of a read memory transaction. Only used for reads.                                                    |
@@ -885,7 +927,7 @@ The memory result interface is used to provide a result from |processor| to the 
 No memory result transaction is performed for instructions that led to a synchronous exception or debug trigger match with *before* timing as signaled via the memory (request/response) interface.
 Otherwise, one memory result transaction is performed per memory (request/response) transaction (even for killed instructions).
 
-Memory result transactions are provided by the |processor| in the same order (with matching ``id``) as the memory (request/response) transactions are received. The ``err`` signal
+Memory result transactions are provided by the |processor| in the same order (with matching ``hartid`` and ``id``) as the memory (request/response) transactions are received. The ``err`` signal
 signals whether a bus error occurred. The ``dbg`` signal
 signals whether a debug trigger match with *before* timing occurred ``rdata`` (for a read transaction only).
 
@@ -948,6 +990,8 @@ for instructions that have been killed.
 
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | **Signal**    | **Type**                        | **Description**                                                                                                 |
+  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | ``hartid``    | :ref:`hartid_t <hartid>`        | Identification of the hart offloading the instruction.                                                          |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``        | :ref:`id_t <id>`                | Identification of the offloaded instruction.                                                                    |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
