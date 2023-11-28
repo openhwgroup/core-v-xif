@@ -333,22 +333,18 @@ A full reference implementation of the SystemVerilog interface can be found at h
 Identification
 ~~~~~~~~~~~~~~
 
-The seven interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
+Most interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
 The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
 An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
 The ``id`` values for in-flight offloaded instructions are required to be unique.
 The ``id`` values are required to be incremental wrapping for sequential instructions, but do not necessarily need to be continuous.
 
-``id`` values can only be introduced by the compressed interface and/or the issue interface.
+``id`` values can only be introduced by the issue interface.
 
-An ``id`` becomes in-flight via the compressed interface in the first cycle that ``compressed_valid`` is 1 for that ``id`` or
-when in the first cycle that ``issue_valid`` is 1 for that ``id`` (only if the same ``id`` was not already in-flight via the
-compressed interface).
+An ``id`` becomes in-flight in the first cycle that ``issue_valid`` is 1 for that ``id``.
 
 An ``id`` ends being in-flight when one of the following scenarios apply:
 
-* the corresponding compressed request transaction is retracted.
-* the corresponding compressed request transaction is not accepted.
 * the corresponding issue request transaction is retracted.
 * the corresponding issue request transaction is not accepted and the corresponding commit handshake has been performed.
 * the corresponding commit transaction killed the offloaded instruction and no corresponding memory request transaction and/or corresponding memory result transactions is in progress or still needs to be performed.
