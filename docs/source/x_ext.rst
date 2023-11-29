@@ -87,13 +87,18 @@ Additionally, the following type definitions are defined to improve readability 
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
   | Name                                     | Definition                             | Description                                                        |
   +==========================================+========================================+====================================================================+
-  | .. _registerflags:                       | logic [X_NUM_RS+X_DUALREAD-1:0]        | Vector with a flag per possible register.                          |
+  | .. _readregflags:                        | logic [X_NUM_RS+X_DUALREAD-1:0]        | Vector with a flag per possible source register.                   |
   |                                          |                                        | This depends upon the number of                                    |
-  | ``registerflags_t``                      |                                        | read ports and their ability to read register pairs.               |
+  | ``readregflags_t``                       |                                        | read ports and their ability to read register pairs.               |
   |                                          |                                        | The bit positions map to registers as follows:                     |
-  |                                          |                                        | as follows:                                                        |
   |                                          |                                        | Low indices correspond to low operand numbers, and the even part   |
   |                                          |                                        | of the pair has the lower index than the odd one.                  |
+  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+  | .. _writeregflags:                       | logic [X_DUALWRITE:0]                  | Bit vector indicating destination registers for write back.        |
+  |                                          |                                        | The width depends on the ability to perform dual write.            |
+  | ``writeregflags_t``                      |                                        | If ``X_DUALWRITE`` = 0, this signal is a single bit.               |
+  |                                          |                                        | Bit 1 may only be set when bit 0 is also set.                      |
+  |                                          |                                        | In this case, the vector indicates that a register pair is used.   |
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
   | .. _mode:                                | logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0]  | Privilege level                                                    |
   |                                          |                                        | (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved,               |
@@ -482,17 +487,14 @@ As coprocessors must be unprivileged, the mode signal may only be used in memory
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``writeback``          | logic                  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
-  |                        |                        | Writeback to ``X0`` is allowed by the |coprocessor|, but will be ignored by the |processor|.                     |
+  | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
+  |                        | <writeregflags>`       | Writeback to ``X0`` or the ``X0``, ``X1`` pair is allowed by the |coprocessor|,                                  |
+  |                        |                        | but will be ignored by the |processor|.                                                                          |
   |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
+  |                        |                        | Writeback to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``dualwrite``          | logic                  | Will the |coprocessor| perform a dual writeback in the core to ``rd`` and ``rd+1``?                              |
-  |                        |                        | Only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.                                    |
-  |                        |                        | Writeback to the ``X0``, ``X1`` pair is allowed by the |coprocessor|, but will be ignored by the |processor|.    |
-  |                        |                        | A |coprocessor| must signal ``dualwrite`` as 0 for non-accepted instructions.                                    |
-  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``register_read``      | :ref:`registerflags_t  | Will the |coprocessor| perform require specific registers to be read?                                            |
-  |                        | <registerflags>`       | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair      |
+  | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
+  |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair      |
   |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for non-accepted instructions.                                |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``loadstore``          | logic                  | Is the offloaded instruction a load/store instruction?                                                           |
@@ -562,8 +564,8 @@ Register interface
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rs[X_NUM_RS-1:0]``   | logic [X_RFR_WIDTH-1:0]  | Register file source operands for the offloaded instruction.                                                    |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rs_valid``           | :ref:`registerflags_t    | Validity of the register file source operand(s). If register pairs are supported, the validity is signaled for  |
-  |                        | <registerflags>`         | each register within the pair individually.                                                                     |
+  | ``rs_valid``           | :ref:`readregflags_t     | Validity of the register file source operand(s). If register pairs are supported, the validity is signaled for  |
+  |                        | <readregflags>`          | each register within the pair individually.                                                                     |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}).                                    |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -955,7 +957,8 @@ for instructions that have been killed.
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``rd``        | logic [4:0]                     | Register file destination address(es).                                                                          |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``we``        | logic [X_RFW_WIDTH/XLEN-1:0]    | Register file write enable(s).                                                                                  |
+  | ``we``        | :ref:`writeregflags_t           | Register file write enable(s).                                                                                  |
+  |               | <writeregflags>`                |                                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``ecswe``     | logic [2:0]                     | Write enables for ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``.                                               |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -988,9 +991,15 @@ a corresponding memory (request/response) transaction or memory request transact
 The trigger match shall lead to a debug entry  in the |processor|.
 The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
-``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. If ``we`` is 2 bits wide, then ``we[1]`` is only allowed to be 1 if ``we[0]`` is 1 as well (i.e. for
-dual writeback). The |processor| shall ignore writeback to ``X0``.  When a dual writeback is performed to the ``X0``, ``X1`` pair, the entire write shall be ignored, i.e. neither ``X0`` nor ``X1``
-shall be written by the |processor|.
+``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``X0``.
+When a dual writeback is performed to the ``X0``, ``X1`` pair, the entire write shall be ignored, i.e. neither ``X0`` nor ``X1`` shall be written by the |processor|.
+For an instruction instance, the ``we`` signal must be the same as ``issue_resp.writeback``.
+The |processor| is not required to check that these signals match.
+
+.. note::
+  ``issue_resp.writeback`` and ``result.we`` carry the same information.
+  Nevertheless, ``result.we`` is provided to simplify the |processor| logic.
+  Without this signal, the |processor| would have to look this information up based on the instruction ``id``.
 
 If ``ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is written to ``mstatus.xs``.
 If ``ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
