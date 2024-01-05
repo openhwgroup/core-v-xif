@@ -356,7 +356,7 @@ An ``id`` ends being in-flight when one of the following scenarios apply:
 * the corresponding result transaction has been performed.
 
 Multiple Harts
---------------
+~~~~~~~~~~~~~~
 
 The interface can be used in systems with multiple harts (hardware threads).
 This includes scenarios with multiple |processors| and multi-threaded implementations of |processors|.
