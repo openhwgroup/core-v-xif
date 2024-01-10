@@ -14,10 +14,15 @@ however that custom instructions do not use opcodes that are reserved/used by RI
 The eXtension interface enables extension of |processor| with:
 
 * Custom ALU type instructions.
-* Custom load/store type instructions.
 * Custom CSRs and related instructions.
 
-Control-Tranfer type instructions (e.g. branches and jumps) are not supported via the eXtension interface.
+.. only:: MemoryIf
+
+  If the memory interface is supported the eXtension interface enables in addition:
+
+  * Custom load/store type instructions.
+
+Control-Transfer type instructions (e.g. branches and jumps) are not supported via the eXtension interface.
 
 CORE-V-XIF
 ----------
@@ -40,9 +45,6 @@ The CORE-V-XIF specification contains the following parameters:
   |                              |                        |               | eXtension interface.                                               |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_ID_WIDTH``               | int unsigned (3..32)   | 4             | Identification (``id``) width for the eXtension interface.         |
-  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-  | ``X_MEM_WIDTH``              | int unsigned (32, 64,  | 32            | Memory access width for loads/stores via the eXtension interface.  |
-  |                              | 128, 256)              |               |                                                                    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_RFR_WIDTH``              | int unsigned (32, 64)  | 32            | Register file read access width for the eXtension interface.       |
   |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
@@ -79,6 +81,21 @@ The CORE-V-XIF specification contains the following parameters:
   |                              |                        |               | If 1, registers are provided after the issue of the instruction.   |
   |                              |                        |               | If 0, registers are provided at the same time as issue.            |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+
+.. only:: MemoryIf
+
+  The memory interface contains the following parameters:
+
+  .. table:: Memory Interface parameters
+    :name: Memory Interface parameters
+    :class: no-scrollbar-table
+
+    +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+    | Name                         | Type/Range             | Default       | Description                                                        |
+    +==============================+========================+===============+====================================================================+
+    | ``X_MEM_WIDTH``              | int unsigned (32, 64,  | 32            | Memory access width for loads/stores via the eXtension interface.  |
+    |                              | 128, 256)              |               |                                                                    |
+    +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 .. note::
 
@@ -163,15 +180,20 @@ The major features of CORE-V-XIF are:
 
   CORE-V-XIF indicates whether offloaded instructions are allowed to be committed (or should be killed).
 
-CORE-V-XIF consists of seven interfaces:
+CORE-V-XIF consists of the following interfaces:
 
 * **Compressed interface**. Signaling of compressed instruction to be offloaded.
 * **Issue (request/response) interface**. Signaling of the uncompressed instruction to be offloaded.
 * **Register interface**. Signaling of General Purpose Registers (GPRs) and CSRs.
 * **Commit interface**. Signaling of control signals related to whether instructions can be committed or should be killed.
-* **Memory (request/response) interface**. Signaling of load/store related signals (i.e. its transaction request signals). This interface is optional.
-* **Memory result interface**. Signaling of load/store related signals (i.e. its transaction result signals). This interface is optional.
 * **Result interface**. Signaling of the instruction result(s).
+
+.. only:: MemoryIf
+
+  In addition, the following interfaces are added to CORE-V-XIF if the memory interface is used:
+
+  * **Memory (request/response) interface**. Signaling of load/store related signals (i.e. its transaction request signals). This interface is optional.
+  * **Memory result interface**. Signaling of load/store related signals (i.e. its transaction result signals). This interface is optional.
 
 Operating principle
 -------------------
@@ -186,31 +208,38 @@ will further handle the instruction. In case of rejection the core will raise an
 The core provides the required register file operand(s) to the |coprocessor| via the register interface.
 If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
 ``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
-The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store, and to which register(s) in the register file it will writeback.
-|processor| uses this information to reserve the load/store unit and to track data dependencies between instructions.
+The |coprocessor| informs the core to which register(s) in the register file it will writeback.
+The |processor| uses this information to track data dependencies between instructions.
+
+.. only:: MemoryIf
+
+  The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store.
+  |processor| uses this information to reserve the load/store unit for that instruction.
 
 Offloaded instructions are speculative; |processor| has not necessarily committed to them yet and might decide to kill them (e.g.
 because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
 core will inform the |coprocessor| about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
 is no longer speculative and is allowed to be committed.
 
-In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
-or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
-will use its PMP/PMA to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
-provide the result (e.g. load data and/or fault status) back to the |coprocessor| via the memory result interface.
+.. only:: MemoryIf
 
-The final result of an accepted offloaded instruction can be written back into the |coprocessor| itself or into the core's register file. Either way, the
-result interface is used to signal to the core that the instruction has completed. Apart from a possible writeback into the register file, the result
+  In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
+  or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
+  will use its PMP/PMA to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
+  provide the result (e.g. load data and/or fault status) back to the |coprocessor| via the memory result interface.
+
+The final result of an accepted offloaded instruction can be written back into the |coprocessor| itself or into the |processor|'s register file. Either way, the
+result interface is used to signal to the |processor| that the instruction has completed. Apart from a possible writeback into the register file, the result
 interface transaction is for example used in the core to increment the ``minstret`` CSR, to implement the fence instructions and to judge if instructions
 before a ``WFI`` instruction have fully completed (so that sleep mode can be entered if needed).
 
-In short: From a functional perspective it should not matter whether an instruction is handled inside the core or inside a |coprocessor|. In both cases
+In short: From a functional perspective it should not matter whether an instruction is handled inside the |processor| or inside a |coprocessor|. In both cases
 the instructions need to obey the same instruction dependency rules, memory consistency rules, load/store address checks, fences, etc.
 
 Interfaces
 ----------
 
-This section describes the six interfaces of CORE-V-XIF. Port directions are described as seen from the perspective of the |processor|.
+This section describes the interfaces of CORE-V-XIF. Port directions are described as seen from the perspective of the |processor|.
 The |coprocessor| will have opposite pin directions.
 Stated signals names are not mandatory, but it is highly recommended to at least include the stated names as part of actual signal names. It is for example allowed to add prefixes and/or postfixes (e.g. ``x_`` prefix or ``_i``, ``_o`` postfixes) or to use different capitalization. A name mapping should be provided if non obvious renaming is applied.
 
@@ -352,8 +381,11 @@ An ``id`` ends being in-flight when one of the following scenarios apply:
 
 * the corresponding issue request transaction is retracted.
 * the corresponding issue request transaction is not accepted and the corresponding commit handshake has been performed.
-* the corresponding commit transaction killed the offloaded instruction and no corresponding memory request transaction and/or corresponding memory result transactions is in progress or still needs to be performed.
 * the corresponding result transaction has been performed.
+
+.. only:: MemoryIf
+
+  * the corresponding commit transaction killed the offloaded instruction and no corresponding memory request transaction and/or corresponding memory result transactions is in progress or still needs to be performed.
 
 For the purpose of relative identification, an instruction is considered to be preceding another instruction, if it was accepted in an issue transaction at an earlier time.
 The other instruction is thus succeeding the earlier one.
@@ -488,8 +520,6 @@ Issue interface
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``instr``              | logic [31:0]                           | Offloaded instruction.                                                                                          |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``               | :ref:`mode_t <mode>`                   | Effective privilege level, as used for load and store instructions.                                             |
-  +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``hartid``             | :ref:`hartid_t <hartid>`               | Identification of the hart offloading the instruction.                                                          |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``                 | :ref:`id_t <id>`                       | Identification of the offloaded instruction.                                                                    |
@@ -504,10 +534,24 @@ A |processor| is allowed to retract its issue request transaction before it is a
 * Keep ``issue_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``issue_req``).
 
 The ``instr``, ``mode``, ``hartid`` and ``id`` signals are valid when ``issue_valid`` is 1.
-The ``instr`` and ``mode`` signals remain stable during an issue request transaction.
+The ``instr`` signal remains stable during an issue request transaction.
 
-``mode`` is the effective privilege level. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
-As coprocessors must be unprivileged, the mode signal may only be used in memory transactions.
+.. only:: MemoryIf
+
+  .. table:: Issue request type extended for Memory Interface
+    :name: Issue request type extended for Memory Interface
+    :class: no-scrollbar-table
+
+    +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | **Signal**             | **Type**                               | **Description**                                                                                                 |
+    +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``mode``               | :ref:`mode_t <mode>`                   | Effective privilege level, as used for load and store instructions.                                             |
+    +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+
+  The ``mode`` signal remains stable during an issue request transaction.
+
+  ``mode`` is the effective privilege level. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
+  As coprocessors must be unprivileged, the mode signal may only be used in memory transactions.
 
 :numref:`Issue response type` describes the ``x_issue_resp_t`` type.
 
@@ -529,11 +573,6 @@ As coprocessors must be unprivileged, the mode signal may only be used in memory
   | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair      |
   |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for non-accepted instructions.                                |
-  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``loadstore``          | logic                  | Is the offloaded instruction a load/store instruction?                                                           |
-  |                        |                        | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        |
-  |                        |                        | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
-  |                        |                        | more transactions via the memory group interface.                                                                |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
   |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     |
@@ -563,6 +602,23 @@ A transaction is considered offloaded/accepted on the positive edge of ``clk`` w
 A transaction is considered not offloaded/rejected on the positive edge of ``clk`` when ``issue_valid`` and ``issue_ready`` are asserted while ``accept`` is 0.
 
 The signals in ``issue_resp`` are valid when ``issue_valid`` and ``issue_ready`` are both 1. There are no stability requirements.
+
+.. only:: MemoryIf
+
+  .. table:: Issue response type extended for Memory Interface
+    :name: Issue response type extended for Memory Interface
+    :class: no-scrollbar-table
+
+    +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+    | **Signal**             | **Type**               | **Description**                                                                                                  |
+    +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+    | ``loadstore``          | logic                  | Is the offloaded instruction a load/store instruction?                                                           |
+    |                        |                        | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        |
+    |                        |                        | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
+    |                        |                        | more transactions via the memory group interface.                                                                |
+    +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+
+  If the memory interface is present, the issue response is extended with the ``loadstore`` signal.
 
 Register interface
 ~~~~~~~~~~~~~~~~~~
@@ -708,10 +764,12 @@ A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
 then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
 
-A |coprocessor| is allowed to perform speculative memory request transactions, but then it must be aware that |processor| can signal a failure for speculative memory request transactions to
-certain memory regions. A |coprocessor| shall never *initiate* memory request transactions for instructions that have already been killed at least a ``clk`` cycle earlier. If a memory request
-transaction or memory result transaction is already in progress at the time that the |processor| signals ``commit_kill`` = 1, then these transaction(s) will complete as normal (although the
-information contained within the memory response and memory result shall be ignored by the |coprocessor|).
+.. only:: MemoryIf
+
+  A |coprocessor| is allowed to perform speculative memory request transactions, but then it must be aware that |processor| can signal a failure for speculative memory request transactions to
+  certain memory regions. A |coprocessor| shall never *initiate* memory request transactions for instructions that have already been killed at least a ``clk`` cycle earlier. If a memory request
+  transaction or memory result transaction is already in progress at the time that the |processor| signals ``commit_kill`` = 1, then these transaction(s) will complete as normal (although the
+  information contained within the memory response and memory result shall be ignored by the |coprocessor|).
 
 A |coprocessor| is not allowed to perform speculative result transactions and shall therefore never initiate a result transaction for instructions that have not yet received a commit transaction
 with ``commit_kill`` = 0. The earliest point at which a |coprocessor| can initiate a result handshake for an instruction is therefore the cycle in which ``commit_valid`` = 1 and ``commit_kill`` = 0
@@ -721,251 +779,265 @@ The signals in ``commit`` are valid when ``commit_valid`` is 1.
 
 Memory (request/response) interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-:numref:`Memory (request/response) interface signals` describes the memory (request/response) interface signals.
 
-.. table:: Memory (request/response) interface signals
-  :name: Memory (request/response) interface signals
-  :class: no-scrollbar-table
+.. only:: not MemoryIf
 
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
-  |                           |                 | (|processor|)   |                                                                                                                              |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``mem_valid``             | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an               |
-  |                           |                 |                 | offloaded instruction.                                                                                                       |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``mem_ready``             | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``mem_req`` is accepted by |processor| when      |
-  |                           |                 |                 | ``mem_valid`` and  ``mem_ready`` are both 1.                                                                                 |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``mem_req``               | x_mem_req_t     | input           | Memory request packet.                                                                                                       |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``mem_resp``              | x_mem_resp_t    | output          | Memory response packet. Response to memory request (e.g. PMA check response). Note that this is not the memory result.       |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+  The memory (request/response) interface is not included in this version of the specification
 
-:numref:`Memory request type` describes the ``x_mem_req_t`` type.
+.. only:: MemoryIf
 
-.. table:: Memory request type
-  :name: Memory request type
-  :class: no-scrollbar-table
+  :numref:`Memory (request/response) interface signals` describes the memory (request/response) interface signals.
 
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**   | **Type**                   | **Description**                                                                                                 |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``hartid``   | :ref:`hartid_t <hartid>`   | Identification of the hart offloading the instruction.                                                          |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``       | :ref:`id_t <id>`           | Identification of the offloaded instruction.                                                                    |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``addr``     | logic [31:0]               | Virtual address of the memory transaction.                                                                      |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``mode``     | logic [1:0]                | Effective privilege level                                                                                       |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``we``       | logic                      | Write enable of the memory transaction.                                                                         |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``size``     | logic [2:0]                | Size of the memory transaction. 0: byte, 1: 2 bytes (halfword), 2: 4 bytes (word), 3: 8 bytes (doubleword),     |
-  |              |                            | 4: 16 bytes, 5: 32 bytes, 6: Reserved, 7: Reserved.                                                             |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``be``       | logic [X_MEM_WIDTH/8-1:0]  | Byte enables for memory transaction.                                                                            |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``attr``     | logic [1:0]                | Memory transaction attributes. attr[0] = modifiable (0 = not modifiable, 1 = modifiable).                       |
-  |              |                            | attr[1] = unaligned (0 = aligned, 1 = unaligned).                                                               |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``wdata``    | logic [X_MEM_WIDTH-1:0]    | Write data of a store memory transaction.                                                                       |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``last``     | logic                      | Is this the last memory transaction for the offloaded instruction?                                              |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``spec``     | logic                      | Is the memory transaction speculative?                                                                          |
-  +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+  .. table:: Memory (request/response) interface signals
+    :name: Memory (request/response) interface signals
+    :class: no-scrollbar-table
 
-The memory request interface can be used by the |coprocessor| to initiate data side memory read or memory write transactions. All memory transactions, no matter if
-they are initiated by |processor| itself or by a |coprocessor| via the memory request interface, are treated equally. Specifically this equal treatment applies to:
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+    |                           |                 | (|processor|)   |                                                                                                                              |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_valid``             | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an               |
+    |                           |                 |                 | offloaded instruction.                                                                                                       |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_ready``             | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``mem_req`` is accepted by |processor| when      |
+    |                           |                 |                 | ``mem_valid`` and  ``mem_ready`` are both 1.                                                                                 |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_req``               | x_mem_req_t     | input           | Memory request packet.                                                                                                       |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_resp``              | x_mem_resp_t    | output          | Memory response packet. Response to memory request (e.g. PMA check response). Note that this is not the memory result.       |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
-* PMA checks and attribution
-* PMU usage
-* MMU usage
-* Misaligned load/store exception handling
-* Write buffer usage
+  :numref:`Memory request type` describes the ``x_mem_req_t`` type.
 
-As for non-offloaded load or store instructions it is assumed that execute permission is never required for offloaded load or store instructions.
-If desired a |coprocessor| can always avoid performing speculative loads or stores (as indicated by ``spec`` = 1)
-by waiting for the commit interface to signal that the offloaded instruction is no longer speculative before issuing the memory request.
+  .. table:: Memory request type
+    :name: Memory request type
+    :class: no-scrollbar-table
 
-Whether a load or store is treated as being speculative or not by the |processor| shall only depend on the ``spec`` signal. Specifically, the |processor| shall
-ignore whatever value it might have communicated via ``commit_kill`` with respect to whether it treats a memory request as speculative or not. A |coprocessor|
-is allowed to signal ``spec`` = 1 without taking the commit transaction into account (so for example even after ``commit_kill`` = 0 has already been signaled).
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | **Signal**   | **Type**                   | **Description**                                                                                                 |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``hartid``   | :ref:`hartid_t <hartid>`   | Identification of the hart offloading the instruction.                                                          |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``id``       | :ref:`id_t <id>`           | Identification of the offloaded instruction.                                                                    |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``addr``     | logic [31:0]               | Virtual address of the memory transaction.                                                                      |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``mode``     | logic [1:0]                | Effective privilege level                                                                                       |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``we``       | logic                      | Write enable of the memory transaction.                                                                         |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``size``     | logic [2:0]                | Size of the memory transaction. 0: byte, 1: 2 bytes (halfword), 2: 4 bytes (word), 3: 8 bytes (doubleword),     |
+    |              |                            | 4: 16 bytes, 5: 32 bytes, 6: Reserved, 7: Reserved.                                                             |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``be``       | logic [X_MEM_WIDTH/8-1:0]  | Byte enables for memory transaction.                                                                            |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``attr``     | logic [1:0]                | Memory transaction attributes. attr[0] = modifiable (0 = not modifiable, 1 = modifiable).                       |
+    |              |                            | attr[1] = unaligned (0 = aligned, 1 = unaligned).                                                               |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``wdata``    | logic [X_MEM_WIDTH-1:0]    | Write data of a store memory transaction.                                                                       |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``last``     | logic                      | Is this the last memory transaction for the offloaded instruction?                                              |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``spec``     | logic                      | Is the memory transaction speculative?                                                                          |
+    +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The ``addr`` signal indicates the (byte) start address of the memory transaction. Transactions on the memory (request/response) interface cannot cross a ``X_MEM_WIDTH`` (bus width) boundary.
-The byte lanes of the data signals (``wdata`` and ``rdata`` of the memory result) (and hence also the bits of the ``be`` signal) are aligned to the width of the memory interface ``X_MEM_WIDTH``.
-The ``be`` signal indicates on what byte lanes to expect valid data for both read and write transactions. ``be[n]`` determines the validity of data bits ``8*N+7:8*N``.
-There are no limitations on the allowed ``be`` values.
-The ``size`` signal indicates the size of the memory transaction. ``size`` shall reflect a naturally aligned range of byte lanes to be used in a transaction.
-The size of a transaction shall not exceed the maximum memory access width (memory bus width) as determined by ``X_MEM_WIDTH``.
-The ``addr`` signal shall be consistent with the ``be`` signal, i.e. if the maximum memory access width (memory bus width) is 2^N bytes (N=2,3,4,5) and the lowest set bit in
-``be`` is at index IDX, then ``addr[N-1:0]`` shall be at most IDX.
+  The memory request interface can be used by the |coprocessor| to initiate data side memory read or memory write transactions. All memory transactions, no matter if
+  they are initiated by |processor| itself or by a |coprocessor| via the memory request interface, are treated equally. Specifically this equal treatment applies to:
 
-When for example performing a transaction that uses the middle two bytes on a 32-bit wide memory interface, the following (equivalent) `be``, ``size``, ``addr[1:0]`` combinations can be used:
+  * PMA checks and attribution
+  * PMU usage
+  * MMU usage
+  * Misaligned load/store exception handling
+  * Write buffer usage
 
-* ``be`` = 4'b0110, ``size`` = 3'b010, ``addr[1:0]`` = 2'b00.
-* ``be`` = 4'b0110, ``size`` = 3'b010, ``addr[1:0]`` = 2'b01.
+  As for non-offloaded load or store instructions it is assumed that execute permission is never required for offloaded load or store instructions.
+  If desired a |coprocessor| can always avoid performing speculative loads or stores (as indicated by ``spec`` = 1)
+  by waiting for the commit interface to signal that the offloaded instruction is no longer speculative before issuing the memory request.
 
-Note that a word transfer is needed in this example because the two bytes transferred are not halfword aligned.
+  Whether a load or store is treated as being speculative or not by the |processor| shall only depend on the ``spec`` signal. Specifically, the |processor| shall
+  ignore whatever value it might have communicated via ``commit_kill`` with respect to whether it treats a memory request as speculative or not. A |coprocessor|
+  is allowed to signal ``spec`` = 1 without taking the commit transaction into account (so for example even after ``commit_kill`` = 0 has already been signaled).
 
-Unaligned (i.e. non naturally aligned) transactions are supported over the memory (request/response) interface using the ``be`` signal. Not all unaligned memory operations
-can however be performed as single transactions on the memory (request/response) interface. Specifically if an unaligned memory operation crosses a X_MEM_WIDTH boundary, then it shall
-be broken into multiple transactions on the memory (request/response) interface by the |coprocessor|.
+  The ``addr`` signal indicates the (byte) start address of the memory transaction. Transactions on the memory (request/response) interface cannot cross a ``X_MEM_WIDTH`` (bus width) boundary.
+  The byte lanes of the data signals (``wdata`` and ``rdata`` of the memory result) (and hence also the bits of the ``be`` signal) are aligned to the width of the memory interface ``X_MEM_WIDTH``.
+  The ``be`` signal indicates on what byte lanes to expect valid data for both read and write transactions. ``be[n]`` determines the validity of data bits ``8*N+7:8*N``.
+  There are no limitations on the allowed ``be`` values.
+  The ``size`` signal indicates the size of the memory transaction. ``size`` shall reflect a naturally aligned range of byte lanes to be used in a transaction.
+  The size of a transaction shall not exceed the maximum memory access width (memory bus width) as determined by ``X_MEM_WIDTH``.
+  The ``addr`` signal shall be consistent with the ``be`` signal, i.e. if the maximum memory access width (memory bus width) is 2^N bytes (N=2,3,4,5) and the lowest set bit in
+  ``be`` is at index IDX, then ``addr[N-1:0]`` shall be at most IDX.
 
-The ``attr`` signal indicates the attributes of the memory transaction.
+  When for example performing a transaction that uses the middle two bytes on a 32-bit wide memory interface, the following (equivalent) `be``, ``size``, ``addr[1:0]`` combinations can be used:
 
-``attr[0]`` indicates whether the transaction is a modifiable transaction. This bit shall be set if the
-transaction results from modifications already done in the |coprocessor| (e.g. merging, splitting, or using a transaction size larger than strictly needed (without changing the active byte lanes)).
-The |processor| shall check whether a modifiable transaction to the requested
-address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed). An example of a modified transaction is
-performing a (merged) word transaction as opposed of doing four byte transactions (assuming the natively intended memory operations are byte operations).
+  * ``be`` = 4'b0110, ``size`` = 3'b010, ``addr[1:0]`` = 2'b00.
+  * ``be`` = 4'b0110, ``size`` = 3'b010, ``addr[1:0]`` = 2'b01.
 
-``attr[1]`` indicates whether the natively intended memory operation(s) resulting in this transaction is naturally aligned or not (0: aligned, 1: unaligned).
-In case that an unaligned native memory operation requires multiple memory request interface transactions, then the |coprocessor| is responsible for splitting the unaligned native memory operation
-into multiple transactions on the memory request interface, each of them having both ``attr[0]`` = 1 and ``attr[1]`` = 1.
-The |processor| shall check whether an unaligned transaction to the requested
-address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed).
+  Note that a word transfer is needed in this example because the two bytes transferred are not halfword aligned.
 
-.. note::
+  Unaligned (i.e. non naturally aligned) transactions are supported over the memory (request/response) interface using the ``be`` signal. Not all unaligned memory operations
+  can however be performed as single transactions on the memory (request/response) interface. Specifically if an unaligned memory operation crosses a X_MEM_WIDTH boundary, then it shall
+  be broken into multiple transactions on the memory (request/response) interface by the |coprocessor|.
 
-   Even though the |coprocessor| is allowed, and sometimes even mandated, to split transacations, this does not mean that split transactions will not result in exceptions.
-   Whether a split transaction is allowed (and makes it onto the external |processor| bus interface) or will lead to an exception, is determined by the |processor| (e.g. by its PMA).
-   No matter if the |coprocessor| already split a transaction or not, further splitting might be required within the |processor| itself (depending on whether a transaction
-   on the memory (request/response) interface can be handled as single transaction on the |processor|'s native bus interface or not). In general a |processor| is allowed to make any modification
-   to a memory (request/response) interface transaction as long as it is in accordance with the modifiable physical memory attribute for the concerned address region.
+  The ``attr`` signal indicates the attributes of the memory transaction.
 
-A memory request transaction starts in the cycle that ``mem_valid`` = 1 and ends in the cycle that both ``mem_valid`` = 1 and ``mem_ready`` = 1. The signals in ``mem_req`` are
-valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable during a memory request transaction, except that ``wdata`` is only required to remain stable during
-memory request transactions in which ``we`` is 1. 
+  ``attr[0]`` indicates whether the transaction is a modifiable transaction. This bit shall be set if the
+  transaction results from modifications already done in the |coprocessor| (e.g. merging, splitting, or using a transaction size larger than strictly needed (without changing the active byte lanes)).
+  The |processor| shall check whether a modifiable transaction to the requested
+  address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed). An example of a modified transaction is
+  performing a (merged) word transaction as opposed of doing four byte transactions (assuming the natively intended memory operations are byte operations).
 
-A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
-shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id`` and it shall signal
-``last`` = 1 otherwise. Once a |coprocessor| signals ``last`` = 1 for a memory request transaction it shall not issue further memory
-request transactions for the same combination of ``id`` and ``hartid``.
+  ``attr[1]`` indicates whether the natively intended memory operation(s) resulting in this transaction is naturally aligned or not (0: aligned, 1: unaligned).
+  In case that an unaligned native memory operation requires multiple memory request interface transactions, then the |coprocessor| is responsible for splitting the unaligned native memory operation
+  into multiple transactions on the memory request interface, each of them having both ``attr[0]`` = 1 and ``attr[1]`` = 1.
+  The |processor| shall check whether an unaligned transaction to the requested
+  address is allowed or not (and respond with an appropriate synchronous exception via the memory response interface if needed).
 
-Normally a sequence of memory request transactions ends with a
-transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
-then it shall issue no further memory request transactions for the same instruction (``hartid`` + ``id``). Similarly, after having received ``commit_kill`` = 1 no further memory request transactions shall
-be issued by a |coprocessor| for the same instruction (``hartid`` + ``id``).
+  .. note::
 
-A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
-A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
-A |coprocessor| shall never initiate a non-speculative memory request transaction(s) unless in the same cycle or after the cycle of receiving a commit transaction with ``commit_kill`` = 0.
-A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cycle in which it receives ``commit_kill`` = 1 via the commit transaction.
-A |coprocessor| shall initiate memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
+    Even though the |coprocessor| is allowed, and sometimes even mandated, to split transacations, this does not mean that split transactions will not result in exceptions.
+    Whether a split transaction is allowed (and makes it onto the external |processor| bus interface) or will lead to an exception, is determined by the |processor| (e.g. by its PMA).
+    No matter if the |coprocessor| already split a transaction or not, further splitting might be required within the |processor| itself (depending on whether a transaction
+    on the memory (request/response) interface can be handled as single transaction on the |processor|'s native bus interface or not). In general a |processor| is allowed to make any modification
+    to a memory (request/response) interface transaction as long as it is in accordance with the modifiable physical memory attribute for the concerned address region.
 
-A |processor| shall always (eventually) complete any memory request transaction by signaling ``mem_ready`` = 1 (also for transactions that relate to killed instructions).
+  A memory request transaction starts in the cycle that ``mem_valid`` = 1 and ends in the cycle that both ``mem_valid`` = 1 and ``mem_ready`` = 1. The signals in ``mem_req`` are
+  valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable during a memory request transaction, except that ``wdata`` is only required to remain stable during
+  memory request transactions in which ``we`` is 1. 
 
-:numref:`Memory response type` describes the ``x_mem_resp_t`` type.
+  A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
+  shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id`` and it shall signal
+  ``last`` = 1 otherwise. Once a |coprocessor| signals ``last`` = 1 for a memory request transaction it shall not issue further memory
+  request transactions for the same combination of ``id`` and ``hartid``.
 
-.. table:: Memory response type
-  :name: Memory response type
-  :class: no-scrollbar-table
+  Normally a sequence of memory request transactions ends with a
+  transaction that has ``last`` = 1. However, if a |coprocessor| receives ``exc`` = 1 or ``dbg`` = 1 via the memory response interface in response to a non-last memory request transaction,
+  then it shall issue no further memory request transactions for the same instruction (``hartid`` + ``id``). Similarly, after having received ``commit_kill`` = 1 no further memory request transactions shall
+  be issued by a |coprocessor| for the same instruction (``hartid`` + ``id``).
 
-  +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**             | **Type**         | **Description**                                                                                                 |
-  +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``exc``                | logic            | Did the memory request cause a synchronous exception?                                                           |
-  +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``exccode``            | logic [5:0]      | Exception code.                                                                                                 |
-  +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``dbg``                | logic            | Did the memory request cause a debug trigger match with ``mcontrol.timing`` = 0?                                |
-  +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+  A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
+  A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
+  A |coprocessor| shall never initiate a non-speculative memory request transaction(s) unless in the same cycle or after the cycle of receiving a commit transaction with ``commit_kill`` = 0.
+  A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cycle in which it receives ``commit_kill`` = 1 via the commit transaction.
+  A |coprocessor| shall initiate memory request transaction(s) for offloaded accepted load/store instructions that receive ``commit_kill`` = 0 via the commit transaction.
 
-The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``.
-The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0 resulting from the memory request transaction defined in ``mem_req``.
-In case of a synchronous exception or debug trigger match with *before* timing no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
-A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
-code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
+  A |processor| shall always (eventually) complete any memory request transaction by signaling ``mem_ready`` = 1 (also for transactions that relate to killed instructions).
 
-A |coprocessor| shall take care that an instruction that causes ``exc`` = 1 or ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of synchronous
-exceptions or debug trigger match with *before* timing. Furthermore, if a result interface handshake will occur for this same instruction, then the ``exc``, ``exccode``  and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) synchronous exception entry and debug entry with *before* timing
-is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline). A |coprocessor| shall not itself use the ``exc`` or ``dbg`` information to
-kill following instructions in its pipeline.
+  :numref:`Memory response type` describes the ``x_mem_resp_t`` type.
 
-The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are both 1. There are no stability requirements.
+  .. table:: Memory response type
+    :name: Memory response type
+    :class: no-scrollbar-table
 
-If ``mem_resp`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_resp`` and the |coprocessor| shall ignore the value received via ``mem_resp``.
+    +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+    | **Signal**             | **Type**         | **Description**                                                                                                 |
+    +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``exc``                | logic            | Did the memory request cause a synchronous exception?                                                           |
+    +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``exccode``            | logic [5:0]      | Exception code.                                                                                                 |
+    +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``dbg``                | logic            | Did the memory request cause a debug trigger match with ``mcontrol.timing`` = 0?                                |
+    +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
-The memory response and hence the memory request/response handshake may get delayed in case that the |processor| splits a memory (request/response) interface transaction
-into multiple transactions on its native bus interface.
-Once it is known that the first, or any following, access results in a synchronous exception, the handshake can be performed immediately.
-Otherwise, the handshake is performed only once it is known that none of the split transactions result in a synchronous exception.
+  The ``exc`` is used to signal synchronous exceptions resulting from the memory request transaction defined in ``mem_req``.
+  The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0 resulting from the memory request transaction defined in ``mem_req``.
+  In case of a synchronous exception or debug trigger match with *before* timing no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
+  A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
+  code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
 
-The memory (request/response) interface is optional. If it is included, then the memory result interface shall also be included.
+  A |coprocessor| shall take care that an instruction that causes ``exc`` = 1 or ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of synchronous
+  exceptions or debug trigger match with *before* timing. Furthermore, if a result interface handshake will occur for this same instruction, then the ``exc``, ``exccode``  and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) synchronous exception entry and debug entry with *before* timing
+  is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline). A |coprocessor| shall not itself use the ``exc`` or ``dbg`` information to
+  kill following instructions in its pipeline.
+
+  The signals in ``mem_resp`` are valid when ``mem_valid`` and  ``mem_ready`` are both 1. There are no stability requirements.
+
+  If ``mem_resp`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_resp`` and the |coprocessor| shall ignore the value received via ``mem_resp``.
+
+  The memory response and hence the memory request/response handshake may get delayed in case that the |processor| splits a memory (request/response) interface transaction
+  into multiple transactions on its native bus interface.
+  Once it is known that the first, or any following, access results in a synchronous exception, the handshake can be performed immediately.
+  Otherwise, the handshake is performed only once it is known that none of the split transactions result in a synchronous exception.
+
+  The memory (request/response) interface is optional. If it is included, then the memory result interface shall also be included.
 
 Memory result interface
 ~~~~~~~~~~~~~~~~~~~~~~~
-:numref:`Memory result interface signals` describes the memory result interface signals.
 
-.. table:: Memory result interface signals
-  :name: Memory result interface signals
-  :class: no-scrollbar-table
+.. only:: not MemoryIf
 
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
-  |                           |                 | (|processor|)   |                                                                                                                              |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``mem_result_valid``      | logic           | output          | Memory result valid. Indicates that |processor| has a valid memory result for the corresponding memory request.              |
-  |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| must be ready to accept             |
-  |                           |                 |                 | ``mem_result`` whenever ``mem_result_valid`` is 1.                                                                           |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``mem_result``            | x_mem_result_t  | output          | Memory result packet.                                                                                                        |
-  +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+  The memory (request/response) interface is not included in this version of the specification
 
-:numref:`Memory result type` describes the ``x_mem_result_t`` type.
+.. only:: MemoryIf
 
-.. table:: Memory result type
-  :name: Memory result type
-  :class: no-scrollbar-table
+  :numref:`Memory result interface signals` describes the memory result interface signals.
 
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**    |          **Type**         | **Description**                                                                                                 |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``hartid``    | :ref:`hartid_t <hartid>`  | Identification of the hart offloading the instruction.                                                          |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``id``        | :ref:`id_t <id>`          | Identification of the offloaded instruction.                                                                    |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``rdata``     | logic [X_MEM_WIDTH-1:0]   | Read data of a read memory transaction. Only used for reads.                                                    |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``err``       | logic                     | Did the instruction cause a bus error?                                                                          |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``dbg``       | logic                     | Did the read data cause a debug trigger match with ``mcontrol.timing`` = 0?                                     |
-  +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+  .. table:: Memory result interface signals
+    :name: Memory result interface signals
+    :class: no-scrollbar-table
 
-The memory result interface is used to provide a result from |processor| to the |coprocessor| for *every* memory transaction (i.e. for both read and write transactions).
-No memory result transaction is performed for instructions that led to a synchronous exception or debug trigger match with *before* timing as signaled via the memory (request/response) interface.
-Otherwise, one memory result transaction is performed per memory (request/response) transaction (even for killed instructions).
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | **Signal**                | **Type**        | **Direction**   | **Description**                                                                                                              |
+    |                           |                 | (|processor|)   |                                                                                                                              |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_result_valid``      | logic           | output          | Memory result valid. Indicates that |processor| has a valid memory result for the corresponding memory request.              |
+    |                           |                 |                 | There is no corresponding ready signal (it is implicit and assumed 1). The |coprocessor| must be ready to accept             |
+    |                           |                 |                 | ``mem_result`` whenever ``mem_result_valid`` is 1.                                                                           |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_result``            | x_mem_result_t  | output          | Memory result packet.                                                                                                        |
+    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
-Memory result transactions are provided by the |processor| in the same order (with matching ``hartid`` and ``id``) as the memory (request/response) transactions are received. The ``err`` signal
-signals whether a bus error occurred. The ``dbg`` signal
-signals whether a debug trigger match with *before* timing occurred ``rdata`` (for a read transaction only).
+  :numref:`Memory result type` describes the ``x_mem_result_t`` type.
 
-A |coprocessor| shall take care that an instruction that causes ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of
-debug trigger match with * before* timing. A |coprocessor| is allowed to treat ``err`` = 1 as an imprecise exception (i.e. it is not mandatory to prevent (|coprocessor| local)
-side effects based on the ``err`` signal).
-Furthermore, if a result interface handshake will occur for this same instruction, then the ``err`` and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) debug entry with *before* timing is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline).
-Upon receiving ``err`` = 1 via the result interface handshake the |processor| is expected to take action to handle the error.
-The error handling performed by the |processor| is implementation-defined and may include raising an (imprecise) NMI.
-A |coprocessor| shall not itself use the ``err`` or ``dbg`` information to kill following instructions in its pipeline.
+  .. table:: Memory result type
+    :name: Memory result type
+    :class: no-scrollbar-table
 
-If ``mem_result`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_result`` and the |coprocessor| shall ignore the value received via ``mem_result``.
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | **Signal**    |          **Type**         | **Description**                                                                                                 |
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``hartid``    | :ref:`hartid_t <hartid>`  | Identification of the hart offloading the instruction.                                                          |
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``id``        | :ref:`id_t <id>`          | Identification of the offloaded instruction.                                                                    |
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``rdata``     | logic [X_MEM_WIDTH-1:0]   | Read data of a read memory transaction. Only used for reads.                                                    |
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``err``       | logic                     | Did the instruction cause a bus error?                                                                          |
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``dbg``       | logic                     | Did the read data cause a debug trigger match with ``mcontrol.timing`` = 0?                                     |
+    +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-From a |processor|'s point of view each memory request transaction has an associated memory result transaction (except if a synchronous exception or debug trigger match with *before* timing
-is signaled via the memory (request/response) interface). The same is not true for a |coprocessor| as it can receive
-memory result transactions for instructions that it did not accept and for which it did not issue a memory request transaction. Such memory result transactions shall
-be ignored by a |coprocessor|. In case that a |coprocessor| did issue a memory request transaction, then it is guaranteed to receive a corresponding memory result
-transaction (which it must be ready to accept).
+  The memory result interface is used to provide a result from |processor| to the |coprocessor| for *every* memory transaction (i.e. for both read and write transactions).
+  No memory result transaction is performed for instructions that led to a synchronous exception or debug trigger match with *before* timing as signaled via the memory (request/response) interface.
+  Otherwise, one memory result transaction is performed per memory (request/response) transaction (even for killed instructions).
 
-.. note::
+  Memory result transactions are provided by the |processor| in the same order (with matching ``hartid`` and ``id``) as the memory (request/response) transactions are received. The ``err`` signal
+  signals whether a bus error occurred. The ``dbg`` signal
+  signals whether a debug trigger match with *before* timing occurred ``rdata`` (for a read transaction only).
 
-   The above asymmetry can only occur at system level when multiple coprocessors are connected to a processor via some interconnect network. ``CORE-V-XIF`` in itself
-   is a point-to-point connection, but its definition is written with ``CORE-V-XIF`` interconnect network(s) in mind.
+  A |coprocessor| shall take care that an instruction that causes ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of
+  debug trigger match with * before* timing. A |coprocessor| is allowed to treat ``err`` = 1 as an imprecise exception (i.e. it is not mandatory to prevent (|coprocessor| local)
+  side effects based on the ``err`` signal).
+  Furthermore, if a result interface handshake will occur for this same instruction, then the ``err`` and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) debug entry with *before* timing is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline).
+  Upon receiving ``err`` = 1 via the result interface handshake the |processor| is expected to take action to handle the error.
+  The error handling performed by the |processor| is implementation-defined and may include raising an (imprecise) NMI.
+  A |coprocessor| shall not itself use the ``err`` or ``dbg`` information to kill following instructions in its pipeline.
 
-The signals in ``mem_result`` are valid when ``mem_result_valid`` is 1.
+  If ``mem_result`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_result`` and the |coprocessor| shall ignore the value received via ``mem_result``.
 
-The memory result interface is optional. If it is included, then the memory (request/response) interface shall also be included.
+  From a |processor|'s point of view each memory request transaction has an associated memory result transaction (except if a synchronous exception or debug trigger match with *before* timing
+  is signaled via the memory (request/response) interface). The same is not true for a |coprocessor| as it can receive
+  memory result transactions for instructions that it did not accept and for which it did not issue a memory request transaction. Such memory result transactions shall
+  be ignored by a |coprocessor|. In case that a |coprocessor| did issue a memory request transaction, then it is guaranteed to receive a corresponding memory result
+  transaction (which it must be ready to accept).
+
+  .. note::
+
+    The above asymmetry can only occur at system level when multiple coprocessors are connected to a processor via some interconnect network. ``CORE-V-XIF`` in itself
+    is a point-to-point connection, but its definition is written with ``CORE-V-XIF`` interconnect network(s) in mind.
+
+  The signals in ``mem_result`` are valid when ``mem_result_valid`` is 1.
+
+  The memory result interface is optional. If it is included, then the memory (request/response) interface shall also be included.
 
 Result interface
 ~~~~~~~~~~~~~~~~
@@ -1000,8 +1072,8 @@ for instructions that have been killed.
   :class: no-scrollbar-table
 
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | **Signal**    | **Type**                        | **Description**                                                                                                 |
-  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+  | Signal        | Type                            | Description                                                                                                     |
+  +===============+=================================+=================================================================================================================+
   | ``hartid``    | :ref:`hartid_t <hartid>`        | Identification of the hart offloading the instruction.                                                          |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``id``        | :ref:`id_t <id>`                | Identification of the offloaded instruction.                                                                    |
@@ -1029,20 +1101,40 @@ for instructions that have been killed.
 A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
 valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction.
 
-The ``exc`` is used to signal synchronous exceptions. 
-An exception may only be signalled if a memory transaction resulted in ``mem_resp.exc`` asserted.
-The received ``exccode`` shall be passed unmodified.
-A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
-code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
-The |processor| shall kill potentially already offloaded instructions to guarantee precise exception behavior.
+.. only:: MemoryIf
 
-The ``err`` is used to signal a bus error.
-A bus error shall lead to an (imprecise) NMI in the |processor|.
+  The result interface is extended by the following signals, if the memory interface is present:
 
-The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0. This signal is only used to signal debug trigger matches received earlier via
-a corresponding memory (request/response) transaction or memory request transaction.
-The trigger match shall lead to a debug entry  in the |processor|.
-The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
+  .. table:: Result packet type exteneded for Memory Interface
+    :name: Result packet type exteneded for Memory Interface
+    :class: no-scrollbar-table
+
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | Signal        | Type                            | Description                                                                                                     |
+    +===============+=================================+=================================================================================================================+
+    | ``exc``       | logic                           | Did the instruction cause a synchronous exception?                                                              |
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``exccode``   | logic [5:0]                     | Exception code.                                                                                                 |
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``dbg``       | logic                           | Did the instruction cause a debug trigger match with ``mcontrol.timing`` = 0?                                   |
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``err``       | logic                           | Did the instruction cause a bus error?                                                                          |
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+
+  The ``exc`` is used to signal synchronous exceptions. 
+  An exception may only be signalled if a memory transaction resulted in ``mem_resp.exc`` asserted.
+  The received ``exccode`` shall be passed unmodified.
+  A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
+  code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
+  The |processor| shall kill potentially already offloaded instructions to guarantee precise exception behavior.
+
+  The ``err`` is used to signal a bus error.
+  A bus error shall lead to an (imprecise) NMI in the |processor|.
+
+  The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0. This signal is only used to signal debug trigger matches received earlier via
+  a corresponding memory (request/response) transaction or memory request transaction.
+  The trigger match shall lead to a debug entry  in the |processor|.
+  The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``X0``.
 When a dual writeback is performed to the ``X0``, ``X1`` pair, the entire write shall be ignored, i.e. neither ``X0`` nor ``X1`` shall be written by the |processor|.
@@ -1068,20 +1160,25 @@ The following rules apply to the relative ordering of the interface handshakes:
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
 * Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
 * Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.
-* If an offloaded instruction is accepted as a ``loadstore`` instruction and not killed, then for each such instruction one or more memory transaction must occur
-  via the memory interface. The transaction ordering on the memory interface interface must correspond to the transaction ordering on the issue interface.
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
   if no writeback needs to happen to the core's register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
   on the issue interface.
 * A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
-* A memory (request/response) interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
-* Memory result interface transactions cannot be initiated before the corresponding memory request interface handshake is completed. They are allowed to be initiated at the same time as
-  or after completion of the memory request interface handshake. Note that a |coprocessor| shall be able to tolerate memory result transactions for which it did not perform the corresponding
-  memory request handshake itself.
+  
+.. only:: MemoryIf
+
+  * If an offloaded instruction is accepted as a ``loadstore`` instruction and not killed, then for each such instruction one or more memory transaction must occur
+    via the memory interface. The transaction ordering on the memory interface interface must correspond to the transaction ordering on the issue interface.
+  * A memory (request/response) interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+  * Memory result interface transactions cannot be initiated before the corresponding memory request interface handshake is completed. They are allowed to be initiated at the same time as
+    or after completion of the memory request interface handshake. Note that a |coprocessor| shall be able to tolerate memory result transactions for which it did not perform the corresponding
+    memory request handshake itself.
+  * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
+  * A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
+
 * A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
 * A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.
-* A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
-* A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
+
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
 
 Handshake rules
@@ -1093,8 +1190,12 @@ The following handshake pairs exist on the eXtension interface:
 * ``issue_valid`` with ``issue_ready``.
 * ``register_valid`` with ``register_ready``.
 * ``commit_valid`` with implicit always ready signal.
-* ``mem_valid`` with ``mem_ready``.
-* ``mem_result_valid`` with implicit always ready signal.
+  
+.. only:: MemoryIf
+    
+  * ``mem_valid`` with ``mem_ready``.
+  * ``mem_result_valid`` with implicit always ready signal.
+
 * ``result_valid`` with ``result_ready``.
 
 The only rule related to valid and ready signals is that:
@@ -1105,7 +1206,7 @@ Specifically note the following:
 
 * The valid signals are allowed to be retracted by a |processor| (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ready is signaled).
 * A new transaction can be started by a |processor| by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
-* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``mem_valid`` is asserted it must remain asserted until the handshake with ``mem_ready`` has been performed). A new transaction can therefore not be started by a |coprocessor| by just changing the ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction. The cycle after receiving the ready signal, a next (back-to-back) transaction is allowed to be started by just keeping the valid signal high and changing the ``id`` to that of the next transaction.
+* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``result_valid`` is asserted it must remain asserted until the handshake with ``result_ready`` has been performed). A new transaction can therefore not be started by a |coprocessor| by just changing the ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction. The cycle after receiving the ready signal, a next (back-to-back) transaction is allowed to be started by just keeping the valid signal high and changing the ``id`` to that of the next transaction.
 * The ready signals is allowed to be 1 when the corresponding valid signal is not asserted.
 
 Signal dependencies
@@ -1114,7 +1215,10 @@ Signal dependencies
 A |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
 * paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``.
-* paths from ``mem_valid``, ``mem_req`` to ``mem_ready``, ``mem_resp``.
+
+.. only:: MemoryIf
+
+  * paths from ``mem_valid``, ``mem_req`` to ``mem_ready``, ``mem_resp``.
 
 .. note::
 
@@ -1124,7 +1228,10 @@ A |processor| shall not have combinatorial paths from its eXtension interface in
 A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
 
 * paths from ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
-* paths from ``mem_ready``, ``mem_resp`` to ``mem_valid``, ``mem_req``.
+
+.. only:: MemoryIf
+
+  * paths from ``mem_ready``, ``mem_resp`` to ``mem_valid``, ``mem_req``.
 
 .. note::
 
@@ -1141,9 +1248,21 @@ Handshake dependencies
 In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
 
 * The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
-* Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows: Compressed transaction, issue transaction, commit transaction, memory (request/response) transaction, memory result transaction, result transaction.
-* Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``mem_valid`` = 1
-  because it first wants to see ``commit_valid`` = 1 or ``result_ready`` = 1 for a newer instruction).
+* Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows:
+
+  * compressed transaction
+  * issue transaction
+  * register transaction
+  * commit transaction
+
+  .. only:: MemoryIf
+
+    * memory (request/response) transaction
+    * memory result transaction
+  
+  * result transaction.
+* Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
+  because it first wants to see ``commit_valid`` = 1 for a newer instruction).
 
 .. note::
    The use of the words *depend* and *dependent* relate to logical relationships, which is broader than combinatorial relationships.
@@ -1159,7 +1278,10 @@ A |coprocessor| is recommended (but not required) to follow the following sugges
 * Avoid using opcodes that are reserved or already used by RISC-V International unless for supporting a standard RISC-V extension.
 * Make it easy to change opcode assignments such that a |coprocessor| can easily be updated if it conflicts with another |coprocessor|.
 * Clearly document the supported and required parameter values.
-* Clearly document the supported and required interfaces (the memory (request/response) interface and memory result interface are optional).
+  
+.. only:: MemoryIf
+  
+  * Clearly document the supported and required interfaces.
 
 Timing recommendations
 ----------------------
