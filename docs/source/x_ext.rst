@@ -1267,8 +1267,130 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 .. note::
    The use of the words *depend* and *dependent* relate to logical relationships, which is broader than combinatorial relationships.
 
-CPU recommendations
--------------------
+Appendix
+========
+
+This appendix contains several useful, non-normative pieces of information that help implementing the eXtension Interface.
+
+SystemVerilog example
+---------------------
+The description in this specification is based on SystemVerilog interfaces. Of course the use of SystemVerilog (interfaces) is not mandatory.
+
+A |processor| using the eXtension interface could have the following interface:
+
+.. code-block:: verilog
+
+  module cpu
+  (
+    // eXtension interface
+    if_xif.cpu_compressed       xif_compressed_if,
+    if_xif.cpu_issue            xif_issue_if,
+    if_xif.cpu_register         xif_register_if,
+    if_xif.cpu_commit           xif_commit_if,
+    if_xif.cpu_mem              xif_mem_if,
+    if_xif.cpu_mem_result       xif_mem_result_if,
+    if_xif.cpu_result           xif_result_if,
+
+    ... // Other ports omitted
+  );
+
+A full example of a |processor| with an eXtension interface is the **CV32E40X**, which can be found at https://github.com/openhwgroup/cv32e40x. 
+
+A |coprocessor| using the eXtension interface could have the following interface:
+
+.. code-block:: verilog
+
+  module coproc
+  (
+    // eXtension interface
+    if_xif.coproc_compressed    xif_compressed_if,
+    if_xif.coproc_issue         xif_issue_if,
+    if_xif.coproc_register      xif_register_if,
+    if_xif.coproc_commit        xif_commit_if,
+    if_xif.coproc_mem           xif_mem_if,
+    if_xif.coproc_mem_result    xif_mem_result_if,
+    if_xif.coproc_result        xif_result_if,
+
+    ... // Other ports omitted
+  );
+
+A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
+
+.. code-block:: verilog
+
+  interface if_xif
+  #(
+    parameter int          X_NUM_RS        =  2,  // Number of register file read ports that can be used by the eXtension interface
+    parameter int          X_ID_WIDTH      =  4,  // Identification width for the eXtension interface
+    parameter int          X_MEM_WIDTH     =  32, // Maximum memory access width for loads/stores via the eXtension interface
+    parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
+    parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
+    parameter int          X_NUM_HARTS     =  1,  // Number of harts associated with the eXtension interface
+    parameter int          X_HARTID_WIDTH  =  1,  // Width of the hartid signals in the eXtension interface
+    parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
+    parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for mstatus.xs
+    parameter int          X_DUALREAD      =  0,  // Dual register file read
+    parameter int          X_DUALWRITE     =  0   // Dual register file write
+  );
+
+    ... // typedefs omitted
+
+    // Compressed interface
+    logic               compressed_valid;
+    logic               compressed_ready;
+    x_compressed_req_t  compressed_req;
+    x_compressed_resp_t compressed_resp;
+
+    // Issue interface
+    logic               issue_valid;
+    logic               issue_ready;
+    x_issue_req_t       issue_req;
+    x_issue_resp_t      issue_resp;
+
+    // Register interface
+    logic               register_valid;
+    logic               register_ready;
+    x_register_t        register;
+
+    // Commit interface
+    logic               commit_valid;
+    x_commit_t          commit;
+
+    // Memory (request/response) interface
+    logic               mem_valid;
+    logic               mem_ready;
+    x_mem_req_t         mem_req;
+    x_mem_resp_t        mem_resp;
+
+    // Memory result interface
+    logic               mem_result_valid;
+    x_mem_result_t      mem_result;
+
+    // Result interface
+    logic               result_valid;
+    logic               result_ready;
+    x_result_t          result;
+
+    // Modports
+    modport cpu_issue (
+      output            issue_valid,
+      input             issue_ready,
+      output            issue_req,
+      input             issue_resp
+    );
+
+    modport coproc_issue (
+      input             issue_valid,
+      output            issue_ready,
+      input             issue_req,
+      output            issue_resp
+    );
+
+    ... // Further modports omitted
+
+  endinterface : if_xif
+
+A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/aa3752cf92cd52e239fd44c9e3000a045eb5fbaa/rtl/cv32e40x_if_xif.sv.
 
 Coprocessor recommendations
 ---------------------------
@@ -1294,3 +1416,9 @@ As is shown in that timing budget, the coprocessor only receives a small part of
 This enables the coprocessor to source its operands directly from the CV32E40X register file bypass network, thereby preventing stall cycles in case an
 offloaded instruction depends on the result of a preceding non-offloaded instruction. This implies that, if a coprocessor is intended for pairing with the CV32E40X,
 it will be beneficial timing wise if the coprocessor does not directly operate on the ``rs*`` source inputs, but registers them instead. To maximize utilization of a coprocessor with various CPUs, such registers could be made optional via a parameter.
+
+Verification
+------------
+
+A UVM agent for the interface was developed for the verification of CVA6.
+It can be accessed under https://github.com/openhwgroup/core-v-verif/tree/master/lib/uvm_agents/uvma_cvxif.
