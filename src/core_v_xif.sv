@@ -86,6 +86,7 @@ interface core_v_xif
   typedef struct packed {
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
+    /* verilator lint_off UNPACKED */
     logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS-1:0];  // Register file source operands for the offloaded instruction.
     readregflags_t rs_valid; // Validity of the register file source operand(s).
     logic [5:0] ecs; // Extension Context Status ({mstatus.xs, mstatus.fs, mstatus.vs})
