@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = u'CORE-V Extension Interface'
-copyright = u'2021, OpenHW Group'
+copyright = u'2021-2024, OpenHW Group'
 author = u'OpenHW Group'
 
 # The short X.Y version
@@ -152,8 +152,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'CORE-V_Extension_Interface_User_Manual.tex', u'CORE-V-Docs Documentation',
-     u'Davide Schiavone', 'manual'),
+    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', project,
+     author, 'manual'),
 ]
 
 
@@ -162,8 +162,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'CORE-V_Extension_Interface_User_Manual.tex', u'CORE-V-Docs Documentation',
-     [author], 1)
+    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', project,
+     author, 1)
 ]
 
 
@@ -173,8 +173,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'CORE-V_Extension_Interface_User_Manual.tex', u'CORE-V-Docs Documentation',
-     author, 'UserManual', 'User Manual for CORE-V Extension Interface.',
+    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', project,
+     author, 'Specification', project,
      'Miscellaneous'),
 ]
 
