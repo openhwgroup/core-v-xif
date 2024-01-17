@@ -4,7 +4,7 @@
 
 // CORE-V-XIF Package
 // Contributor: Moritz Imfeld <moimfeld@student.ethz.ch>
-// Contributor: Michael Platzer - <michael.platzer@tuwien.ac.at>
+// Contributor: Michael Platzer <michael.platzer@hotmail.com>
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
 
 interface core_v_xif
