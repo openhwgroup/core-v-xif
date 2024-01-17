@@ -4,30 +4,35 @@
 
 // CORE-V-XIF Package
 // Contributor: Moritz Imfeld <moimfeld@student.ethz.ch>
+// Contributor: Michael Platzer - <michael.platzer@tuwien.ac.at>
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
 
-package core_v_xif_pkg;
+interface core_v_xif
+#(
+  parameter int unsigned X_NUM_RS               = 2,  // Number of register file read ports that can be used by the eXtension interface
+  parameter int unsigned X_ID_WIDTH             = 4,  // Width of ID field.
+  parameter int unsigned X_RFR_WIDTH            = 32, // Register file read access width for the eXtension interface
+  parameter int unsigned X_RFW_WIDTH            = 32, // Register file write access width for the eXtension interface
+  parameter int unsigned X_NUM_HARTS            = 1,  // Number of harts (hardware threads) associated with the interface
+  parameter int unsigned X_HARTID_WIDTH         = 1,  // Width of ``hartid`` signals.
+  parameter logic [31:0] X_MISA                 = '0, // MISA extensions implemented on the eXtension interface
+  parameter logic [ 1:0] X_ECS_XS               = '0, // Initial value for mstatus.XS
+  parameter int unsigned X_DUALREAD             = 0,  // Is dual read supported? 0: No, 1: Yes, for ``rs1``, 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``
+  parameter int unsigned X_DUALWRITE            = 0,  // Is dual write supported? 0: No, 1: Yes.
+  parameter int unsigned X_ISSUE_REGISTER_SPLIT = 0,  // Does the interface pipeline register interface? 0: No, 1: Yes.
+  parameter int unsigned X_MEM_WIDTH            = 32, // Memory access width for loads/stores via the eXtension interface
+  parameter int unsigned MXLEN                  = 32
+);
 
-  // cv-x-if parameters
-  parameter int X_NUM_RS = 2;
-  parameter int X_ID_WIDTH = 4;
-  parameter int X_MEM_WIDTH = 32;
-  parameter int X_RFR_WIDTH = 32;
-  parameter int X_RFW_WIDTH = 32;
-  parameter logic [31:0] X_MISA = '0;
-  parameter logic [1:0] X_ECS_XS = '0;
-  parameter int X_DUALREAD = 0;
-  parameter int X_DUALWRITE = 0;
-  parameter int X_ISSUE_REGISTER_SPLIT = 0;
-  parameter int XLEN = 32;
-
-  typedef logic [X_NUM_RS+X_DUALREAD-1:0] registerflags_t;
+  typedef logic [X_NUM_RS+X_DUALREAD-1:0] readregflags_t;
+  typedef logic [X_DUALWRITE:0] writeregflags_t;
   typedef logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0] mode_t;
   typedef logic [X_ID_WIDTH-1:0] id_t;
+  typedef logic [X_HARTID_WIDTH-1:0] hartid_t;
 
   typedef struct packed {
     logic [15:0] instr;  // Offloaded compressed instruction
-    id_t id;  // Identification number of the offloaded compressed instruction
+    hartid_t hartid;  // Identification of the hart offloading the instruction
   } x_compressed_req_t;
 
   typedef struct packed {
@@ -37,35 +42,36 @@ package core_v_xif_pkg;
 
   typedef struct packed {
     logic [31:0] instr;  // Offloaded instruction
-    mode_t mode;  // Privilege level
+    mode_t mode;  // Effective Privilege level, as used for load and store instructions.
+    hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
   } x_issue_req_t;
 
   typedef struct packed {
     logic accept;  // Is the offloaded instruction (id) accepted by the coprocessor?
-    logic writeback;  // Will the coprocessor perform a writeback in the core to rd?
-    logic dualwrite;  // Will the coprocessor perform a dual writeback in the core to rd and rd+1?
-    registerflags_t register_read;   // Will the coprocessor perform require specific registers to be read?
-    logic loadstore;  // Is the offloaded instruction a load/store instruction?
+    writeregflags_t writeback;  // Will the coprocessor perform a writeback in the core to rd?
+    readregflags_t register_read;   // Will the coprocessor perform require specific registers to be read?
     logic ecswrite;  // Will the coprocessor perform a writeback in the core to mstatus.xs, mstatus.fs, mstatus.vs
+    logic loadstore;  // Is the offloaded instruction a load/store instruction?
   } x_issue_resp_t;
 
-
   typedef struct packed {
+    hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS-1:0];  // Register file source operands for the offloaded instruction.
-    registerflags_t rs_valid; // Validity of the register file source operand(s).
+    readregflags_t rs_valid; // Validity of the register file source operand(s).
     logic [5:0] ecs; // Extension Context Status ({mstatus.xs, mstatus.fs, mstatus.vs})
     logic ecs_valid; // Validity of the Extension Context Status.
   } x_register_t;
 
-
   typedef struct packed {
+    hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     logic commit_kill;  // Shall an offloaded instruction be killed?
   } x_commit_t;
 
   typedef struct packed {
+    hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     logic [31:0] addr;  // Virtual address of the memory transaction
     mode_t mode;  // Privilege level
@@ -85,6 +91,7 @@ package core_v_xif_pkg;
   } x_mem_resp_t;
 
   typedef struct packed {
+    hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     logic [X_MEM_WIDTH-1:0] rdata;  // Read data of a read memory transaction
     logic err;  // Did the instruction cause a bus error?
@@ -92,10 +99,11 @@ package core_v_xif_pkg;
   } x_mem_result_t;
 
   typedef struct packed {
+    hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     logic [X_RFW_WIDTH     -1:0] data;  // Register file write data value(s)
     logic [4:0] rd;  // Register file destination address(es)
-    logic [X_RFW_WIDTH/XLEN-1:0] we;  // Register file write enable(s)
+    writeregflags_t we;  // Register file write enable(s)
     logic [2:0] ecswe;  // Write enables for {mstatus.xs, mstatus.fs, mstatus.vs}
     logic [5:0] ecsdata;  // Write data value for {mstatus.xs, mstatus.fs, mstatus.vs}
     logic exc;  // Did the instruction cause a synchronous exception?
@@ -104,4 +112,130 @@ package core_v_xif_pkg;
     logic err;  // Did the instruction cause a bus error?
   } x_result_t;
 
-endpackage
+  // Compressed interface
+  logic               compressed_valid;
+  logic               compressed_ready;
+  x_compressed_req_t  compressed_req;
+  x_compressed_resp_t compressed_resp;
+
+  // Issue interface
+  logic               issue_valid;
+  logic               issue_ready;
+  x_issue_req_t       issue_req;
+  x_issue_resp_t      issue_resp;
+
+  // Register interface
+  logic               register_valid;
+  logic               register_ready;
+  x_register_t        register;
+
+  // Commit interface
+  logic               commit_valid;
+  x_commit_t          commit;
+
+  // Memory (request/response) interface
+  logic               mem_valid;
+  logic               mem_ready;
+  x_mem_req_t         mem_req;
+  x_mem_resp_t        mem_resp;
+
+  // Memory result interface
+  logic               mem_result_valid;
+  x_mem_result_t      mem_result;
+
+  // Result interface
+  logic               result_valid;
+  logic               result_ready;
+  x_result_t          result;
+
+  // Port directions for host CPU
+  modport core_v_xif_master_compressed (
+    output compressed_valid,
+    input  compressed_ready,
+    output compressed_req,
+    input  compressed_resp
+  );
+
+  modport core_v_xif_master_issue (
+    output issue_valid,
+    input  issue_ready,
+    output issue_req,
+    input  issue_resp
+  );
+
+  modport core_v_xif_master_register (
+    output register_valid,
+    input  register_ready,
+    output register
+  );
+
+  modport core_v_xif_master_commit (
+    output commit_valid,
+    output commit
+  );
+
+  modport core_v_xif_master_mem (
+    input  mem_valid,
+    output mem_ready,
+    input  mem_req,
+    output mem_resp
+  );
+
+  modport core_v_xif_master_mem_result (
+    output mem_result_valid,
+    output mem_result
+  );
+
+  modport core_v_xif_master_result (
+    input  result_valid,
+    output result_ready,
+    input  result
+  );
+
+  // Port directions for CO-PROCESSOR
+  modport core_v_xif_slave_compressed (
+    input   compressed_valid,
+    output  compressed_ready,
+    input   compressed_req,
+    output  compressed_resp
+  );
+
+  modport core_v_xif_slave_issue (
+    input   issue_valid,
+    output  issue_ready,
+    input   issue_req,
+    output  issue_resp
+  );
+
+  modport core_v_xif_slave_register (
+    input   register_valid,
+    output  register_ready,
+    input   register
+  );
+
+  modport core_v_xif_slave_commit (
+    input   commit_valid,
+    input   commit
+  );
+
+  modport core_v_xif_slave_mem (
+    output  mem_valid,
+    input   mem_ready,
+    output  mem_req,
+    input   mem_resp
+  );
+
+  modport core_v_xif_slave_mem_result (
+    input   mem_result_valid,
+    input   mem_result
+  );
+
+  modport core_v_xif_slave_result (
+    output  result_valid,
+    input   result_ready,
+    output  result
+  );
+
+
+endinterface : core_v_xif
+
