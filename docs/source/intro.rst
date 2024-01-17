@@ -10,7 +10,7 @@ The goal of ``CORE-V-XIF`` is to enable the design and verification of instructi
 
 License
 -------
-Copyright 2021-2023 OpenHW Group.
+Copyright 2021-2024 OpenHW Group.
 
 SPDX-License-Identifier: Apache-2.0 WITH SHL-0.51
 
@@ -19,19 +19,7 @@ Standards Compliance
 
 The ``eXtension interface`` specification depends on the following specifications:
 
-.. [RISC-V-UNPRIV] RISC-V Instruction Set Manual, Volume I: User-Level ISA, Document Version 20191213 (December 13, 2019),
-   https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf
-
-Contents
---------
-
- * :ref:`x_ext` describes the custom eXtension interface.
-
-History
--------
-
-References
-----------
-
-Contributors
-------------
+.. [RISC-V-UNPRIV] The RISC-V Instruction Set Manual, Volume I: User-Level ISA,
+   Document Version 20191213”, Editors Andrew Waterman and Krste Asanovi´c, RISC-V Foundation, December 2019.
+.. [RISC-V-PRIV] The RISC-V Instruction Set Manual, Volume II: Privileged Architecture,
+   Document Version 20211203”, Editors Andrew Waterman, Krste Asanovi´c, and John Hauser, RISC-V International, December 2021.

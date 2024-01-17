@@ -484,7 +484,7 @@ Typically an accepted transaction over the compressed interface will be followed
 on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative). Only when an ``accept``
 is signaled over the *issue* interface, then an instruction is considered *accepted for offload*. 
 
-The |coprocessor| shall not take the ``mstatus`` based extension context status into account when generating the ``accept`` signal on its *compressed* interface (but it shall take
+The |coprocessor| shall not take the ``mstatus`` based extension context status (see ([RISC-V-PRIV]_)) into account when generating the ``accept`` signal on its *compressed* interface (but it shall take
 it into account when generating the ``accept`` signal on its *issue* interface).
 
 Issue interface
@@ -550,7 +550,7 @@ The ``instr`` signal remains stable during an issue request transaction.
 
   The ``mode`` signal remains stable during an issue request transaction.
 
-  ``mode`` is the effective privilege level. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
+  ``mode`` is the effective privilege level as defined in [RISC-V-UNPRIV]_. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
   As coprocessors must be unprivileged, the mode signal may only be used in memory transactions.
 
 :numref:`Issue response type` describes the ``x_issue_resp_t`` type.
