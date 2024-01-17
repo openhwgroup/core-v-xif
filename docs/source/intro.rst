@@ -10,36 +10,16 @@ The goal of ``CORE-V-XIF`` is to enable the design and verification of instructi
 
 License
 -------
-Copyright 2021 OpenHW Group.
+Copyright 2021-2024 OpenHW Group.
 
-Copyright and related rights are licensed under the Solderpad Hardware
-License, Version 0.51 (the “License”); you may not use this file except
-in compliance with the License. You may obtain a copy of the License at
-http://solderpad.org/licenses/SHL-0.51. Unless required by applicable
-law or agreed to in writing, software, hardware and materials
-distributed under this License is distributed on an “AS IS” BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+SPDX-License-Identifier: Apache-2.0 WITH SHL-0.51
 
 Standards Compliance
 --------------------
 
 The ``eXtension interface`` specification depends on the following specifications:
 
-.. [RISC-V-UNPRIV] RISC-V Instruction Set Manual, Volume I: User-Level ISA, Document Version 20191213 (December 13, 2019),
-   https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf
-
-Contents
---------
-
- * :ref:`x_ext` describes the custom eXtension interface.
-
-History
--------
-
-References
-----------
-
-Contributors
-------------
+.. [RISC-V-UNPRIV] The RISC-V Instruction Set Manual, Volume I: User-Level ISA,
+   Document Version 20191213”, Editors Andrew Waterman and Krste Asanovi´c, RISC-V Foundation, December 2019.
+.. [RISC-V-PRIV] The RISC-V Instruction Set Manual, Volume II: Privileged Architecture,
+   Document Version 20211203”, Editors Andrew Waterman, Krste Asanovi´c, and John Hauser, RISC-V International, December 2021.

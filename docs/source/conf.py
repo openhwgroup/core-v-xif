@@ -80,6 +80,7 @@ pygments_style = None
 # Entries for text replacement
 rst_epilog = """
 .. |processor| replace:: CPU
+.. |processors| replace:: CPUs
 .. |coprocessor| replace:: coprocessor
 """
 
