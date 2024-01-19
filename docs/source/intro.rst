@@ -32,6 +32,6 @@ Standards Compliance
 The ``eXtension interface`` specification depends on the following specifications:
 
 .. [RISC-V-UNPRIV] The RISC-V Instruction Set Manual, Volume I: User-Level ISA,
-   Document Version 20191213”, Editors Andrew Waterman and Krste Asanovi´c, RISC-V Foundation, December 2019.
+   Document Version 20191213”, Editors Andrew Waterman and Krste Asanovíc, RISC-V Foundation, December 2019.
 .. [RISC-V-PRIV] The RISC-V Instruction Set Manual, Volume II: Privileged Architecture,
-   Document Version 20211203”, Editors Andrew Waterman, Krste Asanovi´c, and John Hauser, RISC-V International, December 2021.
+   Document Version 20211203”, Editors Andrew Waterman, Krste Asanovíc, and John Hauser, RISC-V International, December 2021.
