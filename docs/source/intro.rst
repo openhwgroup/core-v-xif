@@ -22,14 +22,14 @@ The first CPU implementing such interface is the **CV32E40X**, which can be foun
 
 License
 -------
-Copyright 2021-2024 OpenHW Group.
+Copyright © |copyright|.
 
 SPDX-License-Identifier: Apache-2.0 WITH SHL-0.51
 
 Standards Compliance
 --------------------
 
-The ``CV-X-IF`` specification depends on the following specifications:
+The ``CV-X-IF`` specification depends on the unprivileged [RISC-V-UNPRIV]_ and privileged [RISC-V-PRIV]_ RISC-V specification.
 
 .. [RISC-V-UNPRIV] The RISC-V Instruction Set Manual, Volume I: User-Level ISA,
    Document Version 20191213”, Editors Andrew Waterman and Krste Asanovíc, RISC-V Foundation, December 2019.

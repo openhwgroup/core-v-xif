@@ -1,3 +1,10 @@
+# Copyright 2024 OpenHW Group
+# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+# Licensed under the Solderpad Hardware License v 2.1 (the "License"); you may not use this file except in compliance with the License, or, at your option, the Apache License version 2.0.
+# You may obtain a copy of the License at https://solderpad.org/licenses/SHL-2.1/
+
+# Unless required by applicable law or agreed to in writing, any work distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
@@ -16,18 +23,52 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# -- Specification Process Data -----------------------------------------------
+
+states = (
+          'Development',
+          'Review',
+          'Release Candidate',
+          'Release',
+          )
+state_postfix = [
+                '-dev',
+                '-dev',
+                '-rc',
+                '',
+                ]
+
+title_prefix = 'OpenHW Group Specification'
 
 # -- Project information -----------------------------------------------------
 
 project = u'Core-V eXtension interface (CV-X-IF)'
-title = f'OpenHW Group Specification: {project}'
-copyright = u'2021-2024, OpenHW Group'
+copyright = u'2021-2024 OpenHW Group'
 author = u'OpenHW Group'
+# State must be one of Development, Release Candidate, or Release
+state = 'Development' 
 
-# The short X.Y version
-version = u''
+# The short vX.Y.Z version
+version = u'v0.9.0'
+# If release candidate, provide release candidate version (integer)
+rc_version = 1
+
+# -- Derived Project Information - Do not modify ------------------------------
+
+if state == 'Release Candidate' or state == 'Release':
+    if version[0] == '0':
+        raise ValueError(f'Version {version} not allowed for state {state}.')
+
+postfix = state_postfix[states.index(state)]
+if state == 'Release Candidate':
+    postfix += f'.{rc_version}'
+
 # The full version, including alpha/beta/rc tags
-release = u''
+release = f'{version}{postfix}'
+version = release
+
+title = f'{title_prefix}: {project} - {state}'
+filename = f'{title_prefix}_{project}_{release}'.replace(' ', '_')
 
 
 # -- General configuration ---------------------------------------------------
@@ -79,7 +120,9 @@ numfig_format = {'figure': 'Figure %s', 'table': 'Table %s', 'code-block': 'List
 pygments_style = None
 
 # Entries for text replacement
-rst_epilog = """
+rst_epilog = f"""
+.. |title| replace:: {title}
+.. |copyright| replace:: {copyright}
 .. |processor| replace:: CPU
 .. |processors| replace:: CPUs
 .. |coprocessor| replace:: coprocessor
@@ -101,6 +144,7 @@ html_theme = 'sphinx_rtd_theme'
 #
 html_theme_options = {'style_nav_header_background': '#DDDDDD'}
 html_logo = '../images/openhw-landscape.svg'
+html_favicon ='../images/favicon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -126,10 +170,12 @@ html_css_files = [
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'CORE-V_Extension_Interface'
+htmlhelp_basename = f'{filename}'
 
 
 # -- Options for LaTeX output ------------------------------------------------
+
+latex_logo = '../images/openhw-landscape.png'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
@@ -147,13 +193,14 @@ latex_elements = {
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
+    'atendofbody': f'Copyright © {copyright}'
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', title,
+    (master_doc, f'{filename}.tex', title,
      author, 'manual'),
 ]
 
@@ -163,7 +210,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', title,
+    (master_doc, f'{filename}.tex', title,
      author, 1)
 ]
 
@@ -174,7 +221,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', title,
+    (master_doc, f'{filename}.tex', title,
      author, 'Specification', title,
      'Miscellaneous'),
 ]

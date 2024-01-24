@@ -1,5 +1,5 @@
-OpenHW Group Specification: Core-V eXtension interface (CV-X-IF)
-================================================================
+|title|
+=======
 
 .. toctree::
    :maxdepth: 3
