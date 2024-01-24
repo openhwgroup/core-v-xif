@@ -1,3 +1,8 @@
+Version
+=======
+
+Current version: |release|
+
 Changelog
 =========
 

@@ -16,6 +16,18 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# -- Specification Process Data -----------------------------------------------
+
+states = (
+          'Development',
+          'Release Candidate',
+          'Release',
+          )
+state_postfix = [
+                '-dev',
+                '-rc',
+                '',
+                ]
 
 # -- Project information -----------------------------------------------------
 
@@ -23,11 +35,26 @@ project = u'Core-V eXtension interface (CV-X-IF)'
 title = f'OpenHW Group Specification: {project}'
 copyright = u'2021-2024, OpenHW Group'
 author = u'OpenHW Group'
+# State must be one of Development, Release Candidate, or Release
+state = 'Release Candidate' 
 
-# The short X.Y version
-version = u''
+# The short X.Y.Z version
+version = u'1.0.0'
+# If release candidate, provide release candidate version (integer)
+rc_version = 1
+
+# -- Derived Project Information - Do not modify ------------------------------
+
+if state == 'Release Candidate' or state == 'Release':
+    if version[0] == '0':
+        raise ValueError(f'Version {version} not allowed for state {state}.')
+
+postfix = state_postfix[states.index(state)]
+if state == 'Release Candidate':
+    postfix += f'.{rc_version}'
+
 # The full version, including alpha/beta/rc tags
-release = u''
+release = f'{version}{postfix}'
 
 
 # -- General configuration ---------------------------------------------------
