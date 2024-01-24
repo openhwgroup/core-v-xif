@@ -1,4 +1,4 @@
-# Core-V eXtension interface (CV-X-IF)
+# OpenHW Group Specification: Core-V eXtension interface (CV-X-IF)
 
 The Core-V eXtension interface (CV-X-IF) is a RISC-V eXtension interface that provides a generalized framework suitable to implement custom coprocessors and ISA extensions for existing RISC-V processors.
 

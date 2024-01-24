@@ -19,7 +19,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'CORE-V Extension Interface'
+project = u'Core-V eXtension interface (CV-X-IF)'
+title = f'OpenHW Group Specification: {project}'
 copyright = u'2021-2024, OpenHW Group'
 author = u'OpenHW Group'
 
@@ -152,7 +153,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', project,
+    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', title,
      author, 'manual'),
 ]
 
@@ -162,7 +163,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', project,
+    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', title,
      author, 1)
 ]
 
@@ -173,8 +174,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', project,
-     author, 'Specification', project,
+    (master_doc, 'CORE-V_Extension_Interface_Specification.tex', title,
+     author, 'Specification', title,
      'Miscellaneous'),
 ]
 
@@ -182,10 +183,10 @@ texinfo_documents = [
 # -- Options for Epub output -------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = project
+epub_title = title
 
 # The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
+# or the title homepage.
 #
 # epub_identifier = ''
 
