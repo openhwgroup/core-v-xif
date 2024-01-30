@@ -99,7 +99,9 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {'style_nav_header_background': '#DDDDDD'}
+html_theme_options = {'style_nav_header_background': '#DDDDDD', 'prev_next_buttons_location': 'both'}
+html_show_sphinx = False
+html_show_sourcelink = False
 html_logo = '../images/openhw-landscape.svg'
 
 # Add any paths that contain custom static files (such as style sheets) here,
