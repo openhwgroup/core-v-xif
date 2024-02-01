@@ -37,6 +37,7 @@ The CORE-V-XIF specification contains the following parameters:
 .. table:: Interface parameters
   :name: Interface parameters
   :class: no-scrollbar-table
+  :widths: 30 15 10 45
     
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | Name                         | Type/Range             | Default       | Description                                                        |
@@ -64,7 +65,7 @@ The CORE-V-XIF specification contains the following parameters:
   |                              |                        |               | to MXLEN.                                                          |
   |                              |                        |               | The |processor| determines the legal values for this parameter.    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-  | ``X_MISA``                   | logic [31:0]           | 0x0000_0000   | MISA extensions implemented on the eXtension interface.            |
+  | ``X_MISA``                   | logic [31:0]           | 32'b0         | MISA extensions implemented on the eXtension interface.            |
   |                              |                        |               | The |processor| determines the legal values for this parameter.    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
@@ -89,6 +90,7 @@ The CORE-V-XIF specification contains the following parameters:
   .. table:: Memory Interface parameters
     :name: Memory Interface parameters
     :class: no-scrollbar-table
+    :widths: 30 15 10 45
 
     +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
     | Name                         | Type/Range             | Default       | Description                                                        |
@@ -108,6 +110,7 @@ Additionally, the following type definitions are defined to improve readability 
 .. table:: Interface type definitions
   :name: Interface type definitions
   :class: no-scrollbar-table
+  :widths: 20 30 50
 
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
   | Name                                     | Definition                             | Description                                                        |
@@ -292,6 +295,7 @@ Compressed interface
 .. table:: Compressed interface signals
   :name: Compressed interface signals
   :class: no-scrollbar-table
+  :widths: 20 20 10 50
 
   +---------------------------+---------------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | Signal                    | Type                | Direction       | Description                                                                                                                  |
@@ -312,6 +316,7 @@ Compressed interface
 .. table:: Compressed request type
   :name: Compressed request type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                     | Description                                                                                                     |
@@ -338,6 +343,7 @@ then a new compressed request transaction started).
 .. table:: Compressed response type
   :name: Compressed response type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
   | Signal                 | Type                 | Description                                                                                                     |
@@ -373,6 +379,7 @@ Issue interface
 .. table:: Issue interface signals
   :name: Issue interface signals
   :class: no-scrollbar-table
+  :widths: 20 20 10 50
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | Signal                    | Type            | Direction       | Description                                                                                                                  |
@@ -393,6 +400,7 @@ Issue interface
 .. table:: Issue request type
   :name: Issue request type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                                   | Description                                                                                                     |
@@ -420,6 +428,7 @@ The ``instr`` signal remains stable during an issue request transaction.
   .. table:: Issue request type extended for Memory Interface
     :name: Issue request type extended for Memory Interface
     :class: no-scrollbar-table
+    :widths: 20 20 60
 
     +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
     | Signal                 | Type                                   | Description                                                                                                     |
@@ -437,6 +446,7 @@ The ``instr`` signal remains stable during an issue request transaction.
 .. table:: Issue response type
   :name: Issue response type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                   | Description                                                                                                      |
@@ -487,6 +497,7 @@ The signals in ``issue_resp`` are valid when ``issue_valid`` and ``issue_ready``
   .. table:: Issue response type extended for Memory Interface
     :name: Issue response type extended for Memory Interface
     :class: no-scrollbar-table
+    :widths: 20 20 60
 
     +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
     | Signal                 | Type                   | Description                                                                                                      |
@@ -506,6 +517,7 @@ Register interface
 .. table:: Register interface signals
   :name: Register interface signals
   :class: no-scrollbar-table
+  :widths: 20 20 10 50
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | Signal                    | Type            | Direction       | Description                                                                                                                  |
@@ -524,6 +536,7 @@ Register interface
 .. table:: Register type
   :name: Register type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                     | Description                                                                                                     |
@@ -585,6 +598,7 @@ Commit interface
 .. table:: Commit interface signals
   :name: Commit interface signals
   :class: no-scrollbar-table
+  :widths: 20 20 10 50
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | Signal                    | Type            | Direction       | Description                                                                                                                  |
@@ -603,6 +617,7 @@ Commit interface
 .. table:: Commit packet type
   :name: Commit packet type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
   | Signal             | Type                     | Description                                                                                                                  |
@@ -670,6 +685,7 @@ Memory (request/response) interface
   .. table:: Memory (request/response) interface signals
     :name: Memory (request/response) interface signals
     :class: no-scrollbar-table
+    :widths: 20 20 10 50
 
     +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
     | Signal                    | Type            | Direction       | Description                                                                                                                  |
@@ -691,6 +707,7 @@ Memory (request/response) interface
   .. table:: Memory request type
     :name: Memory request type
     :class: no-scrollbar-table
+    :widths: 20 20 60
 
     +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
     | Signal       | Type                       | Description                                                                                                     |
@@ -806,6 +823,7 @@ Memory (request/response) interface
   .. table:: Memory response type
     :name: Memory response type
     :class: no-scrollbar-table
+    :widths: 20 20 60
 
     +------------------------+------------------+-----------------------------------------------------------------------------------------------------------------+
     | Signal                 | Type             | Description                                                                                                     |
@@ -853,6 +871,7 @@ Memory result interface
   .. table:: Memory result interface signals
     :name: Memory result interface signals
     :class: no-scrollbar-table
+    :widths: 20 20 10 50
 
     +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
     | Signal                    | Type            | Direction       | Description                                                                                                                  |
@@ -870,6 +889,7 @@ Memory result interface
   .. table:: Memory result type
     :name: Memory result type
     :class: no-scrollbar-table
+    :widths: 20 20 60
 
     +---------------+---------------------------+-----------------------------------------------------------------------------------------------------------------+
     | Signal        | Type                      | Description                                                                                                     |
@@ -925,6 +945,7 @@ Result interface
 .. table:: Result interface signals
   :name: Result interface signals
   :class: no-scrollbar-table
+  :widths: 20 20 10 50
 
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | Signal                    | Type            | Direction       | Description                                                                                                                  |
@@ -949,6 +970,7 @@ for instructions that have been killed.
 .. table:: Result packet type
   :name: Result packet type
   :class: no-scrollbar-table
+  :widths: 20 20 60
 
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
   | Signal        | Type                            | Description                                                                                                     |
@@ -987,6 +1009,7 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
   .. table:: Result packet type exteneded for Memory Interface
     :name: Result packet type exteneded for Memory Interface
     :class: no-scrollbar-table
+    :widths: 20 20 60
 
     +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
     | Signal        | Type                            | Description                                                                                                     |

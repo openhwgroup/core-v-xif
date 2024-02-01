@@ -1,5 +1,5 @@
-OpenHW Group eXtension Interface
-================================
+|title|
+=======
 
 .. toctree::
    :maxdepth: 3
