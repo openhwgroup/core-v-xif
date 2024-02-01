@@ -166,88 +166,88 @@ interface core_v_xif
   x_result_t          result;
 
   // Port directions for host CPU
-  modport core_v_xif_master_compressed (
+  modport core_v_xif_cpu_compressed (
     output compressed_valid,
     input  compressed_ready,
     output compressed_req,
     input  compressed_resp
   );
 
-  modport core_v_xif_master_issue (
+  modport core_v_xif_cpu_issue (
     output issue_valid,
     input  issue_ready,
     output issue_req,
     input  issue_resp
   );
 
-  modport core_v_xif_master_register (
+  modport core_v_xif_cpu_register (
     output register_valid,
     input  register_ready,
     output register
   );
 
-  modport core_v_xif_master_commit (
+  modport core_v_xif_cpu_commit (
     output commit_valid,
     output commit
   );
 
-  modport core_v_xif_master_mem (
+  modport core_v_xif_cpu_mem (
     input  mem_valid,
     output mem_ready,
     input  mem_req,
     output mem_resp
   );
 
-  modport core_v_xif_master_mem_result (
+  modport core_v_xif_cpu_mem_result (
     output mem_result_valid,
     output mem_result
   );
 
-  modport core_v_xif_master_result (
+  modport core_v_xif_cpu_result (
     input  result_valid,
     output result_ready,
     input  result
   );
 
   // Port directions for CO-PROCESSOR
-  modport core_v_xif_slave_compressed (
+  modport core_v_xif_coprocessor_compressed (
     input   compressed_valid,
     output  compressed_ready,
     input   compressed_req,
     output  compressed_resp
   );
 
-  modport core_v_xif_slave_issue (
+  modport core_v_xif_coprocessor_issue (
     input   issue_valid,
     output  issue_ready,
     input   issue_req,
     output  issue_resp
   );
 
-  modport core_v_xif_slave_register (
+  modport core_v_xif_coprocessor_register (
     input   register_valid,
     output  register_ready,
     input   register
   );
 
-  modport core_v_xif_slave_commit (
+  modport core_v_xif_coprocessor_commit (
     input   commit_valid,
     input   commit
   );
 
-  modport core_v_xif_slave_mem (
+  modport core_v_xif_coprocessor_mem (
     output  mem_valid,
     input   mem_ready,
     output  mem_req,
     input   mem_resp
   );
 
-  modport core_v_xif_slave_mem_result (
+  modport core_v_xif_coprocessor_mem_result (
     input   mem_result_valid,
     input   mem_result
   );
 
-  modport core_v_xif_slave_result (
+  modport core_v_xif_coprocessor_result (
     output  result_valid,
     input   result_ready,
     output  result
