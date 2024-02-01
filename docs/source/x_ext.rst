@@ -346,8 +346,8 @@ then a new compressed request transaction started).
   :widths: 20 20 60
 
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
-  | Signal                 | Type                 | Description                                                                                                     | 
-  +========================+======================+=================================================================================================================+ 
+  | Signal                 | Type                 | Description                                                                                                     |
+  +========================+======================+=================================================================================================================+
   | ``instr``              | logic [31:0]         | Uncompressed instruction.                                                                                       |
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
   | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 | 
@@ -416,7 +416,7 @@ Issue interface
 
 An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``hartid`` remains unchanged.
 A |processor| is allowed to retract its issue request transaction before it is accepted with ``issue_ready`` = 1 and it can do so in the following ways:
- 
+
 * Set ``issue_valid`` = 0.
 * Keep ``issue_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``issue_req``).
 
@@ -578,7 +578,7 @@ There are two main scenarios, in how the register interface will be used. They a
    The same applies to the ``ecs`` and ``ecs_valid`` signals.
 
 In both scenarios, the following applies:
-The ``hartid``, ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``register_valid`` is 1. 
+The ``hartid``, ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``register_valid`` is 1.
 The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
 The ``ecs`` signal is only considered valid when ``register_valid`` is 1 and ``ecs_valid`` is 1 as well.
 
@@ -651,9 +651,9 @@ is at earliest an instruction with successful issue transaction starting at leas
   In this case, the |coprocessor| may still need to process the request by considering the relevant instructions (either preceding or succeeding) as no longer speculative or to be killed.
   This behavior supports scenarios in which more than one |coprocessor| is connected to an issue interface.
 
-A |processor| is required to mark every instruction that has completed the issue transaction as either killed or non-speculative. 
+A |processor| is required to mark every instruction that has completed the issue transaction as either killed or non-speculative.
 This includes accepted (`issue_resp.accept` = 1) and rejected instructions (`issue_resp.accept` = 0).
-  
+
 A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
 then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
@@ -718,7 +718,7 @@ Memory (request/response) interface
     +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
     | ``addr``     | logic [31:0]               | Virtual address of the memory transaction.                                                                      |
     +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
-    | ``mode``     | logic [1:0]                | Effective privilege level                                                                                       |
+    | ``mode``     | :ref:`mode_t <mode>`       | Effective privilege level                                                                                       |
     +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
     | ``we``       | logic                      | Write enable of the memory transaction.                                                                         |
     +--------------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -798,7 +798,7 @@ Memory (request/response) interface
 
   A memory request transaction starts in the cycle that ``mem_valid`` = 1 and ends in the cycle that both ``mem_valid`` = 1 and ``mem_ready`` = 1. The signals in ``mem_req`` are
   valid when ``mem_valid`` is 1. The signals in ``mem_req`` shall remain stable during a memory request transaction, except that ``wdata`` is only required to remain stable during
-  memory request transactions in which ``we`` is 1. 
+  memory request transactions in which ``we`` is 1.
 
   A |coprocessor| may issue multiple memory request transactions for an offloaded accepted load/store instruction. The |coprocessor|
   shall signal ``last`` = 0 if it intends to issue following memory request transaction with the same ``id`` and it shall signal
@@ -1023,7 +1023,7 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
     | ``err``       | logic                           | Did the instruction cause a bus error?                                                                          |
     +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-  The ``exc`` is used to signal synchronous exceptions. 
+  The ``exc`` is used to signal synchronous exceptions.
   An exception may only be signalled if a memory transaction resulted in ``mem_resp.exc`` asserted.
   The received ``exccode`` shall be passed unmodified.
   A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
@@ -1066,7 +1066,7 @@ The following rules apply to the relative ordering of the interface handshakes:
   if no writeback needs to happen to the core's register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
   on the issue interface.
 * A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
-  
+
 .. only:: MemoryIf
 
   * If an offloaded instruction is accepted as a ``loadstore`` instruction and not killed, then for each such instruction one or more memory transaction must occur
@@ -1092,9 +1092,9 @@ The following handshake pairs exist on the eXtension interface:
 * ``issue_valid`` with ``issue_ready``.
 * ``register_valid`` with ``register_ready``.
 * ``commit_valid`` with implicit always ready signal.
-  
+
 .. only:: MemoryIf
-    
+
   * ``mem_valid`` with ``mem_ready``.
   * ``mem_result_valid`` with implicit always ready signal.
 
@@ -1161,7 +1161,7 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 
     * memory (request/response) transaction
     * memory result transaction
-  
+
   * result transaction.
 * Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
   because it first wants to see ``commit_valid`` = 1 for a newer instruction).
@@ -1176,123 +1176,9 @@ This appendix contains several useful, non-normative pieces of information that 
 
 SystemVerilog example
 ---------------------
-The description in this specification is based on SystemVerilog interfaces. Of course the use of SystemVerilog (interfaces) is not mandatory.
+In in the ``src`` folder, the `core_v_xif.sv <../../../src/core_v_xif.sv>`_ contains the description of this specification based on SystemVerilog interfaces.
+Of course the use of SystemVerilog (interfaces) is not mandatory.
 
-A |processor| using the eXtension interface could have the following interface:
-
-.. code-block:: verilog
-
-  module cpu
-  (
-    // eXtension interface
-    if_xif.cpu_compressed       xif_compressed_if,
-    if_xif.cpu_issue            xif_issue_if,
-    if_xif.cpu_register         xif_register_if,
-    if_xif.cpu_commit           xif_commit_if,
-    if_xif.cpu_mem              xif_mem_if,
-    if_xif.cpu_mem_result       xif_mem_result_if,
-    if_xif.cpu_result           xif_result_if,
-
-    ... // Other ports omitted
-  );
-
-A full example of a |processor| with an eXtension interface is the **CV32E40X**, which can be found at https://github.com/openhwgroup/cv32e40x. 
-
-A |coprocessor| using the eXtension interface could have the following interface:
-
-.. code-block:: verilog
-
-  module coproc
-  (
-    // eXtension interface
-    if_xif.coproc_compressed    xif_compressed_if,
-    if_xif.coproc_issue         xif_issue_if,
-    if_xif.coproc_register      xif_register_if,
-    if_xif.coproc_commit        xif_commit_if,
-    if_xif.coproc_mem           xif_mem_if,
-    if_xif.coproc_mem_result    xif_mem_result_if,
-    if_xif.coproc_result        xif_result_if,
-
-    ... // Other ports omitted
-  );
-
-A SystemVerilog interface implementation for CORE-V-XIF could look as follows:
-
-.. code-block:: verilog
-
-  interface if_xif
-  #(
-    parameter int          X_NUM_RS        =  2,  // Number of register file read ports that can be used by the eXtension interface
-    parameter int          X_ID_WIDTH      =  4,  // Identification width for the eXtension interface
-    parameter int          X_MEM_WIDTH     =  32, // Maximum memory access width for loads/stores via the eXtension interface
-    parameter int          X_RFR_WIDTH     =  32, // Register file read access width for the eXtension interface
-    parameter int          X_RFW_WIDTH     =  32, // Register file write access width for the eXtension interface
-    parameter int          X_NUM_HARTS     =  1,  // Number of harts associated with the eXtension interface
-    parameter int          X_HARTID_WIDTH  =  1,  // Width of the hartid signals in the eXtension interface
-    parameter logic [31:0] X_MISA          =  '0, // MISA extensions implemented on the eXtension interface
-    parameter logic [ 1:0] X_ECS_XS        =  '0, // Default value for mstatus.xs
-    parameter int          X_DUALREAD      =  0,  // Dual register file read
-    parameter int          X_DUALWRITE     =  0   // Dual register file write
-  );
-
-    ... // typedefs omitted
-
-    // Compressed interface
-    logic               compressed_valid;
-    logic               compressed_ready;
-    x_compressed_req_t  compressed_req;
-    x_compressed_resp_t compressed_resp;
-
-    // Issue interface
-    logic               issue_valid;
-    logic               issue_ready;
-    x_issue_req_t       issue_req;
-    x_issue_resp_t      issue_resp;
-
-    // Register interface
-    logic               register_valid;
-    logic               register_ready;
-    x_register_t        register;
-
-    // Commit interface
-    logic               commit_valid;
-    x_commit_t          commit;
-
-    // Memory (request/response) interface
-    logic               mem_valid;
-    logic               mem_ready;
-    x_mem_req_t         mem_req;
-    x_mem_resp_t        mem_resp;
-
-    // Memory result interface
-    logic               mem_result_valid;
-    x_mem_result_t      mem_result;
-
-    // Result interface
-    logic               result_valid;
-    logic               result_ready;
-    x_result_t          result;
-
-    // Modports
-    modport cpu_issue (
-      output            issue_valid,
-      input             issue_ready,
-      output            issue_req,
-      input             issue_resp
-    );
-
-    modport coproc_issue (
-      input             issue_valid,
-      output            issue_ready,
-      input             issue_req,
-      output            issue_resp
-    );
-
-    ... // Further modports omitted
-
-  endinterface : if_xif
-
-A full reference implementation of the SystemVerilog interface can be found at https://github.com/openhwgroup/cv32e40x/blob/aa3752cf92cd52e239fd44c9e3000a045eb5fbaa/rtl/cv32e40x_if_xif.sv.
 
 Coprocessor recommendations
 ---------------------------
@@ -1302,9 +1188,9 @@ A |coprocessor| is recommended (but not required) to follow the following sugges
 * Avoid using opcodes that are reserved or already used by RISC-V International unless for supporting a standard RISC-V extension.
 * Make it easy to change opcode assignments such that a |coprocessor| can easily be updated if it conflicts with another |coprocessor|.
 * Clearly document the supported and required parameter values.
-  
+
 .. only:: MemoryIf
-  
+
   * Clearly document the supported and required interfaces.
 
 Timing recommendations

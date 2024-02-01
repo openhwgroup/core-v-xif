@@ -1,0 +1,31 @@
+/*
+ Copyright 2024 OpenhW Group
+
+ This file, and derivatives thereof are licensed under the
+ Solderpad License, Version 2.0 (the "License");
+ Use of this file means you agree to the terms and conditions
+ of the license and are in full compliance with the License.
+ You may obtain a copy of the License at
+
+ https://solderpad.org/licenses/SHL-2.0/
+
+ Unless required by applicable law or agreed to in writing, software
+ and hardware implementations thereof
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESSED OR IMPLIED.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
+module test;
+
+  // eXtension Interface
+  /* verilator lint_off UNUSED */
+  core_v_xif core_v_xif_bus ();
+
+  initial begin
+   $display("Instantiating CORE-V-XIF reference model");
+   $finish;
+  end
+
+endmodule
