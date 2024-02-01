@@ -1176,9 +1176,8 @@ This appendix contains several useful, non-normative pieces of information that 
 
 SystemVerilog example
 ---------------------
-In in the ``src`` folder, the `core_v_xif.sv <../../../src/core_v_xif.sv>`_ contains the description of this specification based on SystemVerilog interfaces.
+In in the ``src`` folder of this project, the file https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv contains a non-normative realization of this specification based on SystemVerilog interfaces.
 Of course the use of SystemVerilog (interfaces) is not mandatory.
-
 
 Coprocessor recommendations
 ---------------------------
