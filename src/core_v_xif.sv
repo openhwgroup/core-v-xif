@@ -19,7 +19,7 @@
  limitations under the License.
 */
 
-// CORE-V-XIF Package
+// CV-X-IF Package
 // Contributor: Moritz Imfeld <moimfeld@student.ethz.ch>
 // Contributor: Michael Platzer <michael.platzer@hotmail.com>
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
