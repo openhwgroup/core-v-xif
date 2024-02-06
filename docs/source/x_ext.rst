@@ -420,7 +420,7 @@ A |processor| is allowed to retract its issue request transaction before it is a
 * Set ``issue_valid`` = 0.
 * Keep ``issue_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``issue_req``).
 
-The ``instr``, ``mode``, ``hartid`` and ``id`` signals are valid when ``issue_valid`` is 1.
+The ``instr``, ``hartid``, and ``id`` signals are valid when ``issue_valid`` is 1.
 The ``instr`` signal remains stable during an issue request transaction.
 
 .. only:: MemoryIf
@@ -440,6 +440,8 @@ The ``instr`` signal remains stable during an issue request transaction.
 
   ``mode`` is the effective privilege level as defined in [RISC-V-UNPRIV]_. That means that this already accounts for settings of ``mstatus.MPRV`` = 1.
   As coprocessors must be unprivileged, the mode signal may only be used in memory transactions.
+
+  The ``mode`` signal is valid when ``issue_valid`` is 1.
 
 :numref:`Issue response type` describes the ``x_issue_resp_t`` type.
 
