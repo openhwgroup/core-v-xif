@@ -277,7 +277,7 @@ Multiple Harts
 
 The interface can be used in systems with multiple harts (hardware threads).
 This includes scenarios with multiple |processors| and multi-threaded implementations of |processors|.
-RISC-V distinguishes between harts using t ``hartid``, which we also introduce to the interface.
+RISC-V distinguishes between harts using ``hartid``, which we also introduce to the interface.
 It is required to identify the source of the offloaded instruction, as multiple harts might be able to offload via a shared interface.
 No duplicates of the combination of ``hartid`` and ``id`` may be in flight at any time within one instance of the interface.
 Any state within the |coprocessor| (e.g. custom CSRs) must be duplicated according to the number of harts (indicated by the ``X_NUM_HARTS`` parameter).
@@ -460,7 +460,7 @@ The ``instr`` signal remains stable during an issue request transaction.
   |                        |                        | Writeback to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
-  |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair      |
+  |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
   |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for non-accepted instructions.                                |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
@@ -485,7 +485,7 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 A |coprocessor| can (only) accept an offloaded instruction when:
 
 * It can handle the instruction (based on decoding ``instr``).
-* There are no structural hazards that would prevent execution
+* There are no structural hazards that would prevent execution.
 
 A transaction is considered offloaded/accepted on the positive edge of ``clk`` when ``issue_valid``, ``issue_ready`` are asserted and ``accept`` is 1.
 A transaction is considered not offloaded/rejected on the positive edge of ``clk`` when ``issue_valid`` and ``issue_ready`` are asserted while ``accept`` is 0.
@@ -1176,7 +1176,7 @@ This appendix contains several useful, non-normative pieces of information that 
 
 SystemVerilog example
 ---------------------
-In in the ``src`` folder of this project, the file https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv contains a non-normative realization of this specification based on SystemVerilog interfaces.
+In the ``src`` folder of this project, the file https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv contains a non-normative realization of this specification based on SystemVerilog interfaces.
 Of course the use of SystemVerilog (interfaces) is not mandatory.
 
 Coprocessor recommendations
