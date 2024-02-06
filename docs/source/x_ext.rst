@@ -38,7 +38,7 @@ The CV-X-IF specification contains the following parameters:
   :name: Interface parameters
   :class: no-scrollbar-table
   :widths: 30 15 10 45
-    
+
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | Name                         | Type/Range             | Default       | Description                                                        |
   +==============================+========================+===============+====================================================================+
@@ -170,7 +170,7 @@ The major features of CV-X-IF are:
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
 
-  When a dual read is performed with ``n`` = 0, the entire operand is 0, i.e. ``X1`` shall not need to be accessed by the |processor|.
+  When a dual read is performed with ``n`` = 0, the entire operand is 0, i.e. ``x1`` shall not need to be accessed by the |processor|.
 
   Dual register file read is only supported for XLEN = 32.
 
@@ -201,13 +201,13 @@ CV-X-IF consists of the following interfaces:
 Operating principle
 -------------------
 
-|processor| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself. 
+|processor| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself.
 In case of a compressed instruction the |coprocessor| must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
 This non-compressed instruction is then attempted for offload via the issue interface.
 
-Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface. 
+Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface.
 The external |coprocessor| can decide to accept or reject the instruction offload. In case of acceptation the |coprocessor|
-will further handle the instruction. In case of rejection the core will raise an illegal instruction exception. 
+will further handle the instruction. In case of rejection the core will raise an illegal instruction exception.
 The core provides the required register file operand(s) to the |coprocessor| via the register interface.
 If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
 ``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
@@ -277,7 +277,7 @@ Multiple Harts
 
 The interface can be used in systems with multiple harts (hardware threads).
 This includes scenarios with multiple |processors| and multi-threaded implementations of |processors|.
-RISC-V distinguishes between harts using t ``hartid``, which we also introduce to the interface.
+RISC-V distinguishes between harts using ``hartid``, which we also introduce to the interface.
 It is required to identify the source of the offloaded instruction, as multiple harts might be able to offload via a shared interface.
 No duplicates of the combination of ``hartid`` and ``id`` may be in flight at any time within one instance of the interface.
 Any state within the |coprocessor| (e.g. custom CSRs) must be duplicated according to the number of harts (indicated by the ``X_NUM_HARTS`` parameter).
@@ -345,18 +345,18 @@ then a new compressed request transaction started).
   :class: no-scrollbar-table
   :widths: 20 20 60
 
-  +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
+  +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                 | Description                                                                                                     |
   +========================+======================+=================================================================================================================+
   | ``instr``              | logic [31:0]         | Uncompressed instruction.                                                                                       |
   +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 | 
-  +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+ 
+  | ``accept``             | logic                | Is the offloaded compressed instruction (``id``) accepted by the |coprocessor|?                                 |
+  +------------------------+----------------------+-----------------------------------------------------------------------------------------------------------------+
 
 The signals in ``compressed_resp`` are valid when ``compressed_valid`` and ``compressed_ready`` are both 1. There are no stability requirements.
 
 The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
-compressed instructions that it does recognize as legal instructions itself. 
+compressed instructions that it does recognize as legal instructions itself.
 
 The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
 
@@ -367,7 +367,7 @@ The ``accept`` signal of the *compressed* interface merely indicates that the |c
 its uncompressed counterpart.
 Typically an accepted transaction over the compressed interface will be followed by a corresponding transaction over the issue interface, but there is no requirement
 on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative). Only when an ``accept``
-is signaled over the *issue* interface, then an instruction is considered *accepted for offload*. 
+is signaled over the *issue* interface, then an instruction is considered *accepted for offload*.
 
 The |coprocessor| shall not take the ``mstatus`` based extension context status (see ([RISC-V-PRIV]_)) into account when generating the ``accept`` signal on its *compressed* interface (but it shall take
 it into account when generating the ``accept`` signal on its *issue* interface).
@@ -456,13 +456,13 @@ The ``instr`` signal remains stable during an issue request transaction.
   | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
-  |                        | <writeregflags>`       | Writeback to ``X0`` or the ``X0``, ``X1`` pair is allowed by the |coprocessor|,                                  |
+  |                        | <writeregflags>`       | Writeback to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                  |
   |                        |                        | but will be ignored by the |processor|.                                                                          |
   |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
   |                        |                        | Writeback to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
-  |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair      |
+  |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
   |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for non-accepted instructions.                                |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
@@ -487,7 +487,7 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 A |coprocessor| can (only) accept an offloaded instruction when:
 
 * It can handle the instruction (based on decoding ``instr``).
-* There are no structural hazards that would prevent execution
+* There are no structural hazards that would prevent execution.
 
 A transaction is considered offloaded/accepted on the positive edge of ``clk`` when ``issue_valid``, ``issue_ready`` are asserted and ``accept`` is 1.
 A transaction is considered not offloaded/rejected on the positive edge of ``clk`` when ``issue_valid`` and ``issue_ready`` are asserted while ``accept`` is 0.
@@ -560,7 +560,7 @@ Register interface
 There are two main scenarios, in how the register interface will be used. They are selected by ``X_ISSUE_REGISTER_SPLIT``:
 
 1. ``X_ISSUE_REGISTER_SPLIT`` = 0: A register transaction can be started in the same clock cycle as the issue transaction (``issue_valid = register_valid``, ``issue_ready = register_ready``, ``issue_req.hartid = register.hartid`` and ``issue_req.id = register.id``).
-   In this case, the |processor| will speculatively provide all possible source registers via ``register.rs`` when they become available (signalled via the respective ``rs_valid`` signals). 
+   In this case, the |processor| will speculatively provide all possible source registers via ``register.rs`` when they become available (signalled via the respective ``rs_valid`` signals).
    The |coprocessor| will delay accepting the instruction until all necessary registers are provided, and only then assert ``issue_ready`` and ``register_ready``.
    The ``rs_valid`` bits are not required to be stable during the transaction.
    Each bit can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
@@ -569,8 +569,8 @@ There are two main scenarios, in how the register interface will be used. They a
    The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
    The ``ecs`` signal is only required to be stable during the part of a transaction in which this signals is considered to be valid.
 
-2. ``X_ISSUE_REGISTER_SPLIT`` = 1: For a |processor| which splits the issue and register interface into subsequent pipeline stages (e.g. because it has a dedicated read registers (RR) stage), the registers will be provided after the issue transaction completed. 
-   The |processor| initiates the register transaction once all registers are available. 
+2. ``X_ISSUE_REGISTER_SPLIT`` = 1: For a |processor| which splits the issue and register interface into subsequent pipeline stages (e.g. because it has a dedicated read registers (RR) stage), the registers will be provided after the issue transaction completed.
+   The |processor| initiates the register transaction once all registers are available.
    If the |coprocessor| is able to accept multiple issue transactions before receiving the registers, the register transaction can occur in a different order.
    This allows the |processor| to reorder instructions based on the availability of operands.
    The |coprocessor| is always expected to be ready to retrieve its operands via the register interface after accepting the issue of an instruction.
@@ -588,7 +588,7 @@ The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |co
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
-odd register file index is provided in the upper 32 bits. When reading from the ``X0``, ``X1`` pair, then a value of 0 is returned for the entire operand.
+odd register file index is provided in the upper 32 bits. When reading from the ``x0``, ``x1`` pair, then a value of 0 is returned for the entire operand.
 The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources it is supported.
 
 The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
@@ -658,7 +658,7 @@ This includes accepted (`issue_resp.accept` = 1) and rejected instructions (`iss
 
 A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
-then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction. 
+then the |coprocessor| must undo any of its internal architectural state changes that are due to the killed instruction.
 
 .. only:: MemoryIf
 
@@ -1040,8 +1040,8 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
   The trigger match shall lead to a debug entry  in the |processor|.
   The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
-``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``X0``.
-When a dual writeback is performed to the ``X0``, ``X1`` pair, the entire write shall be ignored, i.e. neither ``X0`` nor ``X1`` shall be written by the |processor|.
+``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``x0``.
+When a dual writeback is performed to the ``x0``, ``x1`` pair, the entire write shall be ignored, i.e. neither ``x0`` nor ``x1`` shall be written by the |processor|.
 For an instruction instance, the ``we`` signal must be the same as ``issue_resp.writeback``.
 The |processor| is not required to check that these signals match.
 
@@ -1178,7 +1178,7 @@ This appendix contains several useful, non-normative pieces of information that 
 
 SystemVerilog example
 ---------------------
-In in the ``src`` folder of this project, the file https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv contains a non-normative realization of this specification based on SystemVerilog interfaces.
+In the ``src`` folder of this project, the file https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv contains a non-normative realization of this specification based on SystemVerilog interfaces.
 Of course the use of SystemVerilog (interfaces) is not mandatory.
 
 Coprocessor recommendations
