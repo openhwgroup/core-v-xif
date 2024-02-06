@@ -24,7 +24,7 @@ module test;
   core_v_xif core_v_xif_bus ();
 
   initial begin
-   $display("Instantiating CORE-V-XIF reference model");
+   $display("Instantiating CV-X-IF reference model");
    $finish;
   end
 

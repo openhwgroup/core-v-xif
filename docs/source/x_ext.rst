@@ -24,15 +24,15 @@ The eXtension interface enables extension of |processor| with:
 
 Control-Transfer type instructions (e.g. branches and jumps) are not supported via the eXtension interface.
 
-CORE-V-XIF
+CV-X-IF
 ----------
 
-The terminology ``eXtension interface`` and ``CORE-V-XIF`` are used interchangeably.
+The terminology ``eXtension interface`` and ``CV-X-IF`` are used interchangeably.
 
 Parameters
 ----------
 
-The CORE-V-XIF specification contains the following parameters:
+The CV-X-IF specification contains the following parameters:
 
 .. table:: Interface parameters
   :name: Interface parameters
@@ -146,7 +146,7 @@ Additionally, the following type definitions are defined to improve readability 
 Major features
 --------------
 
-The major features of CORE-V-XIF are:
+The major features of CV-X-IF are:
 
 * Minimal requirements on extension instruction encoding.
 
@@ -158,14 +158,14 @@ The major features of CORE-V-XIF are:
 
 * Support for dual writeback instructions (optional, based on ``X_DUALWRITE``).
 
-  CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
+  CV-X-IF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``).
 
   Dual register file writeback is only supported for ``XLEN`` = 32.
 
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
-  CORE-V-XIF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
+  CV-X-IF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
   is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``n`` being an even number extracted from instruction bits ``[19:15]``),
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
@@ -176,14 +176,14 @@ The major features of CORE-V-XIF are:
 
 * Support for ternary operations.
 
-  CORE-V-XIF optionally supports ISA extensions implementing instructions which use three source operands.
+  CV-X-IF optionally supports ISA extensions implementing instructions which use three source operands.
   Ternary instructions must be encoded in the R4-type instruction format defined by [RISC-V-UNPRIV]_.
 
 * Support for instruction speculation.
 
-  CORE-V-XIF indicates whether offloaded instructions are allowed to be committed (or should be killed).
+  CV-X-IF indicates whether offloaded instructions are allowed to be committed (or should be killed).
 
-CORE-V-XIF consists of the following interfaces:
+CV-X-IF consists of the following interfaces:
 
 * **Compressed interface**. Signaling of compressed instruction to be offloaded.
 * **Issue (request/response) interface**. Signaling of the uncompressed instruction to be offloaded.
@@ -193,7 +193,7 @@ CORE-V-XIF consists of the following interfaces:
 
 .. only:: MemoryIf
 
-  In addition, the following interfaces are added to CORE-V-XIF if the memory interface is used:
+  In addition, the following interfaces are added to CV-X-IF if the memory interface is used:
 
   * **Memory (request/response) interface**. Signaling of load/store related signals (i.e. its transaction request signals). This interface is optional.
   * **Memory result interface**. Signaling of load/store related signals (i.e. its transaction result signals). This interface is optional.
@@ -242,14 +242,14 @@ the instructions need to obey the same instruction dependency rules, memory cons
 Interfaces
 ----------
 
-This section describes the interfaces of CORE-V-XIF. Port directions are described as seen from the perspective of the |processor|.
+This section describes the interfaces of CV-X-IF. Port directions are described as seen from the perspective of the |processor|.
 The |coprocessor| will have opposite pin directions.
 Stated signals names are not mandatory, but it is highly recommended to at least include the stated names as part of actual signal names. It is for example allowed to add prefixes and/or postfixes (e.g. ``x_`` prefix or ``_i``, ``_o`` postfixes) or to use different capitalization. A name mapping should be provided if non obvious renaming is applied.
 
 Identification
 ~~~~~~~~~~~~~~
 
-Most interfaces of CORE-V-XIF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
+Most interfaces of CV-X-IF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
 The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
 An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
 The ``id`` values for in-flight offloaded instructions are required to be unique.
@@ -931,8 +931,8 @@ Memory result interface
 
   .. note::
 
-    The above asymmetry can only occur at system level when multiple coprocessors are connected to a processor via some interconnect network. ``CORE-V-XIF`` in itself
-    is a point-to-point connection, but its definition is written with ``CORE-V-XIF`` interconnect network(s) in mind.
+    The above asymmetry can only occur at system level when multiple coprocessors are connected to a processor via some interconnect network. ``CV-X-IF`` in itself
+    is a point-to-point connection, but its definition is written with ``CV-X-IF`` interconnect network(s) in mind.
 
   The signals in ``mem_result`` are valid when ``mem_result_valid`` is 1.
 
