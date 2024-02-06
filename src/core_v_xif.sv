@@ -40,7 +40,7 @@ interface core_v_xif
   parameter int unsigned X_MEM_WIDTH            = 32  // Memory access width for loads/stores via the eXtension interface
 );
 
-  typedef logic [X_NUM_RS+X_DUALREAD-1:0] readregflags_t;
+  typedef logic [X_NUM_RS+X_NUM_RS*X_DUALREAD-1:0] readregflags_t;
   typedef logic [X_DUALWRITE:0] writeregflags_t;
   typedef logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0] mode_t;
   typedef logic [X_ID_WIDTH-1:0] id_t;
@@ -75,7 +75,7 @@ interface core_v_xif
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     /* verilator lint_off UNPACKED */
-    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS-1:0];  // Register file source operands for the offloaded instruction.
+    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS+X_NUM_RS*X_DUALREAD-1:0];  // Register file source operands for the offloaded instruction.
     readregflags_t rs_valid; // Validity of the register file source operand(s).
     logic [5:0] ecs; // Extension Context Status ({mstatus.xs, mstatus.fs, mstatus.vs})
     logic ecs_valid; // Validity of the Extension Context Status.
@@ -118,7 +118,7 @@ interface core_v_xif
   typedef struct packed {
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
-    logic [X_RFW_WIDTH     -1:0] data;  // Register file write data value(s)
+    logic [X_RFW_WIDTH     -1:0] data [X_DUALWRITE:0];  // Register file write data value(s)
     logic [4:0] rd;  // Register file destination address(es)
     writeregflags_t we;  // Register file write enable(s)
     logic [2:0] ecswe;  // Write enables for {mstatus.xs, mstatus.fs, mstatus.vs}
