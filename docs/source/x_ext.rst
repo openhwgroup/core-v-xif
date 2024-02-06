@@ -170,7 +170,7 @@ The major features of CV-X-IF are:
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
 
-  When a dual read is performed with ``n`` = 0, the entire operand is 0, i.e. ``X1`` shall not need to be accessed by the |processor|.
+  When a dual read is performed with ``n`` = 0, the entire operand is 0, i.e. ``x1`` shall not need to be accessed by the |processor|.
 
   Dual register file read is only supported for XLEN = 32.
 
@@ -454,7 +454,7 @@ The ``instr`` signal remains stable during an issue request transaction.
   | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
-  |                        | <writeregflags>`       | Writeback to ``X0`` or the ``X0``, ``X1`` pair is allowed by the |coprocessor|,                                  |
+  |                        | <writeregflags>`       | Writeback to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                  |
   |                        |                        | but will be ignored by the |processor|.                                                                          |
   |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
   |                        |                        | Writeback to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.    |
@@ -586,7 +586,7 @@ The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |co
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
 ``rs[X_NUM_RS-1:0]`` signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
 in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
-odd register file index is provided in the upper 32 bits. When reading from the ``X0``, ``X1`` pair, then a value of 0 is returned for the entire operand.
+odd register file index is provided in the upper 32 bits. When reading from the ``x0``, ``x1`` pair, then a value of 0 is returned for the entire operand.
 The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources it is supported.
 
 The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
@@ -1038,8 +1038,8 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
   The trigger match shall lead to a debug entry  in the |processor|.
   The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
-``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``X0``.
-When a dual writeback is performed to the ``X0``, ``X1`` pair, the entire write shall be ignored, i.e. neither ``X0`` nor ``X1`` shall be written by the |processor|.
+``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``x0``.
+When a dual writeback is performed to the ``x0``, ``x1`` pair, the entire write shall be ignored, i.e. neither ``x0`` nor ``x1`` shall be written by the |processor|.
 For an instruction instance, the ``we`` signal must be the same as ``issue_resp.writeback``.
 The |processor| is not required to check that these signals match.
 
