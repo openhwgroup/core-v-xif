@@ -253,7 +253,9 @@ Most interfaces of CV-X-IF all use a signal called ``id``, which serves as a uni
 The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
 An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
 The ``id`` values for in-flight offloaded instructions are required to be unique.
-The ``id`` values are required to be incremental wrapping for sequential instructions, but do not necessarily need to be continuous.
+The ``id`` values are required to be incremental from one issue transaction to the next.
+The increment may be greater than one.
+If the next ``id`` would be greater than the maximum value (``2**X_ID_WIDTH - 1``), the value of ``id`` wraps.
 
 ``id`` values can only be introduced by the issue interface.
 
