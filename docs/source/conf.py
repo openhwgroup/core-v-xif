@@ -43,7 +43,7 @@ title_prefix = 'OpenHW Group Specification'
 # -- Project information -----------------------------------------------------
 
 project = u'Core-V eXtension interface (CV-X-IF)'
-copyright = u'2021-2024 OpenHW Group'
+copyright = u'2021-2024 OpenHW Group; Copyright © 2023-2024 NXP'
 author = u'OpenHW Group'
 # State must be one of Development, Release Candidate, or Release
 state = 'Development' 
