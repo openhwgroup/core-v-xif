@@ -45,11 +45,11 @@ title_prefix = 'OpenHW Group Specification'
 project = u'Core-V eXtension interface (CV-X-IF)'
 copyright = u'2021-2024 OpenHW Group'
 author = u'OpenHW Group'
-# State must be one of Development, Release Candidate, or Release
-state = 'Development' 
+# State must be one of Development, Review, Release Candidate, or Release
+state = 'Release Candidate' 
 
 # The short vX.Y.Z version
-version = u'v0.9.0'
+version = u'v1.0.0'
 # If release candidate, provide release candidate version (integer)
 rc_version = 1
 
