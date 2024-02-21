@@ -1195,7 +1195,7 @@ Timing recommendations
 
 The integration of the eXtension interface will vary from |processor| to |processor|, and thus require its own set of timing constraints.
 
-`CV32E40X eXtension timing budget <https://cv32e40x-user-manual.readthedocs.io/en/latest/x_ext.html#timing>`_ shows the recommended timing budgets
+`CV32E40X eXtension timing budget <https://cv32e40x-user-manual.readthedocs.io/en/stable/x_ext.html#timing>`_ shows the recommended timing budgets
 for the coprocessor and (optional) interconnect for the case in which a coprocessor is paired with the CV32E40X (https://github.com/openhwgroup/cv32e40x) processor.
 As is shown in that timing budget, the coprocessor only receives a small part of the timing budget on the paths through ``xif_issue_if.issue_req.rs*``.
 This enables the coprocessor to source its operands directly from the CV32E40X register file bypass network, thereby preventing stall cycles in case an
@@ -1206,4 +1206,4 @@ Verification
 ------------
 
 A UVM agent for the interface was developed for the verification of CVA6.
-It can be accessed under https://github.com/openhwgroup/core-v-verif/tree/master/lib/uvm_agents/uvma_cvxif.
+It can be accessed under `https://github.com/openhwgroup/core-v-verif/tree/master/lib/uvm_agents/uvma_cvxif <https://github.com/openhwgroup/core-v-verif/tree/99b260b036b3c220ab3d405d521f5c710e587e89/lib/uvm_agents/uvma_cvxif>`_.
