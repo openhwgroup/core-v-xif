@@ -371,6 +371,8 @@ Typically an accepted transaction over the compressed interface will be followed
 on the |processor| to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative). Only when an ``accept``
 is signaled over the *issue* interface, then an instruction is considered *accepted for offload*.
 
+Explicitly, the |coprocessor| shall not execute the instruction after receiving it via the compressed interface.
+
 The |coprocessor| shall not take the ``mstatus`` based extension context status (see ([RISC-V-PRIV]_)) into account when generating the ``accept`` signal on its *compressed* interface (but it shall take
 it into account when generating the ``accept`` signal on its *issue* interface).
 
