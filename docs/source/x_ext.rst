@@ -266,7 +266,8 @@ If the oldest in-flight instruction is :math:`id_o`, and the newest is ``id_n``,
   \end{gather}
 
 The first condition applying to cases where the ``id`` has wrapped since the oldest in-flight instruction was issued, and the second where no wrap occurred.
-
+The |coprocessor| is not required to check the validity of ``id`` values under these constraints.
+This has to be guaranteed by design of the CPU.
 
 .. note::
   IDs are not required to be incremental to support scenarios, in which a coprocessor does not see the entire instruction stream.
