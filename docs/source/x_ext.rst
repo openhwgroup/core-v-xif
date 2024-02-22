@@ -256,7 +256,7 @@ The ``id`` values for in-flight offloaded instructions are required to be unique
 The ``id`` values are required to be incremental from one issue transaction to the next.
 The increment may be greater than one.
 If the next ``id`` would be greater than the maximum value (``2**X_ID_WIDTH - 1``), the value of ``id`` wraps.
-A new ``id`` value is not allowed to be greater than the oldest in-flight instruction.
+A new ``id`` value is not allowed to be greater than the oldest in-flight instruction, if a wrap has occurred since the oldest in-flight instruction was issued.
 If the oldest in-flight instruction is :math:`id_o`, and the newest is ``id_n``, then the next instruction with ``id_n+1`` must satisfy the following conditions:
 
 .. math::
