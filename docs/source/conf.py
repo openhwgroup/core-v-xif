@@ -123,8 +123,8 @@ pygments_style = None
 rst_epilog = f"""
 .. |title| replace:: {title}
 .. |copyright| replace:: {copyright}
-.. |processor| replace:: CPU
-.. |processors| replace:: CPUs
+.. |processor| replace:: :term:`CPU`
+.. |processors| replace:: :term:`CPUs<CPU>`
 .. |coprocessor| replace:: coprocessor
 """
 
