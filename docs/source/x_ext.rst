@@ -256,6 +256,24 @@ The ``id`` values for in-flight offloaded instructions are required to be unique
 The ``id`` values are required to be incremental from one issue transaction to the next.
 The increment may be greater than one.
 If the next ``id`` would be greater than the maximum value (``2**X_ID_WIDTH - 1``), the value of ``id`` wraps.
+A new ``id`` value is not allowed to be greater than the oldest in-flight instruction.
+If the oldest in-flight instruction is :math:`id_o`, and the newest is ``id_n``, then the next instruction with ``id_n+1`` must satisfy the following conditions:
+
+.. math::
+  \begin{gather}
+    id_{n+1} > id_{n} \text{ or } id_{n+1} < id_{o}, \text{ if } id_{n} > id_{o}\\
+    id_{n+1} > id_{n} \text{ and } id_{n+1} < id_{o}, \text{ if } id_{n} < id_{o}
+  \end{gather}
+
+The first condition applying to cases where the ``id`` has wrapped since the oldest in-flight instruction was issued, and the second where no wrap occurred.
+
+
+.. note::
+  IDs are not required to be incremental to support scenarios, in which a coprocessor does not see the entire instruction stream.
+  This can be e.g. because offloaded instructions are routed towards different |coprocessors|.
+
+To make sure feasible ``id`` values are available, ``X_ID_WIDTH`` needs to be sufficiently large.
+This can be achieved by calculating the maximum ``id`` increase during the lifetime of the longest executing instruction.
 
 ``id`` values can only be introduced by the issue interface.
 

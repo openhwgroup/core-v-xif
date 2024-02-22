@@ -126,6 +126,7 @@ rst_epilog = f"""
 .. |processor| replace:: CPU
 .. |processors| replace:: CPUs
 .. |coprocessor| replace:: coprocessor
+.. |coprocessors| replace:: coprocessors
 """
 
 # Tags for conditional text
