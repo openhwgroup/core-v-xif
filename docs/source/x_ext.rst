@@ -3,7 +3,7 @@
 eXtension Interface
 ===================
 
-The eXtension interface enables extending |processor| with (custom or standardized) instructions without the need to change the RTL
+The eXtension interface enables extending |processor| with (custom or standardized) instructions without the need to change the  :term:`RTL`
 of |processor| itself. Extensions can be provided in separate modules external to |processor| and are integrated
 at system level by connecting them to the eXtension interface.
 
@@ -13,8 +13,8 @@ however that custom instructions do not use opcodes that are reserved/used by RI
 
 The eXtension interface enables extension of |processor| with:
 
-* Custom ALU type instructions.
-* Custom CSRs and related instructions.
+* Custom :term:`ALU` type instructions.
+* Custom :term:`CSRs<CSR>` and related instructions.
 
 .. only:: MemoryIf
 
@@ -158,14 +158,14 @@ The major features of CV-X-IF are:
 
 * Support for dual writeback instructions (optional, based on ``X_DUALWRITE``).
 
-  CV-X-IF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file writebacks. Dual writeback
+  CV-X-IF optionally supports implementation of (custom or standardized) :term:`ISA` extensions mandating dual register file writebacks. Dual writeback
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``).
 
   Dual register file writeback is only supported for ``XLEN`` = 32.
 
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
-  CV-X-IF optionally supports implementation of (custom or standardized) ISA extensions mandating dual register file reads. Dual read
+  CV-X-IF optionally supports implementation of (custom or standardized) :term:`ISA` extensions mandating dual register file reads. Dual read
   is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``n`` being an even number extracted from instruction bits ``[19:15]``),
   ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
   per instruction.
@@ -176,7 +176,7 @@ The major features of CV-X-IF are:
 
 * Support for ternary operations.
 
-  CV-X-IF optionally supports ISA extensions implementing instructions which use three source operands.
+  CV-X-IF optionally supports :term:`ISA` extensions implementing instructions which use three source operands.
   Ternary instructions must be encoded in the R4-type instruction format defined by [RISC-V-UNPRIV]_.
 
 * Support for instruction speculation.
@@ -187,7 +187,7 @@ CV-X-IF consists of the following interfaces:
 
 * **Compressed interface**. Signaling of compressed instruction to be offloaded.
 * **Issue (request/response) interface**. Signaling of the uncompressed instruction to be offloaded.
-* **Register interface**. Signaling of General Purpose Registers (GPRs) and CSRs.
+* **Register interface**. Signaling of :term:`GPRs<GPR>` and :term:`CSRs<CSR>`.
 * **Commit interface**. Signaling of control signals related to whether instructions can be committed or should be killed.
 * **Result interface**. Signaling of the instruction result(s).
 
@@ -228,12 +228,12 @@ is no longer speculative and is allowed to be committed.
 
   In case an accepted offloaded instruction is a load or store, then the |coprocessor| will use the load/store unit(s) in |processor| to actually perform the load
   or store. The |coprocessor| provides the memory request transaction details (e.g. virtual address, write data, etc.) via the memory request interface and |processor|
-  will use its PMP/PMA to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
+  will use its :term:`PMP`/:term:`PMA` to check if the load or store is actually allowed, and if so, will use its bus interface(s) to perform the required memory transaction and
   provide the result (e.g. load data and/or fault status) back to the |coprocessor| via the memory result interface.
 
 The final result of an accepted offloaded instruction can be written back into the |coprocessor| itself or into the |processor|'s register file. Either way, the
 result interface is used to signal to the |processor| that the instruction has completed. Apart from a possible writeback into the register file, the result
-interface transaction is for example used in the core to increment the ``minstret`` CSR, to implement the fence instructions and to judge if instructions
+interface transaction is for example used in the core to increment the ``minstret`` :term:`CSR`, to implement the fence instructions and to judge if instructions
 before a ``WFI`` instruction have fully completed (so that sleep mode can be entered if needed).
 
 In short: From a functional perspective it should not matter whether an instruction is handled inside the |processor| or inside a |coprocessor|. In both cases
@@ -282,7 +282,7 @@ This includes scenarios with multiple |processors| and multi-threaded implementa
 RISC-V distinguishes between harts using ``hartid``, which we also introduce to the interface.
 It is required to identify the source of the offloaded instruction, as multiple harts might be able to offload via a shared interface.
 No duplicates of the combination of ``hartid`` and ``id`` may be in flight at any time within one instance of the interface.
-Any state within the |coprocessor| (e.g. custom CSRs) must be duplicated according to the number of harts (indicated by the ``X_NUM_HARTS`` parameter).
+Any state within the |coprocessor| (e.g. custom :term:`CSRs<CSR>`) must be duplicated according to the number of harts (indicated by the ``X_NUM_HARTS`` parameter).
 Execution units may be shared among threads of the |coprocessor|, and conflicts around such resources must be managed by the |coprocessor|.
 
 .. note::
@@ -595,7 +595,7 @@ in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register 
 odd register file index is provided in the upper 32 bits. When reading from the ``x0``, ``x1`` pair, then a value of 0 is returned for the entire operand.
 The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources it is supported.
 
-The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` CSR to the |coprocessor|.
+The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` :term:`CSR` to the |coprocessor|.
 
 Commit interface
 ~~~~~~~~~~~~~~~~
@@ -693,20 +693,20 @@ Memory (request/response) interface
     :class: no-scrollbar-table
     :widths: 20 20 10 50
 
-    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-    | Signal                    | Type            | Direction       | Description                                                                                                                  |
-    |                           |                 | (|processor|)   |                                                                                                                              |
-    +===========================+=================+=================+==============================================================================================================================+
-    | ``mem_valid``             | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an               |
-    |                           |                 |                 | offloaded instruction.                                                                                                       |
-    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-    | ``mem_ready``             | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``mem_req`` is accepted by |processor| when      |
-    |                           |                 |                 | ``mem_valid`` and  ``mem_ready`` are both 1.                                                                                 |
-    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-    | ``mem_req``               | x_mem_req_t     | input           | Memory request packet.                                                                                                       |
-    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-    | ``mem_resp``              | x_mem_resp_t    | output          | Memory response packet. Response to memory request (e.g. PMA check response). Note that this is not the memory result.       |
-    +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
+    +---------------------------+-----------------+-----------------+--------------------------------------------------------------------------------------------------------------------------------+
+    | Signal                    | Type            | Direction       | Description                                                                                                                    |
+    |                           |                 | (|processor|)   |                                                                                                                                |
+    +===========================+=================+=================+================================================================================================================================+
+    | ``mem_valid``             | logic           | input           | Memory (request/response) valid. Indicates that the |coprocessor| wants to perform a memory transaction for an                 |
+    |                           |                 |                 | offloaded instruction.                                                                                                         |
+    +---------------------------+-----------------+-----------------+--------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_ready``             | logic           | output          | Memory (request/response) ready. The memory (request/response) signaled via ``mem_req`` is accepted by |processor| when        |
+    |                           |                 |                 | ``mem_valid`` and  ``mem_ready`` are both 1.                                                                                   |
+    +---------------------------+-----------------+-----------------+--------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_req``               | x_mem_req_t     | input           | Memory request packet.                                                                                                         |
+    +---------------------------+-----------------+-----------------+--------------------------------------------------------------------------------------------------------------------------------+
+    | ``mem_resp``              | x_mem_resp_t    | output          | Memory response packet. Response to memory request (e.g. :term:`PMA` check response). Note that this is not the memory result. |
+    +---------------------------+-----------------+-----------------+--------------------------------------------------------------------------------------------------------------------------------+
 
   :numref:`Memory request type` describes the ``x_mem_req_t`` type.
 
@@ -746,9 +746,9 @@ Memory (request/response) interface
   The memory request interface can be used by the |coprocessor| to initiate data side memory read or memory write transactions. All memory transactions, no matter if
   they are initiated by |processor| itself or by a |coprocessor| via the memory request interface, are treated equally. Specifically this equal treatment applies to:
 
-  * PMA checks and attribution
-  * PMU usage
-  * MMU usage
+  * :term:`PMA` checks and attribution
+  * :term:`PMP` usage
+  * :term:`MMU` usage
   * Misaligned load/store exception handling
   * Write buffer usage
 
@@ -796,8 +796,8 @@ Memory (request/response) interface
 
   .. note::
 
-    Even though the |coprocessor| is allowed, and sometimes even mandated, to split transacations, this does not mean that split transactions will not result in exceptions.
-    Whether a split transaction is allowed (and makes it onto the external |processor| bus interface) or will lead to an exception, is determined by the |processor| (e.g. by its PMA).
+    Even though the |coprocessor| is allowed, and sometimes even mandated, to split transactions, this does not mean that split transactions will not result in exceptions.
+    Whether a split transaction is allowed (and makes it onto the external |processor| bus interface) or will lead to an exception, is determined by the |processor| (e.g. by its :term:`PMA`).
     No matter if the |coprocessor| already split a transaction or not, further splitting might be required within the |processor| itself (depending on whether a transaction
     on the memory (request/response) interface can be handled as single transaction on the |processor|'s native bus interface or not). In general a |processor| is allowed to make any modification
     to a memory (request/response) interface transaction as long as it is in accordance with the modifiable physical memory attribute for the concerned address region.
@@ -845,7 +845,7 @@ Memory (request/response) interface
   The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0 resulting from the memory request transaction defined in ``mem_req``.
   In case of a synchronous exception or debug trigger match with *before* timing no corresponding transaction will be performed over the memory result (``mem_result_valid``) interface.
   A synchronous exception will lead to a trap in |processor| unless the corresponding instruction is killed. ``exccode`` provides the least significant bits of the exception
-  code bitfield of the ``mcause`` CSR. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
+  code bitfield of the ``mcause`` :term:`CSR`. Similarly a debug trigger match with *before* timing will lead to debug mode entry in |processor| unless the corresponding instruction is killed.
 
   A |coprocessor| shall take care that an instruction that causes ``exc`` = 1 or ``dbg`` = 1 does not cause (|coprocessor| local) side effects that are prohibited in the context of synchronous
   exceptions or debug trigger match with *before* timing. Furthermore, if a result interface handshake will occur for this same instruction, then the ``exc``, ``exccode``  and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) synchronous exception entry and debug entry with *before* timing
@@ -924,7 +924,7 @@ Memory result interface
   side effects based on the ``err`` signal).
   Furthermore, if a result interface handshake will occur for this same instruction, then the ``err`` and ``dbg`` information shall be passed onto that handshake as well. It is the responsibility of the |processor| to make sure that (precise) debug entry with *before* timing is achieved (possibly by killing following instructions that either are already offloaded or are in its own pipeline).
   Upon receiving ``err`` = 1 via the result interface handshake the |processor| is expected to take action to handle the error.
-  The error handling performed by the |processor| is implementation-defined and may include raising an (imprecise) NMI.
+  The error handling performed by the |processor| is implementation-defined and may include raising an (imprecise) :term:`NMI`.
   A |coprocessor| shall not itself use the ``err`` or ``dbg`` information to kill following instructions in its pipeline.
 
   If ``mem_result`` relates to an instruction that has been killed, then the |processor| is allowed to signal any value in ``mem_result`` and the |coprocessor| shall ignore the value received via ``mem_result``.
@@ -1004,8 +1004,8 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
 
   The result interface is extended by the following signals, if the memory interface is present:
 
-  .. table:: Result packet type exteneded for Memory Interface
-    :name: Result packet type exteneded for Memory Interface
+  .. table:: Result packet type extended for Memory Interface
+    :name: Result packet type extended for Memory Interface
     :class: no-scrollbar-table
     :widths: 20 20 60
 
@@ -1025,11 +1025,11 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
   An exception may only be signalled if a memory transaction resulted in ``mem_resp.exc`` asserted.
   The received ``exccode`` shall be passed unmodified.
   A synchronous exception shall lead to a trap in the |processor| (unless ``dbg`` = 1 at the same time). ``exccode`` provides the least significant bits of the exception
-  code bitfield of the ``mcause`` CSR. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
+  code bitfield of the ``mcause`` :term:`CSR`. ``we`` shall be driven to 0 by the |coprocessor| for synchronous exceptions.
   The |processor| shall kill potentially already offloaded instructions to guarantee precise exception behavior.
 
   The ``err`` is used to signal a bus error.
-  A bus error shall lead to an (imprecise) NMI in the |processor|.
+  A bus error shall lead to an (imprecise) :term:`NMI` in the |processor|.
 
   The ``dbg`` is used to signal a debug trigger match with ``mcontrol.timing`` = 0. This signal is only used to signal debug trigger matches received earlier via
   a corresponding memory (request/response) transaction or memory request transaction.
@@ -1136,7 +1136,7 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
 .. note::
 
    The above implies that a |coprocessor| has a pipeline stage separating the register file operands from its result generating circuit (similar to
-   the separation between decode stage and execute stage found in many CPUs).
+   the separation between decode stage and execute stage found in many :term:`CPUs<CPU>`).
 
 .. note::
    As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
@@ -1200,10 +1200,10 @@ for the coprocessor and (optional) interconnect for the case in which a coproces
 As is shown in that timing budget, the coprocessor only receives a small part of the timing budget on the paths through ``xif_issue_if.issue_req.rs*``.
 This enables the coprocessor to source its operands directly from the CV32E40X register file bypass network, thereby preventing stall cycles in case an
 offloaded instruction depends on the result of a preceding non-offloaded instruction. This implies that, if a coprocessor is intended for pairing with the CV32E40X,
-it will be beneficial timing wise if the coprocessor does not directly operate on the ``rs*`` source inputs, but registers them instead. To maximize utilization of a coprocessor with various CPUs, such registers could be made optional via a parameter.
+it will be beneficial timing wise if the coprocessor does not directly operate on the ``rs*`` source inputs, but registers them instead. To maximize utilization of a coprocessor with various :term:`CPUs<CPU>`, such registers could be made optional via a parameter.
 
 Verification
 ------------
 
-A UVM agent for the interface was developed for the verification of CVA6.
+A :term:`UVM` agent for the interface was developed for the verification of CVA6.
 It can be accessed under `https://github.com/openhwgroup/core-v-verif/tree/master/lib/uvm_agents/uvma_cvxif <https://github.com/openhwgroup/core-v-verif/tree/99b260b036b3c220ab3d405d521f5c710e587e89/lib/uvm_agents/uvma_cvxif>`_.
