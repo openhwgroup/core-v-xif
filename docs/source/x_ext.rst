@@ -457,20 +457,20 @@ The ``instr`` signal remains stable during an issue request transaction.
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                   | Description                                                                                                      |
   +========================+========================+==================================================================================================================+
-  | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted by the |coprocessor|?                                             |
+  | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted (1) by the |coprocessor| or rejected (0)?                         |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
   |                        | <writeregflags>`       | Writeback to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                  |
   |                        |                        | but will be ignored by the |processor|.                                                                          |
-  |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for non-accepted instructions.                                    |
+  |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for rejected instructions.                                        |
   |                        |                        | Writeback to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
-  |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for non-accepted instructions.                                |
+  |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for rejected instructions.                                    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
-  |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for non-accepted instructions.                                     |
+  |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for rejected instructions.                                         |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
 The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
@@ -509,7 +509,7 @@ The signals in ``issue_resp`` are valid when ``issue_valid`` and ``issue_ready``
     | Signal                 | Type                   | Description                                                                                                      |
     +========================+========================+==================================================================================================================+
     | ``loadstore``          | logic                  | Is the offloaded instruction a load/store instruction?                                                           |
-    |                        |                        | A |coprocessor| must signal ``loadstore`` as 0 for non-accepted instructions. (Only) if an instruction is        |
+    |                        |                        | A |coprocessor| must signal ``loadstore`` as 0 for rejected instructions. (Only) if an instruction is            |
     |                        |                        | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
     |                        |                        | more transactions via the memory group interface.                                                                |
     +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
@@ -816,7 +816,7 @@ Memory (request/response) interface
   then it shall issue no further memory request transactions for the same instruction (``hartid`` + ``id``). Similarly, after having received ``commit_kill`` = 1 no further memory request transactions shall
   be issued by a |coprocessor| for the same instruction (``hartid`` + ``id``).
 
-  A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-accepted instructions.
+  A |coprocessor| shall never initiate a memory request transaction(s) for offloaded rejected instructions.
   A |coprocessor| shall never initiate a memory request transaction(s) for offloaded non-load/store instructions (``loadstore`` = 0).
   A |coprocessor| shall never initiate a non-speculative memory request transaction(s) unless in the same cycle or after the cycle of receiving a commit transaction with ``commit_kill`` = 0.
   A |coprocessor| shall never initiate a speculative memory request transaction(s) on cycles after a cycle in which it receives ``commit_kill`` = 1 via the commit transaction.
