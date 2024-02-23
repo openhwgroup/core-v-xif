@@ -19,6 +19,7 @@ However, this interface was tightly coupled with the |processor| pipeline, which
 Moreover, it was designed for a specific use-case. Later, the PULP team developed a more advanced interface for the **CVA6** project, which could handle more complex scenarios required by the **ARA** vector machine. This interface was further refined in the **Snitch** project, where it was made more modular and independent from the pipeline, requiring only minimal changes to the decoder of the |processor|. The aim of ``CV-X-IF`` within the OpenHW Group is to take this interface to the next level and eliminate all dependencies between the |processor| and the |coprocessor|.
 The interface is not only agnostic from the decoder and pipeline perspective, but also from the license and codebase standpoint, with the goal of becoming the standard interface that will enable wide reuse of RISC-V IPs.
 The first CPU implementing such interface is the **CV32E40X**, which can be found at https://github.com/openhwgroup/cv32e40x.
+The interface was also added as an option to **CVA6**, which can be found at https://github.com/openhwgroup/cva6.
 
 License
 -------
