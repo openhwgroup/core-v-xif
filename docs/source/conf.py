@@ -81,9 +81,6 @@ filename = f'{title_prefix}_{project}_{release}'.replace(' ', '_')
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.todo',
-    'recommonmark',
     'sphinxcontrib.inkscapeconverter',
     'sphinx_github_changelog',
 ]
