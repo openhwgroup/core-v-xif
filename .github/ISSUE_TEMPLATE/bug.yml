@@ -1,0 +1,38 @@
+name: CV-X-IF Bug
+description: Create a CV-X-IF Bug
+title: "[BUG] <title>"
+labels: ["bug"]
+body:
+- type: checkboxes
+  attributes:
+    label: Is there an existing CV-X-IF Bug for this?
+    description: Please search to see if a bug issue already exists for the task you need to create
+    options:
+    - label: I have searched the existing bug issues
+      required: true
+- type: textarea
+  attributes:
+    label: Task Description
+    description: A concise description of the problem
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Proposed resolution
+    description: Describe what needs to be done
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Description of Done
+    description: What are the criteria for completion of this bug?
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Associated PRs
+    description: Use this area to provide a link to PRs used to complete this bug.
+- type: markdown
+  attributes:
+    value: |
+      **Keep task progress up to date by adding comments to the task as it progresses.**
