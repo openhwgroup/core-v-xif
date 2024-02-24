@@ -17,8 +17,8 @@ body:
       label: Is your employer an OpenHW Group member?
       multiple: false
       options:
-        - label: Yes
-        - label: No
+      - label: Yes
+      - label: No
     validations:
       required: true
   - type: textarea
@@ -33,9 +33,9 @@ body:
       description: What changes to CV-X-IF v1.0.0-rc.1 do you recommend to address the comment?
     validations:
       required: true
-  - type: 
+  - type: textarea
     attributes:
       label: Addition Info 
       description: Provide any additional information or links that relate to this comment
     validations:
-      required: true
+      required: false
