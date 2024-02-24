@@ -5,8 +5,7 @@ labels: ["public-review", "CV-X-IF-v1.0.0-rc.1"]
 body:
   - type: markdown
     attributes:
-      value: |
-        Thanks for your review comment on the CV-X-IF v1.0.0-rc.1 specification! Please submit a separate issue for each comment.
+      value: "Thanks for your review comment on the CV-X-IF v1.0.0-rc.1 specification! The PDF is at https://docs.openhwgroup.org/_/downloads/openhw-group-core-v-xif/en/v1.0.0-rc.1/pdf/. Please submit a separate issue for each comment."
 #  - type: checkbox
 #    attributes:
 #      label: Is your employer an OpenHW Group member?
