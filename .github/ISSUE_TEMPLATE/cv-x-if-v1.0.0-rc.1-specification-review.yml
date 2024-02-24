@@ -7,25 +7,36 @@ body:
     attributes:
       value: |
         Thanks for your review comment on the CV-X-IF v1.0.0-rc.1 specification! Please submit a separate issue for each comment.
-  - type: checkbox
+#  - type: checkbox
+#    attributes:
+#      label: Is your employer an OpenHW Group member?
+#      options:
+#        - label: Yes
+#        - label: No
+  - type: dropdown
     attributes:
       label: Is your employer an OpenHW Group member?
+      multiple: false
       options:
         - label: Yes
         - label: No
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Comment
       description: Describe the comment, question, problem, or suggestion w.r.t. CV-X-IF v1.0.0-rc.1
-      validations:
-        required: false
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Proposed Resolution
       description: What changes to CV-X-IF v1.0.0-rc.1 do you recommend to address the comment?
-      validations:
-        required: false
+    validations:
+      required: true
   - type: 
     attributes:
       label: Addition Info 
       description: Provide any additional information or links that relate to this comment
+    validations:
+      required: true
