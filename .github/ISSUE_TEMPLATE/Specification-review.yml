@@ -1,0 +1,28 @@
+name: Specification Public Review
+description: Specification Public Review Comment
+title: "[Review Comment]: "
+labels: ["public-review"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for your review comment on the CV-X-IF specification! The latest published PDF is at https://readthedocs.com/projects/openhw-group-core-v-xif/downloads/. Please submit a separate issue for each comment."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Comment
+      description: Describe the comment, question, problem, or suggestion w.r.t. CV-X-IF
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed Resolution
+      description: What changes to CV-X-IF do you recommend to address the comment?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Addition Info 
+      description: Provide any additional information or links that relate to this comment
+    validations:
+      required: false
