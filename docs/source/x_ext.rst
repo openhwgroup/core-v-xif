@@ -65,7 +65,7 @@ The CV-X-IF specification contains the following parameters:
   |                              |                        |               | to MXLEN.                                                          |
   |                              |                        |               | The |processor| determines the legal values for this parameter.    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-  | ``X_MISA``                   | logic [31:0]           | 32'b0         | MISA extensions implemented on the eXtension interface.            |
+  | ``X_MISA``                   | logic [25:0]           | 32'b0         | MISA extensions implemented on the eXtension interface.            |
   |                              |                        |               | The |processor| determines the legal values for this parameter.    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
@@ -82,6 +82,9 @@ The CV-X-IF specification contains the following parameters:
   |                              |                        |               | If 1, registers are provided after the issue of the instruction.   |
   |                              |                        |               | If 0, registers are provided at the same time as issue.            |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+
+The |processor| shall set the ``misa.Extensions`` field to a value that is the result of an or operation of its own Extensions and the ``X_MISA`` parameter.
+Not all bits of ``misa.Extensions`` will be legal for a coprocessor to set, e.g. if this extension is already implemented in the |processor| or if it is an extension not possible to implement as part of a coprocessor like privileged extensions.
 
 .. only:: MemoryIf
 
