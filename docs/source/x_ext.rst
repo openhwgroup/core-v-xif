@@ -84,6 +84,7 @@ The CV-X-IF specification contains the following parameters:
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 The |processor| shall set the ``misa.Extensions`` field to a value that is the result of an or operation of its own Extensions and the ``X_MISA`` parameter.
+Not all bits of ``misa.Extensions`` will be legal for a coprocessor to set, e.g. if this extension is already implemented in the |processor| or if it is an extension not possible to implement as part of a coprocessor like privileged extensions.
 
 .. only:: MemoryIf
 
