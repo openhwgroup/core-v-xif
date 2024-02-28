@@ -87,3 +87,6 @@ Glossary
 
     RTL
         Register transfer language
+
+    ECS
+        Extension Context Status
