@@ -4,6 +4,14 @@ The Core-V eXtension interface (CV-X-IF) is a RISC-V eXtension interface that pr
 
 It features independent channels for accelerator-agnostic offloading of instructions and writeback of the result(s).
 
+## Configuration
+
+The project is configured using the [pyproject.toml](./pyproject.toml) file. Its values are input to [docs/source/conf.py](./docs/source/conf.py) for building the documentation.
+
+When updating the project, it should be ensured that the configuration is up to date. In particular, version and copyright should be checked.
+
+The specification uses semantic versioning (see [https://semver.org/](https://semver.org/)).
+
 ## Documentation
 
 The CV-X-IF user manual can be found in the _docs_ folder and it is

@@ -2,3 +2,4 @@ sphinx
 sphinx-rtd-theme
 sphinxcontrib-svg2pdfconverter
 sphinx_github_changelog
+sphinx-pyproject>=0.3.0
