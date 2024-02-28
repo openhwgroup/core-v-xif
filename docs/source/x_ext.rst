@@ -265,7 +265,7 @@ If the oldest in-flight instruction is :math:`id_o`, and the newest is ``id_n``,
     id_{n+1} > id_{n} \text{ and } id_{n+1} < id_{o}, \text{ if } id_{n} < id_{o}
   \end{gather}
 
-The first condition applying to cases where the ``id`` has wrapped since the oldest in-flight instruction was issued, and the second where no wrap occurred.
+The first condition applying to cases where the ``id`` has not wrapped since the oldest in-flight instruction was issued, and the second where one wrap occurred.
 The |coprocessor| is not required to check the validity of ``id`` values under these constraints.
 This has to be guaranteed by design of the CPU.
 
