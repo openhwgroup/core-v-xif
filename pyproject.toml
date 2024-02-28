@@ -3,7 +3,7 @@ name = "Core-V eXtension interface (CV-X-IF)"
 readme = "README.md"
 description = "RISC-V extension interface"
 requires-python = ">=3.9"
-version = "1.0.0-rc.1"
+version = "dynamic"
 
 [[project.authors]]
 name = "OpenHW Group"
