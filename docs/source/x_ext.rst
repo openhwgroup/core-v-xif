@@ -257,7 +257,7 @@ The ``id`` values are required to be incremental from one issue transaction to t
 The increment may be greater than one.
 If the next ``id`` would be greater than the maximum value (``2**X_ID_WIDTH - 1``), the value of ``id`` wraps.
 A new ``id`` value is not allowed to be greater than the oldest in-flight instruction, if a wrap has occurred since the oldest in-flight instruction was issued.
-If the oldest in-flight instruction is :math:`id_o`, and the newest is ``id_n``, then the next instruction with ``id_n+1`` must satisfy the following conditions:
+If the oldest in-flight instruction is :math:`id_o`, and the newest is :math:`id_n`, then the next instruction with :math:`id_{n+1}` must satisfy the following conditions:
 
 .. math::
   \begin{gather}
@@ -265,7 +265,7 @@ If the oldest in-flight instruction is :math:`id_o`, and the newest is ``id_n``,
     id_{n+1} > id_{n} \text{ and } id_{n+1} < id_{o}, \text{ if } id_{n} < id_{o}
   \end{gather}
 
-The first condition applying to cases where the ``id`` has not wrapped since the oldest in-flight instruction was issued, and the second where one wrap occurred.
+The first condition applying to cases where the :math:`id_n` has not wrapped since the oldest in-flight instruction was issued, and the second where one wrap occurred between :math:`id_o` and :math:`id_n`.
 The |coprocessor| is not required to check the validity of ``id`` values under these constraints.
 This has to be guaranteed by design of the CPU.
 
