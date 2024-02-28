@@ -16,7 +16,21 @@
 # -- pyproject integration ---------------------------------------------------
 
 from sphinx_pyproject import SphinxConfig
-config = SphinxConfig("../../pyproject.toml", globalns=globals())
+#config = SphinxConfig("../../pyproject.toml", globalns=globals())
+
+from setuptools_scm import get_version
+version = get_version(root='../../',
+                         relative_to=__file__,
+                         normalize=False,
+                         # https://setuptools-scm.readthedocs.io/en/latest/extending/#available-implementations
+                         local_scheme="no-local-version",
+                         )
+
+# enforcing non-normalized notation for dev
+version = '-dev.'.join(version.split('.dev'))
+
+# Load settings from pyproject.toml, but override the version
+config = SphinxConfig("../../pyproject.toml", globalns=globals(), config_overrides = {"version": version})
 
 # -- Path setup --------------------------------------------------------------
 
@@ -35,12 +49,14 @@ title_prefix = 'OpenHW Group Specification'
 project = name
 
 # -- Derived Project Information - Do not modify ------------------------------
-version_elements = version.split('-')
+# split on first - separator
+version_elements = version.split('-', 1)
 if len(version_elements) > 1:
-    if version_elements[1].startswith('rc'):
-        state = 'Release Candidate'
-    elif version_elements[1].startswith('dev'):
+    # dev needs to be checked first, as vX.Y.Z-rc.1-dev.4 would be considered development
+    if 'dev' in version_elements[1]:
         state = 'Development'
+    elif version_elements[1].startswith('rc'):
+        state = 'Release Candidate'
 else:
     state = 'Release'
 
