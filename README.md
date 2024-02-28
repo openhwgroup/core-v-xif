@@ -6,11 +6,11 @@ It features independent channels for accelerator-agnostic offloading of instruct
 
 ## Configuration
 
-The project is configured using the pyproject.toml file. Its values are input to docs/conf.py for building the documentation.
+The project is configured using the [pyproject.toml](./pyproject.toml) file. Its values are input to [docs/source/conf.py](./docs/source/conf.py) for building the documentation.
 
 When updating the project, it should be ensured that the configuration is up to date. In particular, version and copyright should be checked.
 
-The specification uses semantic versioning (see [https://semver.org/](https://semver.org/)). 
+The specification uses semantic versioning (see [https://semver.org/](https://semver.org/)).
 
 ## Documentation
 
