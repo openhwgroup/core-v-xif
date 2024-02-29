@@ -28,10 +28,6 @@ body:
     description: What are the criteria for completion of this bug?
   validations:
     required: true
-- type: textarea
-  attributes:
-    label: Associated PRs
-    description: Use this area to provide a link to PRs used to complete this bug.
 - type: markdown
   attributes:
     value: |
