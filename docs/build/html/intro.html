@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; Core-V eXtension interface (CV-X-IF)  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="eXtension Interface" href="x_ext.html" />
+    <link rel="prev" title="Acknowledgements" href="preface.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #DDDDDD" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Core-V eXtension interface (CV-X-IF)
+              <img src="_static/openhw-landscape.svg" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.1-dev.249
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="preface.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preface.html#changelog">Changelog</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#history">History</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standards-compliance">Standards Compliance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#glossary">Glossary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="x_ext.html">eXtension Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="x_ext.html#appendix">Appendix</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #DDDDDD" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Core-V eXtension interface (CV-X-IF)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="preface.html" class="btn btn-neutral float-left" title="Acknowledgements" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="x_ext.html" class="btn btn-neutral float-right" title="eXtension Interface" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">Core-V</span> <span class="pre">eXtension</span> <span class="pre">interface</span></code>, also called <code class="docutils literal notranslate"><span class="pre">CV-X-IF</span></code>, is an interface aimed at extending a <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a> with (custom or standardized) instructions implemented in a coprocessor.</p>
+<p>It can be used to implement standard RISC-V extensions as for example B (Bit Manipulation), M (Integer Multiplication and Division), F (Single-Precision Floating Point) and D (Double-Precision Floating Point). It can also be used to implement custom extensions.
+Extensions implemented on the interface are unprivileged, i.e. implementing privileged extensions like H (Hypervisor) is not supported.</p>
+<p>The goal of <code class="docutils literal notranslate"><span class="pre">CV-X-IF</span></code> is to enable the design and verification of instruction extensions in a coprocessor in a standardized manner without the need to modify the <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a> itself.
+Having a common interface allows designers of RISC-V <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPUs</span></a> to reuse existing co-processor and vice versa.
+Please note that the <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a> and coprocessor can have different license models. Example, the coprocessor could be closed source, connected to an open-source <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a>.</p>
+<section id="history">
+<h2>History<a class="headerlink" href="#history" title="Permalink to this heading"></a></h2>
+<p>The idea of an extension interface originated from the <strong>PULP Project</strong> at ETH Zurich and University of Bologna, where it was used to decouple the floating-point unit and the CPU design.
+The first version of this interface was called <code class="docutils literal notranslate"><span class="pre">apu</span> <span class="pre">interface</span></code>, and it was implemented in the <strong>CV32E40P</strong> to communicate with the <strong>CVFPU</strong> coprocessor.
+However, this interface was tightly coupled with the <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a> pipeline, which meant that any other new coprocessor extension had to modify the <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a> pipeline and decoder.
+Moreover, it was designed for a specific use-case. Later, the PULP team developed a more advanced interface for the <strong>CVA6</strong> project, which could handle more complex scenarios required by the <strong>ARA</strong> vector machine. This interface was further refined in the <strong>Snitch</strong> project, where it was made more modular and independent from the pipeline, requiring only minimal changes to the decoder of the <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a>. The aim of <code class="docutils literal notranslate"><span class="pre">CV-X-IF</span></code> within the OpenHW Group is to take this interface to the next level and eliminate all dependencies between the <a class="reference internal" href="#term-CPU"><span class="xref std std-term">CPU</span></a> and the coprocessor.
+The interface is not only agnostic from the decoder and pipeline perspective, but also from the license and codebase standpoint, with the goal of becoming the standard interface that will enable wide reuse of RISC-V IPs.
+The first CPU implementing such interface is the <strong>CV32E40X</strong>, which can be found at <a class="reference external" href="https://github.com/openhwgroup/cv32e40x">https://github.com/openhwgroup/cv32e40x</a>.
+The interface was also added as an option to <strong>CVA6</strong>, which can be found at <a class="reference external" href="https://github.com/openhwgroup/cva6">https://github.com/openhwgroup/cva6</a>.</p>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
+<p>Copyright © 2021-2024 OpenHW Group.</p>
+<p>SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1</p>
+<p>Licensed under the Solderpad Hardware License v 2.1 (the “License”); you may not use this file except in compliance with the License, or, at your option, the Apache License version 2.0.</p>
+<p>You may obtain a copy of the License at</p>
+<p><a class="reference external" href="https://solderpad.org/licenses/SHL-2.1/">https://solderpad.org/licenses/SHL-2.1/</a></p>
+<p>Unless required by applicable law or agreed to in writing, any work distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</p>
+<p>See the License for the specific language governing permissions and limitations under the License.</p>
+</section>
+<section id="standards-compliance">
+<h2>Standards Compliance<a class="headerlink" href="#standards-compliance" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">CV-X-IF</span></code> specification depends on the unprivileged <a class="reference internal" href="#risc-v-unpriv" id="id1"><span>[RISC-V-UNPRIV]</span></a> and privileged <a class="reference internal" href="#risc-v-priv" id="id2"><span>[RISC-V-PRIV]</span></a> RISC-V specification.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="risc-v-unpriv" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">RISC-V-UNPRIV</a><span class="fn-bracket">]</span></span>
+<p>The RISC-V Instruction Set Manual, Volume I: User-Level ISA,
+Document Version 20191213”, Editors Andrew Waterman and Krste Asanovíc, RISC-V Foundation, December 2019.</p>
+</div>
+<div class="citation" id="risc-v-priv" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">RISC-V-PRIV</a><span class="fn-bracket">]</span></span>
+<p>The RISC-V Instruction Set Manual, Volume II: Privileged Architecture,
+Document Version 20211203”, Editors Andrew Waterman, Krste Asanovíc, and John Hauser, RISC-V International, December 2021.</p>
+</div>
+</div>
+</section>
+<section id="glossary">
+<h2>Glossary<a class="headerlink" href="#glossary" title="Permalink to this heading"></a></h2>
+<dl class="simple glossary">
+<dt id="term-clk">clk<a class="headerlink" href="#term-clk" title="Permalink to this term"></a></dt><dd><p>Clock signal</p>
+</dd>
+<dt id="term-ISA">ISA<a class="headerlink" href="#term-ISA" title="Permalink to this term"></a></dt><dd><p>Instruction set architecture</p>
+</dd>
+<dt id="term-CPU">CPU<a class="headerlink" href="#term-CPU" title="Permalink to this term"></a></dt><dd><p>Central processing unit</p>
+</dd>
+<dt id="term-ALU">ALU<a class="headerlink" href="#term-ALU" title="Permalink to this term"></a></dt><dd><p>Arithmetic logic unit</p>
+</dd>
+<dt id="term-CSR">CSR<a class="headerlink" href="#term-CSR" title="Permalink to this term"></a></dt><dd><p>Control and status register</p>
+</dd>
+<dt id="term-GPR">GPR<a class="headerlink" href="#term-GPR" title="Permalink to this term"></a></dt><dd><p>General purpose register</p>
+</dd>
+<dt id="term-PMP">PMP<a class="headerlink" href="#term-PMP" title="Permalink to this term"></a></dt><dd><p>Physical memory protection</p>
+</dd>
+<dt id="term-PMA">PMA<a class="headerlink" href="#term-PMA" title="Permalink to this term"></a></dt><dd><p>Physical memory attributes</p>
+</dd>
+<dt id="term-MMU">MMU<a class="headerlink" href="#term-MMU" title="Permalink to this term"></a></dt><dd><p>Memory management unit</p>
+</dd>
+<dt id="term-NMI">NMI<a class="headerlink" href="#term-NMI" title="Permalink to this term"></a></dt><dd><p>Non-maskable interrupt</p>
+</dd>
+<dt id="term-UVM">UVM<a class="headerlink" href="#term-UVM" title="Permalink to this term"></a></dt><dd><p>Universal Verification Methodology</p>
+</dd>
+<dt id="term-RTL">RTL<a class="headerlink" href="#term-RTL" title="Permalink to this term"></a></dt><dd><p>Register transfer language</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="preface.html" class="btn btn-neutral float-left" title="Acknowledgements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="x_ext.html" class="btn btn-neutral float-right" title="eXtension Interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024 OpenHW Group.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

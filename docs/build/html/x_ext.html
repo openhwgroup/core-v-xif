@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eXtension Interface &mdash; Core-V eXtension interface (CV-X-IF)  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Introduction" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #DDDDDD" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Core-V eXtension interface (CV-X-IF)
+              <img src="_static/openhw-landscape.svg" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.1-dev.249
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="preface.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preface.html#changelog">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">eXtension Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cv-x-if">CV-X-IF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#major-features">Major features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#operating-principle">Operating principle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interfaces">Interfaces</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#identification">Identification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-harts">Multiple Harts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compressed-interface">Compressed interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issue-interface">Issue interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#register-interface">Register interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#commit-interface">Commit interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory-request-response-interface">Memory (request/response) interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory-result-interface">Memory result interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#result-interface">Result interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#interface-dependencies">Interface dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#handshake-rules">Handshake rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#signal-dependencies">Signal dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#handshake-dependencies">Handshake dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#appendix">Appendix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#systemverilog-example">SystemVerilog example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coprocessor-recommendations">Coprocessor recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timing-recommendations">Timing recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #DDDDDD" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Core-V eXtension interface (CV-X-IF)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">eXtension Interface</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="intro.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="extension-interface">
+<span id="x-ext"></span><h1>eXtension Interface<a class="headerlink" href="#extension-interface" title="Permalink to this heading"></a></h1>
+<p>The eXtension interface enables extending <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> with (custom or standardized) instructions without the need to change the  <a class="reference internal" href="intro.html#term-RTL"><span class="xref std std-term">RTL</span></a>
+of <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> itself. Extensions can be provided in separate modules external to <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> and are integrated
+at system level by connecting them to the eXtension interface.</p>
+<p>The eXtension interface provides low latency (tightly integrated) read and write access to the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> register file.
+All opcodes which are not used (i.e. considered to be invalid) by <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> can be used for extensions. It is recommended
+however that custom instructions do not use opcodes that are reserved/used by RISC-V International.</p>
+<p>The eXtension interface enables extension of <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> with:</p>
+<ul class="simple">
+<li><p>Custom <a class="reference internal" href="intro.html#term-ALU"><span class="xref std std-term">ALU</span></a> type instructions.</p></li>
+<li><p>Custom <a class="reference internal" href="intro.html#term-CSR"><span class="xref std std-term">CSRs</span></a> and related instructions.</p></li>
+</ul>
+<p>Control-Transfer type instructions (e.g. branches and jumps) are not supported via the eXtension interface.</p>
+<section id="cv-x-if">
+<h2>CV-X-IF<a class="headerlink" href="#cv-x-if" title="Permalink to this heading"></a></h2>
+<p>The terminology <code class="docutils literal notranslate"><span class="pre">eXtension</span> <span class="pre">interface</span></code> and <code class="docutils literal notranslate"><span class="pre">CV-X-IF</span></code> are used interchangeably.</p>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<p>The CV-X-IF specification contains the following parameters:</p>
+<table class="no-scrollbar-table docutils align-default" id="interface-parameters">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">Interface parameters</span><a class="headerlink" href="#interface-parameters" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 15%" />
+<col style="width: 10%" />
+<col style="width: 45%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type/Range</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X_NUM_RS</span></code></p></td>
+<td><p>int unsigned (2..3)</p></td>
+<td><p>2</p></td>
+<td><p>Number of register file read ports that can be used by the
+eXtension interface.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">X_ID_WIDTH</span></code></p></td>
+<td><p>int unsigned (3..32)</p></td>
+<td><p>4</p></td>
+<td><p>Identification (<code class="docutils literal notranslate"><span class="pre">id</span></code>) width for the eXtension interface.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X_RFR_WIDTH</span></code></p></td>
+<td><p>int unsigned (32, 64)</p></td>
+<td><p>32</p></td>
+<td><p>Register file read access width for the eXtension interface.
+Must be at least XLEN. If XLEN = 32, then the legal values are 32
+and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is
+(only) 64.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">X_RFW_WIDTH</span></code></p></td>
+<td><p>int unsigned (32, 64)</p></td>
+<td><p>32</p></td>
+<td><p>Register file write access width for the eXtension interface.
+Must be at least XLEN. If XLEN = 32, then the legal values are 32
+and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is
+(only) 64.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X_NUM_HARTS</span></code></p></td>
+<td><p>int unsigned
+(1..2^MXLEN)</p></td>
+<td><p>1</p></td>
+<td><p>Number of harts (hardware threads) associated with the interface.
+The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> determines the legal values for this parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">X_HARTID_WIDTH</span></code></p></td>
+<td><p>int unsigned
+(1..MXLEN)</p></td>
+<td><p>1</p></td>
+<td><p>Width of <code class="docutils literal notranslate"><span class="pre">hartid</span></code> signals.
+Must be at least 1. Limited by the RISC-V privileged specification
+to MXLEN.
+The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> determines the legal values for this parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X_MISA</span></code></p></td>
+<td><p>logic [25:0]</p></td>
+<td><p>32’b0</p></td>
+<td><p>MISA extensions implemented on the eXtension interface.
+The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> determines the legal values for this parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">X_ECS_XS</span></code></p></td>
+<td><p>logic [1:0]</p></td>
+<td><p>2’b0</p></td>
+<td><p>Initial value for <code class="docutils literal notranslate"><span class="pre">mstatus.XS</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X_DUALREAD</span></code></p></td>
+<td><p>int unsigned (0..3)</p></td>
+<td><p>0</p></td>
+<td><p>Is dual read supported? 0: No, 1: Yes, for <code class="docutils literal notranslate"><span class="pre">rs1</span></code>,
+2: Yes, for <code class="docutils literal notranslate"><span class="pre">rs1</span></code> - <code class="docutils literal notranslate"><span class="pre">rs2</span></code>, 3: Yes, for <code class="docutils literal notranslate"><span class="pre">rs1</span></code> - <code class="docutils literal notranslate"><span class="pre">rs3</span></code>.
+Legal values are determined by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">X_DUALWRITE</span></code></p></td>
+<td><p>int unsigned (0..1)</p></td>
+<td><p>0</p></td>
+<td><p>Is dual write supported? 0: No, 1: Yes.
+Legal values are determined by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">X_ISSUE_REGISTER_SPLIT</span></code></p></td>
+<td><p>int unsigned (0..1)</p></td>
+<td><p>0</p></td>
+<td><p>Does the interface pipeline register interface? 0: No, 1: Yes.
+Legal values are determined by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.
+If 1, registers are provided after the issue of the instruction.
+If 0, registers are provided at the same time as issue.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> shall set the <code class="docutils literal notranslate"><span class="pre">misa.Extensions</span></code> field to a value that is the result of an or operation of its own Extensions and the <code class="docutils literal notranslate"><span class="pre">X_MISA</span></code> parameter.
+Not all bits of <code class="docutils literal notranslate"><span class="pre">misa.Extensions</span></code> will be legal for a coprocessor to set, e.g. if this extension is already implemented in the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> or if it is an extension not possible to implement as part of a coprocessor like privileged extensions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> shall clearly document which <code class="docutils literal notranslate"><span class="pre">X_MISA</span></code> values it can support and there is no requirement that a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> can support
+all possible <code class="docutils literal notranslate"><span class="pre">X_MISA</span></code> values. For example, if a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> only supports machine mode, then it is not reasonable to expect that the
+<a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> will additionally support user mode by just setting the <code class="docutils literal notranslate"><span class="pre">X_MISA[20]</span></code> (<code class="docutils literal notranslate"><span class="pre">U</span></code> bit) to 1.</p>
+</div>
+<p>Additionally, the following type definitions are defined to improve readability of the specification and ensure consistency between the interfaces:</p>
+<table class="no-scrollbar-table docutils align-default" id="interface-type-definitions">
+<caption><span class="caption-number">Table 3 </span><span class="caption-text">Interface type definitions</span><a class="headerlink" href="#interface-type-definitions" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 30%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Definition</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p id="readregflags"><code class="docutils literal notranslate"><span class="pre">readregflags_t</span></code></p>
+</td>
+<td><p>logic [X_NUM_RS+X_DUALREAD-1:0]</p></td>
+<td><p>Vector with a flag per possible source register.
+This depends upon the number of
+read ports and their ability to read register pairs.
+The bit positions map to registers as follows:
+Low indices correspond to low operand numbers, and the even part
+of the pair has the lower index than the odd one.</p></td>
+</tr>
+<tr class="row-odd"><td><p id="writeregflags"><code class="docutils literal notranslate"><span class="pre">writeregflags_t</span></code></p>
+</td>
+<td><p>logic [X_DUALWRITE:0]</p></td>
+<td><p>Bit vector indicating destination registers for write back.
+The width depends on the ability to perform dual write.
+If <code class="docutils literal notranslate"><span class="pre">X_DUALWRITE</span></code> = 0, this signal is a single bit.
+Bit 1 may only be set when bit 0 is also set.
+In this case, the vector indicates that a register pair is used.</p></td>
+</tr>
+<tr class="row-even"><td><p id="mode"><code class="docutils literal notranslate"><span class="pre">mode_t</span></code></p>
+</td>
+<td><p>logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0]</p></td>
+<td><p>Privilege level
+(2’b00 = User, 2’b01 = Supervisor, 2’b10 = Reserved,
+2’b11 = Machine).</p></td>
+</tr>
+<tr class="row-odd"><td><p id="id"><code class="docutils literal notranslate"><span class="pre">id_t</span></code></p>
+</td>
+<td><p>logic [X_ID_WIDTH-1:0]</p></td>
+<td><p>Identification of the offloaded instruction.
+See <a class="reference internal" href="#identification">Identification</a> for details on the identifiers</p></td>
+</tr>
+<tr class="row-even"><td><p id="hartid"><code class="docutils literal notranslate"><span class="pre">hartid_t</span></code></p>
+</td>
+<td><p>logic [X_HARTID_WIDTH-1:0]</p></td>
+<td><p>Identification of the hart offloading the instruction.
+Only relevant in multi-hart systems. Hart IDs are not required to
+to be numbered continuously.
+The hart ID would usually correspond to <code class="docutils literal notranslate"><span class="pre">mhartid</span></code>, but it is not
+required to do so.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="major-features">
+<h2>Major features<a class="headerlink" href="#major-features" title="Permalink to this heading"></a></h2>
+<p>The major features of CV-X-IF are:</p>
+<ul>
+<li><p>Minimal requirements on extension instruction encoding.</p>
+<p>If an extension instruction relies on reading from or writing to the core’s general purpose register file, then the standard
+RISC-V bitfield locations for rs1, rs2, rs3, rd as used for non-compressed instructions (<a class="reference internal" href="intro.html#risc-v-unpriv" id="id1"><span>[RISC-V-UNPRIV]</span></a>) must be used.
+Bitfields for unused read or write operands can be fully repurposed. Extension instructions can either use the compressed
+or uncompressed instruction format. For offloading compressed instructions the coprocessor must provide the core with
+the related non-compressed instructions.</p>
+</li>
+<li><p>Support for dual writeback instructions (optional, based on <code class="docutils literal notranslate"><span class="pre">X_DUALWRITE</span></code>).</p>
+<p>CV-X-IF optionally supports implementation of (custom or standardized) <a class="reference internal" href="intro.html#term-ISA"><span class="xref std std-term">ISA</span></a> extensions mandating dual register file writebacks. Dual writeback
+is supported for even-odd register pairs (<code class="docutils literal notranslate"><span class="pre">Xn</span></code> and <code class="docutils literal notranslate"><span class="pre">Xn+1</span></code> with <code class="docutils literal notranslate"><span class="pre">n</span></code> being an even number extracted from instruction bits <code class="docutils literal notranslate"><span class="pre">[11:7]</span></code>).</p>
+<p>Dual register file writeback is only supported for <code class="docutils literal notranslate"><span class="pre">XLEN</span></code> = 32.</p>
+</li>
+<li><p>Support for dual read instructions (per source operand) (optional, based on <code class="docutils literal notranslate"><span class="pre">X_DUALREAD</span></code>).</p>
+<p>CV-X-IF optionally supports implementation of (custom or standardized) <a class="reference internal" href="intro.html#term-ISA"><span class="xref std std-term">ISA</span></a> extensions mandating dual register file reads. Dual read
+is supported for even-odd register pairs (<code class="docutils literal notranslate"><span class="pre">Xn</span></code> and <code class="docutils literal notranslate"><span class="pre">Xn+1</span></code>, with <code class="docutils literal notranslate"><span class="pre">n</span></code> being an even number extracted from instruction bits <code class="docutils literal notranslate"><span class="pre">[19:15]</span></code>),
+<code class="docutils literal notranslate"><span class="pre">[24:20]</span></code> and <code class="docutils literal notranslate"><span class="pre">[31:27]</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">rs1</span></code>, <code class="docutils literal notranslate"><span class="pre">rs2</span></code> and <code class="docutils literal notranslate"><span class="pre">rs3</span></code>). Dual read can therefore provide up to six 32-bit operands
+per instruction.</p>
+<p>When a dual read is performed with <code class="docutils literal notranslate"><span class="pre">n</span></code> = 0, the entire operand is 0, i.e. <code class="docutils literal notranslate"><span class="pre">x1</span></code> shall not need to be accessed by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.</p>
+<p>Dual register file read is only supported for XLEN = 32.</p>
+</li>
+<li><p>Support for ternary operations.</p>
+<p>CV-X-IF optionally supports <a class="reference internal" href="intro.html#term-ISA"><span class="xref std std-term">ISA</span></a> extensions implementing instructions which use three source operands.
+Ternary instructions must be encoded in the R4-type instruction format defined by <a class="reference internal" href="intro.html#risc-v-unpriv" id="id2"><span>[RISC-V-UNPRIV]</span></a>.</p>
+</li>
+<li><p>Support for instruction speculation.</p>
+<p>CV-X-IF indicates whether offloaded instructions are allowed to be committed (or should be killed).</p>
+</li>
+</ul>
+<p>CV-X-IF consists of the following interfaces:</p>
+<ul class="simple">
+<li><p><strong>Compressed interface</strong>. Signaling of compressed instruction to be offloaded.</p></li>
+<li><p><strong>Issue (request/response) interface</strong>. Signaling of the uncompressed instruction to be offloaded.</p></li>
+<li><p><strong>Register interface</strong>. Signaling of <a class="reference internal" href="intro.html#term-GPR"><span class="xref std std-term">GPRs</span></a> and <a class="reference internal" href="intro.html#term-CSR"><span class="xref std std-term">CSRs</span></a>.</p></li>
+<li><p><strong>Commit interface</strong>. Signaling of control signals related to whether instructions can be committed or should be killed.</p></li>
+<li><p><strong>Result interface</strong>. Signaling of the instruction result(s).</p></li>
+</ul>
+</section>
+<section id="operating-principle">
+<h2>Operating principle<a class="headerlink" href="#operating-principle" title="Permalink to this heading"></a></h2>
+<p><a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself.
+In case of a compressed instruction the coprocessor must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
+This non-compressed instruction is then attempted for offload via the issue interface.</p>
+<p>Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface.
+The external coprocessor can decide to accept or reject the instruction offload. In case of acceptation the coprocessor
+will further handle the instruction. In case of rejection the core will raise an illegal instruction exception.
+The core provides the required register file operand(s) to the coprocessor via the register interface.
+If an offloaded instruction uses any of the register file sources <code class="docutils literal notranslate"><span class="pre">rs1</span></code>, <code class="docutils literal notranslate"><span class="pre">rs2</span></code> or <code class="docutils literal notranslate"><span class="pre">rs3</span></code>, then these are always encoded in instruction bits <code class="docutils literal notranslate"><span class="pre">[19:15]</span></code>,
+<code class="docutils literal notranslate"><span class="pre">[24:20]</span></code> and <code class="docutils literal notranslate"><span class="pre">[31:27]</span></code> respectively. The coprocessor only needs to wait for the register file operands that a specific instruction actually uses.
+The coprocessor informs the core to which register(s) in the register file it will writeback.
+The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> uses this information to track data dependencies between instructions.</p>
+<p>Offloaded instructions are speculative; <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> has not necessarily committed to them yet and might decide to kill them (e.g.
+because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
+core will inform the coprocessor about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
+is no longer speculative and is allowed to be committed.</p>
+<p>The final result of an accepted offloaded instruction can be written back into the coprocessor itself or into the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>’s register file. Either way, the
+result interface is used to signal to the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> that the instruction has completed. Apart from a possible writeback into the register file, the result
+interface transaction is for example used in the core to increment the <code class="docutils literal notranslate"><span class="pre">minstret</span></code> <a class="reference internal" href="intro.html#term-CSR"><span class="xref std std-term">CSR</span></a>, to implement the fence instructions and to judge if instructions
+before a <code class="docutils literal notranslate"><span class="pre">WFI</span></code> instruction have fully completed (so that sleep mode can be entered if needed).</p>
+<p>In short: From a functional perspective it should not matter whether an instruction is handled inside the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> or inside a coprocessor. In both cases
+the instructions need to obey the same instruction dependency rules, memory consistency rules, load/store address checks, fences, etc.</p>
+</section>
+<section id="interfaces">
+<h2>Interfaces<a class="headerlink" href="#interfaces" title="Permalink to this heading"></a></h2>
+<p>This section describes the interfaces of CV-X-IF. Port directions are described as seen from the perspective of the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.
+The coprocessor will have opposite pin directions.
+Stated signals names are not mandatory, but it is highly recommended to at least include the stated names as part of actual signal names. It is for example allowed to add prefixes and/or postfixes (e.g. <code class="docutils literal notranslate"><span class="pre">x_</span></code> prefix or <code class="docutils literal notranslate"><span class="pre">_i</span></code>, <code class="docutils literal notranslate"><span class="pre">_o</span></code> postfixes) or to use different capitalization. A name mapping should be provided if non obvious renaming is applied.</p>
+<section id="identification">
+<h3>Identification<a class="headerlink" href="#identification" title="Permalink to this heading"></a></h3>
+<p>Most interfaces of CV-X-IF all use a signal called <code class="docutils literal notranslate"><span class="pre">id</span></code>, which serves as a unique identification number for offloaded instructions.
+The same <code class="docutils literal notranslate"><span class="pre">id</span></code> value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
+An <code class="docutils literal notranslate"><span class="pre">id</span></code> value can be reused after an earlier instruction related to the same <code class="docutils literal notranslate"><span class="pre">id</span></code> value is no longer consider in-flight.
+The <code class="docutils literal notranslate"><span class="pre">id</span></code> values for in-flight offloaded instructions are required to be unique.
+The <code class="docutils literal notranslate"><span class="pre">id</span></code> values are required to be incremental from one issue transaction to the next.
+The increment may be greater than one.
+If the next <code class="docutils literal notranslate"><span class="pre">id</span></code> would be greater than the maximum value (<code class="docutils literal notranslate"><span class="pre">2**X_ID_WIDTH</span> <span class="pre">-</span> <span class="pre">1</span></code>), the value of <code class="docutils literal notranslate"><span class="pre">id</span></code> wraps.
+A new <code class="docutils literal notranslate"><span class="pre">id</span></code> value is not allowed to be greater than the oldest in-flight instruction, if a wrap has occurred since the oldest in-flight instruction was issued.
+If the oldest in-flight instruction is <span class="math notranslate nohighlight">\(id_o\)</span>, and the newest is <span class="math notranslate nohighlight">\(id_n\)</span>, then the next instruction with <span class="math notranslate nohighlight">\(id_{n+1}\)</span> must satisfy the following conditions:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{gather}
+  id_{n+1} &gt; id_{n} \text{ or } id_{n+1} &lt; id_{o}, \text{ if } id_{n} &gt; id_{o}\\
+  id_{n+1} &gt; id_{n} \text{ and } id_{n+1} &lt; id_{o}, \text{ if } id_{n} &lt; id_{o}
+\end{gather}\end{split}\]</div>
+<p>The first condition applying to cases where the <span class="math notranslate nohighlight">\(id_n\)</span> has not wrapped since the oldest in-flight instruction was issued, and the second where one wrap occurred between <span class="math notranslate nohighlight">\(id_o\)</span> and <span class="math notranslate nohighlight">\(id_n\)</span>.
+The coprocessor is not required to check the validity of <code class="docutils literal notranslate"><span class="pre">id</span></code> values under these constraints.
+This has to be guaranteed by design of the CPU.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>IDs are not required to be incremental to support scenarios, in which a coprocessor does not see the entire instruction stream.
+This can be e.g. because offloaded instructions are routed towards different coprocessors.</p>
+</div>
+<p>To make sure feasible <code class="docutils literal notranslate"><span class="pre">id</span></code> values are available, <code class="docutils literal notranslate"><span class="pre">X_ID_WIDTH</span></code> needs to be sufficiently large.
+This can be achieved by calculating the maximum <code class="docutils literal notranslate"><span class="pre">id</span></code> increase during the lifetime of the longest executing instruction.</p>
+<p><code class="docutils literal notranslate"><span class="pre">id</span></code> values can only be introduced by the issue interface.</p>
+<p>An <code class="docutils literal notranslate"><span class="pre">id</span></code> becomes in-flight in the first cycle that <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> is 1 for that <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+<p>An <code class="docutils literal notranslate"><span class="pre">id</span></code> ends being in-flight when one of the following scenarios apply:</p>
+<ul class="simple">
+<li><p>the corresponding issue request transaction is retracted.</p></li>
+<li><p>the corresponding issue request transaction is not accepted and the corresponding commit handshake has been performed.</p></li>
+<li><p>the corresponding result transaction has been performed.</p></li>
+</ul>
+<p>For the purpose of relative identification, an instruction is considered to be preceding another instruction, if it was accepted in an issue transaction at an earlier time.
+The other instruction is thus succeeding the earlier one.</p>
+</section>
+<section id="multiple-harts">
+<h3>Multiple Harts<a class="headerlink" href="#multiple-harts" title="Permalink to this heading"></a></h3>
+<p>The interface can be used in systems with multiple harts (hardware threads).
+This includes scenarios with multiple <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPUs</span></a> and multi-threaded implementations of <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPUs</span></a>.
+RISC-V distinguishes between harts using <code class="docutils literal notranslate"><span class="pre">hartid</span></code>, which we also introduce to the interface.
+It is required to identify the source of the offloaded instruction, as multiple harts might be able to offload via a shared interface.
+No duplicates of the combination of <code class="docutils literal notranslate"><span class="pre">hartid</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code> may be in flight at any time within one instance of the interface.
+Any state within the coprocessor (e.g. custom <a class="reference internal" href="intro.html#term-CSR"><span class="xref std std-term">CSRs</span></a>) must be duplicated according to the number of harts (indicated by the <code class="docutils literal notranslate"><span class="pre">X_NUM_HARTS</span></code> parameter).
+Execution units may be shared among threads of the coprocessor, and conflicts around such resources must be managed by the coprocessor.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The interface can be used in scenarios where the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> is superscalar, i.e. it can issue more than one instruction per cycle.
+In such scenarios, the coprocessor is usually required to also be able to accept more than one instruction per cycle.
+Our expectation is that implementers will duplicate the interface according to the issue width.</p>
+</div>
+</section>
+<section id="compressed-interface">
+<h3>Compressed interface<a class="headerlink" href="#compressed-interface" title="Permalink to this heading"></a></h3>
+<p><a class="reference internal" href="#compressed-interface-signals"><span class="std std-numref">Table 4</span></a> describes the compressed interface signals.</p>
+<table class="no-scrollbar-table docutils align-default" id="compressed-interface-signals">
+<caption><span class="caption-number">Table 4 </span><span class="caption-text">Compressed interface signals</span><a class="headerlink" href="#compressed-interface-signals" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 10%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Direction
+(<a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>)</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>output</p></td>
+<td><p>Compressed request valid. Request to uncompress a compressed instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compressed_ready</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>input</p></td>
+<td><p>Compressed request ready. The transactions signaled via <code class="docutils literal notranslate"><span class="pre">compressed_req</span></code> and <code class="docutils literal notranslate"><span class="pre">compressed_resp</span></code> are accepted when
+<code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> and  <code class="docutils literal notranslate"><span class="pre">compressed_ready</span></code> are both 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">compressed_req</span></code></p></td>
+<td><p>x_compressed_req_t</p></td>
+<td><p>output</p></td>
+<td><p>Compressed request packet.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compressed_resp</span></code></p></td>
+<td><p>x_compressed_resp_t</p></td>
+<td><p>input</p></td>
+<td><p>Compressed response packet.</p></td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference internal" href="#compressed-request-type"><span class="std std-numref">Table 5</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_compressed_req_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="compressed-request-type">
+<caption><span class="caption-number">Table 5 </span><span class="caption-text">Compressed request type</span><a class="headerlink" href="#compressed-request-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">instr</span></code></p></td>
+<td><p>logic [15:0]</p></td>
+<td><p>Offloaded compressed instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hartid</span></code></p></td>
+<td><p><a class="reference internal" href="#hartid"><span class="std std-ref">hartid_t</span></a></p></td>
+<td><p>Identification of the hart offloading the instruction.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal notranslate"><span class="pre">instr[15:0]</span></code> signal is used to signal compressed instructions that are considered illegal by <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> itself. A coprocessor can provide an uncompressed instruction
+in response to receiving this.</p>
+<p>A compressed request transaction is defined as the combination of all <code class="docutils literal notranslate"><span class="pre">compressed_req</span></code> signals during which <code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> is 1 and the <code class="docutils literal notranslate"><span class="pre">hartid</span></code> remains unchanged.
+A <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> is allowed to retract its compressed request transaction before it is accepted with <code class="docutils literal notranslate"><span class="pre">compressed_ready</span></code> = 1 and it can do so in the following ways:</p>
+<ul class="simple">
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> = 0.</p></li>
+<li><p>Keep <code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> = 1, but change the <code class="docutils literal notranslate"><span class="pre">hartid</span></code> signal (and if desired change the other signals in <code class="docutils literal notranslate"><span class="pre">compressed_req</span></code>).</p></li>
+</ul>
+<p>The signals in <code class="docutils literal notranslate"><span class="pre">compressed_req</span></code> are valid when <code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> is 1. These signals remain stable during a compressed request transaction (if <code class="docutils literal notranslate"><span class="pre">hartid</span></code> changes while <code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> remains 1,
+then a new compressed request transaction started).</p>
+<p><a class="reference internal" href="#compressed-response-type"><span class="std std-numref">Table 6</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_compressed_resp_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="compressed-response-type">
+<caption><span class="caption-number">Table 6 </span><span class="caption-text">Compressed response type</span><a class="headerlink" href="#compressed-response-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">instr</span></code></p></td>
+<td><p>logic [31:0]</p></td>
+<td><p>Uncompressed instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">accept</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>Is the offloaded compressed instruction (<code class="docutils literal notranslate"><span class="pre">id</span></code>) accepted by the coprocessor?</p></td>
+</tr>
+</tbody>
+</table>
+<p>The signals in <code class="docutils literal notranslate"><span class="pre">compressed_resp</span></code> are valid when <code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> and <code class="docutils literal notranslate"><span class="pre">compressed_ready</span></code> are both 1. There are no stability requirements.</p>
+<p>The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> might also attempt to offload
+compressed instructions that it does recognize as legal instructions itself.</p>
+<p>The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:</p>
+<ul class="simple">
+<li><p>is considered to be valid by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> and accepted by the coprocessor (<code class="docutils literal notranslate"><span class="pre">accept</span></code> = 1).</p></li>
+<li><p>is considered neither to be valid by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> nor accepted by the coprocessor (<code class="docutils literal notranslate"><span class="pre">accept</span></code> = 0).</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">accept</span></code> signal of the <em>compressed</em> interface merely indicates that the coprocessor accepts the compressed instruction as an instruction that it implements and translates into
+its uncompressed counterpart.
+Typically an accepted transaction over the compressed interface will be followed by a corresponding transaction over the issue interface, but there is no requirement
+on the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> to do so (as the instructions offloaded over the compressed interface and issue interface are allowed to be speculative). Only when an <code class="docutils literal notranslate"><span class="pre">accept</span></code>
+is signaled over the <em>issue</em> interface, then an instruction is considered <em>accepted for offload</em>.</p>
+<p>Explicitly, the coprocessor shall not execute the instruction after receiving it via the compressed interface.</p>
+<p>The coprocessor shall not take the <code class="docutils literal notranslate"><span class="pre">mstatus</span></code> based extension context status (see (<a class="reference internal" href="intro.html#risc-v-priv" id="id3"><span>[RISC-V-PRIV]</span></a>)) into account when generating the <code class="docutils literal notranslate"><span class="pre">accept</span></code> signal on its <em>compressed</em> interface (but it shall take
+it into account when generating the <code class="docutils literal notranslate"><span class="pre">accept</span></code> signal on its <em>issue</em> interface).</p>
+</section>
+<section id="issue-interface">
+<h3>Issue interface<a class="headerlink" href="#issue-interface" title="Permalink to this heading"></a></h3>
+<p><a class="reference internal" href="#issue-interface-signals"><span class="std std-numref">Table 7</span></a> describes the issue interface signals.</p>
+<table class="no-scrollbar-table docutils align-default" id="issue-interface-signals">
+<caption><span class="caption-number">Table 7 </span><span class="caption-text">Issue interface signals</span><a class="headerlink" href="#issue-interface-signals" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 10%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Direction
+(<a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>)</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">issue_valid</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>output</p></td>
+<td><p>Issue request valid. Indicates that <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> wants to offload an instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">issue_ready</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>input</p></td>
+<td><p>Issue request ready. The transaction signaled via <code class="docutils literal notranslate"><span class="pre">issue_req</span></code> and <code class="docutils literal notranslate"><span class="pre">issue_resp</span></code> is accepted when
+<code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> and  <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> are both 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">issue_req</span></code></p></td>
+<td><p>x_issue_req_t</p></td>
+<td><p>output</p></td>
+<td><p>Issue request packet.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">issue_resp</span></code></p></td>
+<td><p>x_issue_resp_t</p></td>
+<td><p>input</p></td>
+<td><p>Issue response packet.</p></td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference internal" href="#issue-request-type"><span class="std std-numref">Table 8</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_issue_req_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="issue-request-type">
+<caption><span class="caption-number">Table 8 </span><span class="caption-text">Issue request type</span><a class="headerlink" href="#issue-request-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">instr</span></code></p></td>
+<td><p>logic [31:0]</p></td>
+<td><p>Offloaded instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hartid</span></code></p></td>
+<td><p><a class="reference internal" href="#hartid"><span class="std std-ref">hartid_t</span></a></p></td>
+<td><p>Identification of the hart offloading the instruction.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p><a class="reference internal" href="#id"><span class="std std-ref">id_t</span></a></p></td>
+<td><p>Identification of the offloaded instruction.</p></td>
+</tr>
+</tbody>
+</table>
+<p>An issue request transaction is defined as the combination of all <code class="docutils literal notranslate"><span class="pre">issue_req</span></code> signals during which <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> is 1 and the <code class="docutils literal notranslate"><span class="pre">hartid</span></code> remains unchanged.
+A <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> is allowed to retract its issue request transaction before it is accepted with <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> = 1 and it can do so in the following ways:</p>
+<ul class="simple">
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> = 0.</p></li>
+<li><p>Keep <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> = 1, but change the <code class="docutils literal notranslate"><span class="pre">hartid</span></code> signal (and if desired change the other signals in <code class="docutils literal notranslate"><span class="pre">issue_req</span></code>).</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">instr</span></code>, <code class="docutils literal notranslate"><span class="pre">hartid</span></code>, and <code class="docutils literal notranslate"><span class="pre">id</span></code> signals are valid when <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> is 1.
+The <code class="docutils literal notranslate"><span class="pre">instr</span></code> signal remains stable during an issue request transaction.</p>
+<p><a class="reference internal" href="#issue-response-type"><span class="std std-numref">Table 10</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_issue_resp_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="issue-response-type">
+<caption><span class="caption-number">Table 10 </span><span class="caption-text">Issue response type</span><a class="headerlink" href="#issue-response-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">accept</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>Is the offloaded instruction (<code class="docutils literal notranslate"><span class="pre">id</span></code>) accepted (1) by the coprocessor or rejected (0)?</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">writeback</span></code></p></td>
+<td><p><a class="reference internal" href="#writeregflags"><span class="std std-ref">writeregflags_t</span></a></p></td>
+<td><p>Will the coprocessor perform a writeback in the core to <code class="docutils literal notranslate"><span class="pre">rd</span></code>?
+Writeback to <code class="docutils literal notranslate"><span class="pre">x0</span></code> or the <code class="docutils literal notranslate"><span class="pre">x0</span></code>, <code class="docutils literal notranslate"><span class="pre">x1</span></code> pair is allowed by the coprocessor,
+but will be ignored by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.
+A coprocessor must signal <code class="docutils literal notranslate"><span class="pre">writeback</span></code> as 0 for rejected instructions.
+Writeback to a register pair is only allowed if <code class="docutils literal notranslate"><span class="pre">X_DUALWRITE</span></code> = 1 and instruction bits <code class="docutils literal notranslate"><span class="pre">[11:7]</span></code> are even.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">register_read</span></code></p></td>
+<td><p><a class="reference internal" href="#readregflags"><span class="std std-ref">readregflags_t</span></a></p></td>
+<td><p>Will the coprocessor perform require specific registers to be read?
+A coprocessor may only request an odd register of a pair, if it also requests the even register of a pair.
+A coprocessor must signal <code class="docutils literal notranslate"><span class="pre">register_read</span></code> as 0 for rejected instructions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecswrite</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>Will the coprocessor perform a writeback in the core to <code class="docutils literal notranslate"><span class="pre">mstatus.xs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.fs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.vs</span></code>?
+A coprocessor must signal <code class="docutils literal notranslate"><span class="pre">ecswrite</span></code> as 0 for rejected instructions.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The core shall attempt to offload instructions via the issue interface for the following two main scenarios:</p>
+<ul class="simple">
+<li><p>The instruction is originally non-compressed and it is not recognized as a valid instruction by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>’s non-compressed instruction decoder.</p></li>
+<li><p>The instruction is originally compressed and the coprocessor accepted the compressed instruction and provided a 32-bit uncompressed instruction.
+In this case the 32-bit uncompressed instruction will be attempted for offload even if it matches in the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>’s non-compressed instruction decoder.</p></li>
+</ul>
+<p>Apart from the above two main scenarios a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> may also attempt to offload
+(compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> and the coprocessor accept the same instruction as being valid,
+the instruction will cause an illegal instruction fault upon execution.</p>
+<p>The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:</p>
+<ul class="simple">
+<li><p>is considered to be valid by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> and accepted by the coprocessor (<code class="docutils literal notranslate"><span class="pre">accept</span></code> = 1).</p></li>
+<li><p>is considered neither to be valid by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> nor accepted by the coprocessor (<code class="docutils literal notranslate"><span class="pre">accept</span></code> = 0).</p></li>
+</ul>
+<p>A coprocessor can (only) accept an offloaded instruction when:</p>
+<ul class="simple">
+<li><p>It can handle the instruction (based on decoding <code class="docutils literal notranslate"><span class="pre">instr</span></code>).</p></li>
+<li><p>There are no structural hazards that would prevent execution.</p></li>
+</ul>
+<p>A transaction is considered offloaded/accepted on the positive edge of <code class="docutils literal notranslate"><span class="pre">clk</span></code> when <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code>, <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> are asserted and <code class="docutils literal notranslate"><span class="pre">accept</span></code> is 1.
+A transaction is considered not offloaded/rejected on the positive edge of <code class="docutils literal notranslate"><span class="pre">clk</span></code> when <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> and <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> are asserted while <code class="docutils literal notranslate"><span class="pre">accept</span></code> is 0.</p>
+<p>The signals in <code class="docutils literal notranslate"><span class="pre">issue_resp</span></code> are valid when <code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> and <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> are both 1. There are no stability requirements.</p>
+</section>
+<section id="register-interface">
+<h3>Register interface<a class="headerlink" href="#register-interface" title="Permalink to this heading"></a></h3>
+<p><a class="reference internal" href="#register-interface-signals"><span class="std std-numref">Table 12</span></a> describes the register interface signals.</p>
+<table class="no-scrollbar-table docutils align-default" id="register-interface-signals">
+<caption><span class="caption-number">Table 12 </span><span class="caption-text">Register interface signals</span><a class="headerlink" href="#register-interface-signals" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 10%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Direction
+(<a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>)</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">register_valid</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>output</p></td>
+<td><p>Register request valid. Indicates that <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> provides register contents related to an instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">register_ready</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>input</p></td>
+<td><p>Register request ready. The transaction signaled via <code class="docutils literal notranslate"><span class="pre">register_req</span></code> is accepted when
+<code class="docutils literal notranslate"><span class="pre">register_valid</span></code> and  <code class="docutils literal notranslate"><span class="pre">register_ready</span></code> are both 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">register</span></code></p></td>
+<td><p>x_register_t</p></td>
+<td><p>output</p></td>
+<td><p>Register packet.</p></td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference internal" href="#register-type"><span class="std std-numref">Table 13</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_register_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="register-type">
+<caption><span class="caption-number">Table 13 </span><span class="caption-text">Register type</span><a class="headerlink" href="#register-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hartid</span></code></p></td>
+<td><p><a class="reference internal" href="#hartid"><span class="std std-ref">hartid_t</span></a></p></td>
+<td><p>Identification of the hart offloading the instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p><a class="reference internal" href="#id"><span class="std std-ref">id_t</span></a></p></td>
+<td><p>Identification of the offloaded instruction.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rs[X_NUM_RS-1:0]</span></code></p></td>
+<td><p>logic [X_RFR_WIDTH-1:0]</p></td>
+<td><p>Register file source operands for the offloaded instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rs_valid</span></code></p></td>
+<td><p><a class="reference internal" href="#readregflags"><span class="std std-ref">readregflags_t</span></a></p></td>
+<td><p>Validity of the register file source operand(s). If register pairs are supported, the validity is signaled for
+each register within the pair individually.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecs</span></code></p></td>
+<td><p>logic [5:0]</p></td>
+<td><p>Extension Context Status ({<code class="docutils literal notranslate"><span class="pre">mstatus.xs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.fs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.vs</span></code>}).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecs_valid</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>Validity of the Extension Context Status.</p></td>
+</tr>
+</tbody>
+</table>
+<p>There are two main scenarios, in how the register interface will be used. They are selected by <code class="docutils literal notranslate"><span class="pre">X_ISSUE_REGISTER_SPLIT</span></code>:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">X_ISSUE_REGISTER_SPLIT</span></code> = 0: A register transaction can be started in the same clock cycle as the issue transaction (<code class="docutils literal notranslate"><span class="pre">issue_valid</span> <span class="pre">=</span> <span class="pre">register_valid</span></code>, <code class="docutils literal notranslate"><span class="pre">issue_ready</span> <span class="pre">=</span> <span class="pre">register_ready</span></code>, <code class="docutils literal notranslate"><span class="pre">issue_req.hartid</span> <span class="pre">=</span> <span class="pre">register.hartid</span></code> and <code class="docutils literal notranslate"><span class="pre">issue_req.id</span> <span class="pre">=</span> <span class="pre">register.id</span></code>).
+In this case, the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> will speculatively provide all possible source registers via <code class="docutils literal notranslate"><span class="pre">register.rs</span></code> when they become available (signalled via the respective <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> signals).
+The coprocessor will delay accepting the instruction until all necessary registers are provided, and only then assert <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> and <code class="docutils literal notranslate"><span class="pre">register_ready</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> bits are not required to be stable during the transaction.
+Each bit can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
+A coprocessor is not expected to wait for all <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> bits to be 1, but only for those registers it intends to read.
+The <code class="docutils literal notranslate"><span class="pre">rs</span></code> signals are only required to be stable during the part of a transaction in which these signals are considered to be valid.
+The <code class="docutils literal notranslate"><span class="pre">ecs_valid</span></code> bit is not required to be stable during the transaction. It can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
+The <code class="docutils literal notranslate"><span class="pre">ecs</span></code> signal is only required to be stable during the part of a transaction in which this signals is considered to be valid.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">X_ISSUE_REGISTER_SPLIT</span></code> = 1: For a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> which splits the issue and register interface into subsequent pipeline stages (e.g. because it has a dedicated read registers (RR) stage), the registers will be provided after the issue transaction completed.
+The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> initiates the register transaction once all registers are available.
+If the coprocessor is able to accept multiple issue transactions before receiving the registers, the register transaction can occur in a different order.
+This allows the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> to reorder instructions based on the availability of operands.
+The coprocessor is always expected to be ready to retrieve its operands via the register interface after accepting the issue of an instruction.
+Therefore, <code class="docutils literal notranslate"><span class="pre">register_ready</span></code> is tied to 1.
+The <code class="docutils literal notranslate"><span class="pre">register_valid</span></code> signal will be 1 for one cycle, and <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> is guaranteed to be equal to the corresponding <code class="docutils literal notranslate"><span class="pre">issue_resp.register_read</span></code>.
+Thus, a coprocessor can ignore <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> in this case and a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> may chose to not implement the signal.
+The same applies to the <code class="docutils literal notranslate"><span class="pre">ecs</span></code> and <code class="docutils literal notranslate"><span class="pre">ecs_valid</span></code> signals.</p></li>
+</ol>
+<p>In both scenarios, the following applies:
+The <code class="docutils literal notranslate"><span class="pre">hartid</span></code>, <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">ecs_valid</span></code> and <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> signals are valid when <code class="docutils literal notranslate"><span class="pre">register_valid</span></code> is 1.
+The <code class="docutils literal notranslate"><span class="pre">rs</span></code> signal is only considered valid when <code class="docutils literal notranslate"><span class="pre">register_valid</span></code> is 1 and the corresponding bit in <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> is 1 as well.
+The <code class="docutils literal notranslate"><span class="pre">ecs</span></code> signal is only considered valid when <code class="docutils literal notranslate"><span class="pre">register_valid</span></code> is 1 and <code class="docutils literal notranslate"><span class="pre">ecs_valid</span></code> is 1 as well.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">rs[X_NUM_RS-1:0]</span></code> signals provide the register file operand(s) to the coprocessor. In case that <code class="docutils literal notranslate"><span class="pre">XLEN</span></code> = <code class="docutils literal notranslate"><span class="pre">X_RFR_WIDTH</span></code>, then the regular register file
+operands corresponding to <code class="docutils literal notranslate"><span class="pre">rs1</span></code>, <code class="docutils literal notranslate"><span class="pre">rs2</span></code> or <code class="docutils literal notranslate"><span class="pre">rs3</span></code> are provided. In case <code class="docutils literal notranslate"><span class="pre">XLEN</span></code> != <code class="docutils literal notranslate"><span class="pre">X_RFR_WIDTH</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">XLEN</span></code> = 32 and <code class="docutils literal notranslate"><span class="pre">X_RFR_WIDTH</span></code> = 64), then the
+<code class="docutils literal notranslate"><span class="pre">rs[X_NUM_RS-1:0]</span></code> signals provide two 32-bit register file operands per index (corresponding to even/odd register pairs) with the even register specified
+in <code class="docutils literal notranslate"><span class="pre">rs1</span></code>, <code class="docutils literal notranslate"><span class="pre">rs2</span></code> or <code class="docutils literal notranslate"><span class="pre">rs3</span></code>. The register file operand for the even register file index is provided in the lower 32 bits; the register file operand for the
+odd register file index is provided in the upper 32 bits. When reading from the <code class="docutils literal notranslate"><span class="pre">x0</span></code>, <code class="docutils literal notranslate"><span class="pre">x1</span></code> pair, then a value of 0 is returned for the entire operand.
+The <code class="docutils literal notranslate"><span class="pre">X_DUALREAD</span></code> parameter defines whether dual read is supported and for which register file sources it is supported.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ecs</span></code> signal provides the Extension Context Status from the <code class="docutils literal notranslate"><span class="pre">mstatus</span></code> <a class="reference internal" href="intro.html#term-CSR"><span class="xref std std-term">CSR</span></a> to the coprocessor.</p>
+</section>
+<section id="commit-interface">
+<h3>Commit interface<a class="headerlink" href="#commit-interface" title="Permalink to this heading"></a></h3>
+<p><a class="reference internal" href="#commit-interface-signals"><span class="std std-numref">Table 14</span></a> describes the commit interface signals.</p>
+<table class="no-scrollbar-table docutils align-default" id="commit-interface-signals">
+<caption><span class="caption-number">Table 14 </span><span class="caption-text">Commit interface signals</span><a class="headerlink" href="#commit-interface-signals" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 10%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Direction
+(<a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>)</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">commit_valid</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>output</p></td>
+<td><p>Commit request valid. Indicates that <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> has valid commit or kill information for an offloaded instruction.
+There is no corresponding ready signal (it is implicit and assumed 1). The coprocessor shall be ready
+to observe the <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> and <code class="docutils literal notranslate"><span class="pre">commit_kill</span></code> signals at any time coincident or after an issue transaction
+initiation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">commit</span></code></p></td>
+<td><p>x_commit_t</p></td>
+<td><p>output</p></td>
+<td><p>Commit packet.</p></td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference internal" href="#commit-packet-type"><span class="std std-numref">Table 15</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_commit_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="commit-packet-type">
+<caption><span class="caption-number">Table 15 </span><span class="caption-text">Commit packet type</span><a class="headerlink" href="#commit-packet-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hartid</span></code></p></td>
+<td><p><a class="reference internal" href="#hartid"><span class="std std-ref">hartid_t</span></a></p></td>
+<td><p>Identification of the hart offloading the instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p><a class="reference internal" href="#id"><span class="std std-ref">id_t</span></a></p></td>
+<td><p>Identification of the offloaded instruction. Valid when <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> is 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">commit_kill</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>If <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> is 1 and <code class="docutils literal notranslate"><span class="pre">commit_kill</span></code> is 0,  then the core guarantees that the offloaded instruction (<code class="docutils literal notranslate"><span class="pre">id</span></code>) and any
+older (i.e. preceding) instructions are no longer speculative, will not get killed (e.g. due to misspeculation or an
+exception in a preceding instruction), and are allowed to be committed.
+If <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> is 1 and <code class="docutils literal notranslate"><span class="pre">commit_kill</span></code> is 1, then the offloaded instruction (<code class="docutils literal notranslate"><span class="pre">id</span></code>) and any newer (i.e. succeeding)
+instructions shall be killed in the coprocessor and the coprocessor must guarantee that the related instructions do/did
+not change architectural state.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> signal will be 1 exactly one <code class="docutils literal notranslate"><span class="pre">clk</span></code> cycle.
+It is not required that a commit transaction is performed for each offloaded instruction individually.
+Instructions can be signalled to be non-speculative or to be killed in batch.
+E.g. signalling the oldest instruction to be killed is equivalent to requesting a flush of the coprocessor.
+The first instruction to be considered not-to-be-killed after a commit transaction with <code class="docutils literal notranslate"><span class="pre">commit_kill</span></code> as 1,
+is at earliest an instruction with successful issue transaction starting at least one clock cycle later.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If an instruction is marked in the coprocessor as killed or committed, the coprocessor shall ignore any subsequent commit transaction related to that instruction.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A coprocessor must be tolerant to any possible <code class="docutils literal notranslate"><span class="pre">commit.id</span></code>, whether this represents and in-flight instruction or not.
+In this case, the coprocessor may still need to process the request by considering the relevant instructions (either preceding or succeeding) as no longer speculative or to be killed.
+This behavior supports scenarios in which more than one coprocessor is connected to an issue interface.</p>
+</div>
+<p>A <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> is required to mark every instruction that has completed the issue transaction as either killed or non-speculative.
+This includes accepted (<cite>issue_resp.accept</cite> = 1) and rejected instructions (<cite>issue_resp.accept</cite> = 0).</p>
+<p>A coprocessor does not have to wait for <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> to
+become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
+then the coprocessor must undo any of its internal architectural state changes that are due to the killed instruction.</p>
+<p>A coprocessor is not allowed to perform speculative result transactions and shall therefore never initiate a result transaction for instructions that have not yet received a commit transaction
+with <code class="docutils literal notranslate"><span class="pre">commit_kill</span></code> = 0. The earliest point at which a coprocessor can initiate a result handshake for an instruction is therefore the cycle in which <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> = 1 and <code class="docutils literal notranslate"><span class="pre">commit_kill</span></code> = 0
+for that instruction.</p>
+<p>The signals in <code class="docutils literal notranslate"><span class="pre">commit</span></code> are valid when <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> is 1.</p>
+</section>
+<section id="memory-request-response-interface">
+<h3>Memory (request/response) interface<a class="headerlink" href="#memory-request-response-interface" title="Permalink to this heading"></a></h3>
+<p>The memory (request/response) interface is not included in this version of the specification</p>
+</section>
+<section id="memory-result-interface">
+<h3>Memory result interface<a class="headerlink" href="#memory-result-interface" title="Permalink to this heading"></a></h3>
+<p>The memory (request/response) interface is not included in this version of the specification</p>
+</section>
+<section id="result-interface">
+<h3>Result interface<a class="headerlink" href="#result-interface" title="Permalink to this heading"></a></h3>
+<p><a class="reference internal" href="#result-interface-signals"><span class="std std-numref">Table 21</span></a> describes the result interface signals.</p>
+<table class="no-scrollbar-table docutils align-default" id="result-interface-signals">
+<caption><span class="caption-number">Table 21 </span><span class="caption-text">Result interface signals</span><a class="headerlink" href="#result-interface-signals" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 10%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Direction
+(<a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>)</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">result_valid</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>input</p></td>
+<td><p>Result request valid. Indicates that the coprocessor has a valid result (write data or exception) for an offloaded
+instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">result_ready</span></code></p></td>
+<td><p>logic</p></td>
+<td><p>output</p></td>
+<td><p>Result request ready. The result signaled via <code class="docutils literal notranslate"><span class="pre">result</span></code> is accepted by the core when
+<code class="docutils literal notranslate"><span class="pre">result_valid</span></code> and  <code class="docutils literal notranslate"><span class="pre">result_ready</span></code> are both 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">result</span></code></p></td>
+<td><p>x_result_t</p></td>
+<td><p>input</p></td>
+<td><p>Result packet.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The coprocessor shall provide results to the core via the result interface. A coprocessor is allowed to provide results to the core in an out of order fashion. A coprocessor is only
+allowed to provide a result for an instruction once the core has indicated (via the commit interface) that this instruction is allowed to be committed. Each accepted offloaded (committed and not killed) instruction shall
+have exactly one result transaction (even if no data needs to be written back to the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>’s register file). No result transaction shall be performed for instructions which have not been accepted for offload or
+for instructions that have been killed.</p>
+<p><a class="reference internal" href="#result-packet-type"><span class="std std-numref">Table 22</span></a> describes the <code class="docutils literal notranslate"><span class="pre">x_result_t</span></code> type.</p>
+<table class="no-scrollbar-table docutils align-default" id="result-packet-type">
+<caption><span class="caption-number">Table 22 </span><span class="caption-text">Result packet type</span><a class="headerlink" href="#result-packet-type" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Signal</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hartid</span></code></p></td>
+<td><p><a class="reference internal" href="#hartid"><span class="std std-ref">hartid_t</span></a></p></td>
+<td><p>Identification of the hart offloading the instruction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p><a class="reference internal" href="#id"><span class="std std-ref">id_t</span></a></p></td>
+<td><p>Identification of the offloaded instruction.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">data</span></code></p></td>
+<td><p>logic [X_RFW_WIDTH-1:0]</p></td>
+<td><p>Register file write data value(s).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rd</span></code></p></td>
+<td><p>logic [4:0]</p></td>
+<td><p>Register file destination address(es).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">we</span></code></p></td>
+<td><p><a class="reference internal" href="#writeregflags"><span class="std std-ref">writeregflags_t</span></a></p></td>
+<td><p>Register file write enable(s).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecswe</span></code></p></td>
+<td><p>logic [2:0]</p></td>
+<td><p>Write enables for <code class="docutils literal notranslate"><span class="pre">mstatus.xs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.fs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.vs</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecsdata</span></code></p></td>
+<td><p>logic [5:0]</p></td>
+<td><p>Write data value for {<code class="docutils literal notranslate"><span class="pre">mstatus.xs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.fs</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus.vs</span></code>}.</p></td>
+</tr>
+</tbody>
+</table>
+<p>A result transaction starts in the cycle that <code class="docutils literal notranslate"><span class="pre">result_valid</span></code> = 1 and ends in the cycle that both <code class="docutils literal notranslate"><span class="pre">result_valid</span></code> = 1 and <code class="docutils literal notranslate"><span class="pre">result_ready</span></code> = 1. The signals in <code class="docutils literal notranslate"><span class="pre">result</span></code> are
+valid when <code class="docutils literal notranslate"><span class="pre">result_valid</span></code> is 1. The signals in <code class="docutils literal notranslate"><span class="pre">result</span></code> shall remain stable during a result transaction.</p>
+<p><code class="docutils literal notranslate"><span class="pre">we</span></code> is 2 bits wide when <code class="docutils literal notranslate"><span class="pre">XLEN</span></code> = 32 and <code class="docutils literal notranslate"><span class="pre">X_RFW_WIDTH</span></code> = 64, and 1 bit wide otherwise. The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> shall ignore writeback to <code class="docutils literal notranslate"><span class="pre">x0</span></code>.
+When a dual writeback is performed to the <code class="docutils literal notranslate"><span class="pre">x0</span></code>, <code class="docutils literal notranslate"><span class="pre">x1</span></code> pair, the entire write shall be ignored, i.e. neither <code class="docutils literal notranslate"><span class="pre">x0</span></code> nor <code class="docutils literal notranslate"><span class="pre">x1</span></code> shall be written by the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.
+For an instruction instance, the <code class="docutils literal notranslate"><span class="pre">we</span></code> signal must be the same as <code class="docutils literal notranslate"><span class="pre">issue_resp.writeback</span></code>.
+The <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> is not required to check that these signals match.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">issue_resp.writeback</span></code> and <code class="docutils literal notranslate"><span class="pre">result.we</span></code> carry the same information.
+Nevertheless, <code class="docutils literal notranslate"><span class="pre">result.we</span></code> is provided to simplify the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> logic.
+Without this signal, the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> would have to look this information up based on the instruction <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">ecswe[2]</span></code> is 1, then the value in <code class="docutils literal notranslate"><span class="pre">ecsdata[5:4]</span></code> is written to <code class="docutils literal notranslate"><span class="pre">mstatus.xs</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">ecswe[1]</span></code> is 1, then the value in <code class="docutils literal notranslate"><span class="pre">ecsdata[3:2]</span></code> is written to <code class="docutils literal notranslate"><span class="pre">mstatus.fs</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">ecswe[0]</span></code> is 1, then the value in <code class="docutils literal notranslate"><span class="pre">ecsdata[1:0]</span></code> is written to <code class="docutils literal notranslate"><span class="pre">mstatus.vs</span></code>.
+The writes to the stated <code class="docutils literal notranslate"><span class="pre">mstatus</span></code> bitfields will take into account any WARL rules that might exist for these bitfields in the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>.</p>
+</section>
+</section>
+<section id="interface-dependencies">
+<h2>Interface dependencies<a class="headerlink" href="#interface-dependencies" title="Permalink to this heading"></a></h2>
+<p>The following rules apply to the relative ordering of the interface handshakes:</p>
+<ul class="simple">
+<li><p>The compressed interface transactions are in program order (possibly a subset) and the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> will at least attempt to offload instructions that it does not consider to be valid itself.</p></li>
+<li><p>The issue interface transactions are in program order (possibly a subset) and the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> will at least attempt to offload instructions that it does not consider to be valid itself.</p></li>
+<li><p>Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.</p></li>
+<li><p>Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.</p></li>
+<li><p>If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
+if no writeback needs to happen to the core’s register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
+on the issue interface.</p></li>
+<li><p>A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.</p></li>
+</ul>
+<ul class="simple">
+<li><p>A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.</p></li>
+<li><p>A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.</p></li>
+<li><p>A result interface handshake cannot be (or have been) initiated for killed instructions.</p></li>
+</ul>
+</section>
+<section id="handshake-rules">
+<h2>Handshake rules<a class="headerlink" href="#handshake-rules" title="Permalink to this heading"></a></h2>
+<p>The following handshake pairs exist on the eXtension interface:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">compressed_valid</span></code> with <code class="docutils literal notranslate"><span class="pre">compressed_ready</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">issue_valid</span></code> with <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">register_valid</span></code> with <code class="docutils literal notranslate"><span class="pre">register_ready</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> with implicit always ready signal.</p></li>
+</ul>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">result_valid</span></code> with <code class="docutils literal notranslate"><span class="pre">result_ready</span></code>.</p></li>
+</ul>
+<p>The only rule related to valid and ready signals is that:</p>
+<ul class="simple">
+<li><p>A transaction is considered accepted on the positive <code class="docutils literal notranslate"><span class="pre">clk</span></code> edge when both valid and (implicit or explicit) ready are 1.</p></li>
+</ul>
+<p>Specifically note the following:</p>
+<ul class="simple">
+<li><p>The valid signals are allowed to be retracted by a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> (e.g. in case that the related instruction is killed in the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>’s pipeline before the corresponding ready is signaled).</p></li>
+<li><p>A new transaction can be started by a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> by changing the <code class="docutils literal notranslate"><span class="pre">id</span></code> signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).</p></li>
+<li><p>The valid signals are not allowed to be retracted by a coprocessor (e.g. once <code class="docutils literal notranslate"><span class="pre">result_valid</span></code> is asserted it must remain asserted until the handshake with <code class="docutils literal notranslate"><span class="pre">result_ready</span></code> has been performed). A new transaction can therefore not be started by a coprocessor by just changing the <code class="docutils literal notranslate"><span class="pre">id</span></code> signal and keeping the valid signal asserted if no ready has been received yet for the original transaction. The cycle after receiving the ready signal, a next (back-to-back) transaction is allowed to be started by just keeping the valid signal high and changing the <code class="docutils literal notranslate"><span class="pre">id</span></code> to that of the next transaction.</p></li>
+<li><p>The ready signals is allowed to be 1 when the corresponding valid signal is not asserted.</p></li>
+</ul>
+</section>
+<section id="signal-dependencies">
+<h2>Signal dependencies<a class="headerlink" href="#signal-dependencies" title="Permalink to this heading"></a></h2>
+<p>A <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:</p>
+<ul class="simple">
+<li><p>paths from <code class="docutils literal notranslate"><span class="pre">result_valid</span></code>, <code class="docutils literal notranslate"><span class="pre">result</span></code> to <code class="docutils literal notranslate"><span class="pre">rs</span></code>, <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The above implies that the non-compressed instruction <code class="docutils literal notranslate"><span class="pre">instr[31:0]</span></code> received via the compressed interface is not allowed
+to combinatorially feed into the issue interface’s <code class="docutils literal notranslate"><span class="pre">instr[31:0]</span></code> instruction.</p>
+</div>
+<p>A coprocessor is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a coprocessor:</p>
+<ul class="simple">
+<li><p>paths from <code class="docutils literal notranslate"><span class="pre">rs</span></code>, <code class="docutils literal notranslate"><span class="pre">rs_valid</span></code> to <code class="docutils literal notranslate"><span class="pre">result_valid</span></code>, <code class="docutils literal notranslate"><span class="pre">result</span></code>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The above implies that a coprocessor has a pipeline stage separating the register file operands from its result generating circuit (similar to
+the separation between decode stage and execute stage found in many <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPUs</span></a>).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As a <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> is allowed to retract transactions on its compressed and issue interfaces, the <code class="docutils literal notranslate"><span class="pre">compressed_ready</span></code> and <code class="docutils literal notranslate"><span class="pre">issue_ready</span></code> signals will have to
+depend on signals received from the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> in a combinatorial manner (otherwise these ready signals might be signaled for the wrong <code class="docutils literal notranslate"><span class="pre">id</span></code>).</p>
+</div>
+</section>
+<section id="handshake-dependencies">
+<h2>Handshake dependencies<a class="headerlink" href="#handshake-dependencies" title="Permalink to this heading"></a></h2>
+<p>In order to avoid system level deadlock both the <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> and the coprocessor shall obey the following rules:</p>
+<ul>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">valid</span></code> signal of a transaction shall not be dependent on the corresponding <code class="docutils literal notranslate"><span class="pre">ready</span></code> signal.</p></li>
+<li><p>Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same <code class="docutils literal notranslate"><span class="pre">id</span></code> related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows:</p>
+<ul class="simple">
+<li><p>compressed transaction</p></li>
+<li><p>issue transaction</p></li>
+<li><p>register transaction</p></li>
+<li><p>commit transaction</p></li>
+</ul>
+<ul class="simple">
+<li><p>result transaction.</p></li>
+</ul>
+</li>
+<li><p>Transactions with an earlier issued <code class="docutils literal notranslate"><span class="pre">id</span></code> shall not depend on transactions with a later issued <code class="docutils literal notranslate"><span class="pre">id</span></code> (e.g. a coprocessor is not allowed to delay generating <code class="docutils literal notranslate"><span class="pre">result_valid</span></code> = 1
+because it first wants to see <code class="docutils literal notranslate"><span class="pre">commit_valid</span></code> = 1 for a newer instruction).</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The use of the words <em>depend</em> and <em>dependent</em> relate to logical relationships, which is broader than combinatorial relationships.</p>
+</div>
+</section>
+</section>
+<section id="appendix">
+<h1>Appendix<a class="headerlink" href="#appendix" title="Permalink to this heading"></a></h1>
+<p>This appendix contains several useful, non-normative pieces of information that help implementing the eXtension Interface.</p>
+<section id="systemverilog-example">
+<h2>SystemVerilog example<a class="headerlink" href="#systemverilog-example" title="Permalink to this heading"></a></h2>
+<p>In the <code class="docutils literal notranslate"><span class="pre">src</span></code> folder of this project, the file <a class="reference external" href="https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv">https://github.com/openhwgroup/core-v-xif/blob/main/src/core_v_xif.sv</a> contains a non-normative realization of this specification based on SystemVerilog interfaces.
+Of course the use of SystemVerilog (interfaces) is not mandatory.</p>
+</section>
+<section id="coprocessor-recommendations">
+<h2>Coprocessor recommendations<a class="headerlink" href="#coprocessor-recommendations" title="Permalink to this heading"></a></h2>
+<p>A coprocessor is recommended (but not required) to follow the following suggestions to maximize its re-use potential:</p>
+<ul class="simple">
+<li><p>Avoid using opcodes that are reserved or already used by RISC-V International unless for supporting a standard RISC-V extension.</p></li>
+<li><p>Make it easy to change opcode assignments such that a coprocessor can easily be updated if it conflicts with another coprocessor.</p></li>
+<li><p>Clearly document the supported and required parameter values.</p></li>
+</ul>
+</section>
+<section id="timing-recommendations">
+<h2>Timing recommendations<a class="headerlink" href="#timing-recommendations" title="Permalink to this heading"></a></h2>
+<p>The integration of the eXtension interface will vary from <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a> to <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPU</span></a>, and thus require its own set of timing constraints.</p>
+<p><a class="reference external" href="https://cv32e40x-user-manual.readthedocs.io/en/stable/x_ext.html#timing">CV32E40X eXtension timing budget</a> shows the recommended timing budgets
+for the coprocessor and (optional) interconnect for the case in which a coprocessor is paired with the CV32E40X (<a class="reference external" href="https://github.com/openhwgroup/cv32e40x">https://github.com/openhwgroup/cv32e40x</a>) processor.
+As is shown in that timing budget, the coprocessor only receives a small part of the timing budget on the paths through <code class="docutils literal notranslate"><span class="pre">xif_issue_if.issue_req.rs*</span></code>.
+This enables the coprocessor to source its operands directly from the CV32E40X register file bypass network, thereby preventing stall cycles in case an
+offloaded instruction depends on the result of a preceding non-offloaded instruction. This implies that, if a coprocessor is intended for pairing with the CV32E40X,
+it will be beneficial timing wise if the coprocessor does not directly operate on the <code class="docutils literal notranslate"><span class="pre">rs*</span></code> source inputs, but registers them instead. To maximize utilization of a coprocessor with various <a class="reference internal" href="intro.html#term-CPU"><span class="xref std std-term">CPUs</span></a>, such registers could be made optional via a parameter.</p>
+</section>
+<section id="verification">
+<h2>Verification<a class="headerlink" href="#verification" title="Permalink to this heading"></a></h2>
+<p>A <a class="reference internal" href="intro.html#term-UVM"><span class="xref std std-term">UVM</span></a> agent for the interface was developed for the verification of CVA6.
+It can be accessed under <a class="reference external" href="https://github.com/openhwgroup/core-v-verif/tree/99b260b036b3c220ab3d405d521f5c710e587e89/lib/uvm_agents/uvma_cvxif">https://github.com/openhwgroup/core-v-verif/tree/master/lib/uvm_agents/uvma_cvxif</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="intro.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024 OpenHW Group.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

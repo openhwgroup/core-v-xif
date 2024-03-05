@@ -38,7 +38,7 @@ config = SphinxConfig("../../pyproject.toml", globalns=globals(), config_overrid
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -47,6 +47,13 @@ title_prefix = 'OpenHW Group Specification'
 # -- Project information -----------------------------------------------------
 
 project = name
+
+# -- Extensions -----------------------------------------------------
+
+extensions = [
+    "sphinx_github_changelog",
+]
+
 
 # -- Derived Project Information - Do not modify ------------------------------
 # split on first - separator
@@ -235,6 +242,10 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+# Not sure which of these is correct. First follows https://github.com/ewjoachim/sphinx-github-changelog/blob/ad0a535aba48a1a42b97b56f66229a335e1530f2/docs/conf.py
+changelog_github_token = os.environ.get("CHANGELOG_GITHUB_TOKEN")
+# Second follows Readthedocs 
+sphinx_github_changelog_token = os.environ.get("CHANGELOG_GITHUB_TOKEN")
 
 # -- Options for todo extension ----------------------------------------------
 

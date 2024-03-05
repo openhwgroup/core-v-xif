@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenHW Group Specification: Core-V eXtension interface (CV-X-IF) - Development &mdash; Core-V eXtension interface (CV-X-IF)  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Acknowledgements" href="preface.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #DDDDDD" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Core-V eXtension interface (CV-X-IF)
+              <img src="_static/openhw-landscape.svg" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.1-dev.249
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preface.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preface.html#changelog">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="x_ext.html">eXtension Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="x_ext.html#appendix">Appendix</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #DDDDDD" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Core-V eXtension interface (CV-X-IF)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">OpenHW Group Specification: Core-V eXtension interface (CV-X-IF) - Development</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="preface.html" class="btn btn-neutral float-right" title="Acknowledgements" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="title">
+<h1>OpenHW Group Specification: Core-V eXtension interface (CV-X-IF) - Development<a class="headerlink" href="#title" title="Permalink to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preface.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preface.html#changelog">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#history">History</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#standards-compliance">Standards Compliance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#glossary">Glossary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="x_ext.html">eXtension Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#cv-x-if">CV-X-IF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#major-features">Major features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#operating-principle">Operating principle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#interfaces">Interfaces</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#identification">Identification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#multiple-harts">Multiple Harts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#compressed-interface">Compressed interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#issue-interface">Issue interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#register-interface">Register interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#commit-interface">Commit interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#memory-request-response-interface">Memory (request/response) interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#memory-result-interface">Memory result interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="x_ext.html#result-interface">Result interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#interface-dependencies">Interface dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#handshake-rules">Handshake rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#signal-dependencies">Signal dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#handshake-dependencies">Handshake dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="x_ext.html#appendix">Appendix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#systemverilog-example">SystemVerilog example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#coprocessor-recommendations">Coprocessor recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#timing-recommendations">Timing recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="x_ext.html#verification">Verification</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="preface.html" class="btn btn-neutral float-right" title="Acknowledgements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024 OpenHW Group.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
