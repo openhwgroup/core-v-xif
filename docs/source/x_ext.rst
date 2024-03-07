@@ -263,10 +263,8 @@ A new ``id`` value is not allowed to be greater than the oldest in-flight instru
 If the oldest in-flight instruction is :math:`id_o`, and the newest is :math:`id_n`, then the next instruction with :math:`id_{n+1}` must satisfy the following conditions:
 
 .. math::
-  \begin{gather}
     id_{n+1} > id_{n} \text{ or } id_{n+1} < id_{o}, \text{ if } id_{n} > id_{o}\\
     id_{n+1} > id_{n} \text{ and } id_{n+1} < id_{o}, \text{ if } id_{n} < id_{o}
-  \end{gather}
 
 The first condition applying to cases where the :math:`id_n` has not wrapped since the oldest in-flight instruction was issued, and the second where one wrap occurred between :math:`id_o` and :math:`id_n`.
 The |coprocessor| is not required to check the validity of ``id`` values under these constraints.
