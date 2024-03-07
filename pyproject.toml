@@ -13,5 +13,6 @@ copyright = "2021-2024 OpenHW Group"
 extensions = [
     'sphinxcontrib.inkscapeconverter',
     'sphinx_github_changelog',
+    'sphinx_contributors',
 ]
 package_root = "docs"
