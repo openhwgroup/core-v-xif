@@ -68,8 +68,6 @@ The CV-X-IF specification contains the following parameters:
   | ``X_MISA``                   | logic [25:0]           | 32'b0         | MISA extensions implemented on the eXtension interface.            |
   |                              |                        |               | The |processor| determines the legal values for this parameter.    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-  | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial value for ``mstatus.XS``.                                  |
-  +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_DUALREAD``               | int unsigned (0..3)    | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
   |                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
   |                              |                        |               | Legal values are determined by the |processor|.                    |
@@ -107,6 +105,20 @@ Not all bits of ``misa.Extensions`` will be legal for a coprocessor to set, e.g.
    A |processor| shall clearly document which ``X_MISA`` values it can support and there is no requirement that a |processor| can support
    all possible ``X_MISA`` values. For example, if a |processor| only supports machine mode, then it is not reasonable to expect that the
    |processor| will additionally support user mode by just setting the ``X_MISA[20]`` (``U`` bit) to 1.
+
+.. only:: ECS
+
+  .. table:: Interface parameters with ECS feature
+    :name: Interface parameters with ECS feature
+    :class: no-scrollbar-table
+    :widths: 30 15 10 45
+
+    +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
+    | Name                         | Type/Range             | Default       | Description                                                        |
+    +==============================+========================+===============+====================================================================+
+    | ``X_ECS_XS``                 | logic [1:0]            | 2'b0          | Initial extension status of the |coprocessor| to be aggregated by  |
+    |                              |                        |               | by the |processor| into ``mstatus.xs``                             |
+    +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 Additionally, the following type definitions are defined to improve readability of the specification and ensure consistency between the interfaces:
 
@@ -185,6 +197,16 @@ The major features of CV-X-IF are:
 * Support for instruction speculation.
 
   CV-X-IF indicates whether offloaded instructions are allowed to be committed (or should be killed).
+
+.. only:: not ECS
+
+  .. note::
+
+    The interface does not provide a mechanism for providing and synchronizing the Extension Context Status (:term:`ECS`, see [RISC-V-PRIV]_).
+    :term:`ECS` might be needed if an extension has context that needs to be switched upon a task switch.
+    Ensuring that the behavior of the overall system is compliant to [RISC-V-PRIV]_ is the responsibility of an integrator.
+    It is the intention that future versions of this specification provide a general mechanism to deal with :term:`ECS`.
+
 
 CV-X-IF consists of the following interfaces:
 
@@ -491,9 +513,20 @@ The ``instr`` signal remains stable during an issue request transaction.
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
   |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for rejected instructions.                                    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``?        |
-  |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for rejected instructions.                                         |
-  +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+
+.. only:: ECS
+
+  .. table:: Issue response type extended for ECS feature
+    :name: Issue response type extended for ECS feature
+    :class: no-scrollbar-table
+    :widths: 20 20 60
+
+    +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
+    | Signal                 | Type                   | Description                                                                                                      |
+    +========================+========================+==================================================================================================================+  
+    | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, or ``mstatus.vs``?     |
+    |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for rejected instructions.                                         |
+    +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
 The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
 
@@ -578,10 +611,21 @@ Register interface
   | ``rs_valid``           | :ref:`readregflags_t     | Validity of the register file source operand(s). If register pairs are supported, the validity is signaled for  |
   |                        | <readregflags>`          | each register within the pair individually.                                                                     |
   +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs``                | logic [5:0]              | Extension Context Status ({``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}).                                    |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
-  +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+
+.. only:: ECS
+
+  .. table:: Register type extended for ECS feature
+    :name: Register type extended for ECS feature
+    :class: no-scrollbar-table
+    :widths: 20 20 60
+
+    +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | Signal                 | Type                     | Description                                                                                                     |
+    +========================+==========================+=================================================================================================================+  
+    | ``ecs``                | logic [3:0]              | Extension Context Status ({``mstatus.fs``, ``mstatus.vs``}).                                                    |
+    +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``ecs_valid``          | logic                    | Validity of the Extension Context Status.                                                                       |
+    +------------------------+--------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 There are two main scenarios, in how the register interface will be used. They are selected by ``X_ISSUE_REGISTER_SPLIT``:
 
@@ -592,8 +636,11 @@ There are two main scenarios, in how the register interface will be used. They a
    Each bit can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
    A |coprocessor| is not expected to wait for all ``rs_valid`` bits to be 1, but only for those registers it intends to read.
    The ``rs`` signals are only required to be stable during the part of a transaction in which these signals are considered to be valid.
-   The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
-   The ``ecs`` signal is only required to be stable during the part of a transaction in which this signals is considered to be valid.
+
+.. only:: ECS
+
+    - The ``ecs_valid`` bit is not required to be stable during the transaction. It can transition from 0 to 1, but is not allowed to transition back to 0 during a transaction.
+      The ``ecs`` signal is only required to be stable during the part of a transaction in which this signals is considered to be valid.
 
 2. ``X_ISSUE_REGISTER_SPLIT`` = 1: For a |processor| which splits the issue and register interface into subsequent pipeline stages (e.g. because it has a dedicated read registers (RR) stage), the registers will be provided after the issue transaction completed.
    The |processor| initiates the register transaction once all registers are available.
@@ -603,12 +650,14 @@ There are two main scenarios, in how the register interface will be used. They a
    Therefore, ``register_ready`` is tied to 1.
    The ``register_valid`` signal will be 1 for one cycle, and ``rs_valid`` is guaranteed to be equal to the corresponding ``issue_resp.register_read``.
    Thus, a |coprocessor| can ignore ``rs_valid`` in this case and a |processor| may chose to not implement the signal.
-   The same applies to the ``ecs`` and ``ecs_valid`` signals.
+
+.. only:: ECS
+
+    - The same applies to the ``ecs`` and ``ecs_valid`` signals.
 
 In both scenarios, the following applies:
-The ``hartid``, ``id``, ``ecs_valid`` and ``rs_valid`` signals are valid when ``register_valid`` is 1.
+The ``hartid``, ``id``, and ``rs_valid`` signals are valid when ``register_valid`` is 1.
 The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
-The ``ecs`` signal is only considered valid when ``register_valid`` is 1 and ``ecs_valid`` is 1 as well.
 
 The ``rs[X_NUM_RS-1:0]`` signals provide the register file operand(s) to the |coprocessor|. In case that ``XLEN`` = ``X_RFR_WIDTH``, then the regular register file
 operands corresponding to ``rs1``, ``rs2`` or ``rs3`` are provided. In case ``XLEN`` != ``X_RFR_WIDTH`` (i.e. ``XLEN`` = 32 and ``X_RFR_WIDTH`` = 64), then the
@@ -617,7 +666,11 @@ in ``rs1``, ``rs2`` or ``rs3``. The register file operand for the even register 
 odd register file index is provided in the upper 32 bits. When reading from the ``x0``, ``x1`` pair, then a value of 0 is returned for the entire operand.
 The ``X_DUALREAD`` parameter defines whether dual read is supported and for which register file sources it is supported.
 
-The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` :term:`CSR` to the |coprocessor|.
+.. only:: ECS
+
+  The ``ecs_valid`` signal is valid when ``register_valid`` is 1.
+  The ``ecs`` signal is only considered valid when ``register_valid`` is 1 and ``ecs_valid`` is 1 as well.
+  The ``ecs`` signal provides the Extension Context Status from the ``mstatus`` :term:`CSR` to the |coprocessor|.
 
 Commit interface
 ~~~~~~~~~~~~~~~~
@@ -1014,10 +1067,21 @@ for instructions that have been killed.
   | ``we``        | :ref:`writeregflags_t           | Register file write enable(s).                                                                                  |
   |               | <writeregflags>`                |                                                                                                                 |
   +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecswe``     | logic [2:0]                     | Write enables for ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``.                                               |
-  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
-  | ``ecsdata``   | logic [5:0]                     | Write data value for {``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}.                                          |
-  +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+
+.. only:: ECS
+
+  .. table:: Result packet type extended for ECS feature
+    :name: Result packet type extended for ECS feature
+    :class: no-scrollbar-table
+    :widths: 20 20 60
+
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | Signal        | Type                            | Description                                                                                                     |
+    +===============+=================================+=================================================================================================================+
+    | ``ecswe``     | logic [2:0]                     | Write enables for ``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``.                                               |
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
+    | ``ecsdata``   | logic [5:0]                     | Write data value for {``mstatus.xs``, ``mstatus.fs``, ``mstatus.vs``}.                                          |
+    +---------------+---------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 A result transaction starts in the cycle that ``result_valid`` = 1 and ends in the cycle that both ``result_valid`` = 1 and ``result_ready`` = 1. The signals in ``result`` are
 valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable during a result transaction.
@@ -1068,10 +1132,12 @@ The |processor| is not required to check that these signals match.
   Nevertheless, ``result.we`` is provided to simplify the |processor| logic.
   Without this signal, the |processor| would have to look this information up based on the instruction ``id``.
 
-If ``ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is written to ``mstatus.xs``.
-If ``ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
-If ``ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
-The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
+.. only:: ECS
+
+  If ``ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is aggreagated by the |processor| with other extension states and written to ``mstatus.xs``.
+  If ``ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
+  If ``ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
+  The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
 
 Interface dependencies
 ----------------------
