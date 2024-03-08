@@ -32,7 +32,12 @@ The terminology ``eXtension interface`` and ``CV-X-IF`` are used interchangeably
 Parameters
 ----------
 
-The CV-X-IF specification contains the following parameters:
+The CV-X-IF specification contains two kinds of parameters.
+The first kind of parameters is configured for the |coprocessor|. 
+Not all possible values of parameter might be supported by the |processor|, in which case it determines the legal values.
+
+The second kind of parameter is a system parameter, i.e. it is determined based on the configuration of the |processor| and the |coprocessor|.
+This includes ``X_ID_WIDTH`` and ``X_HARTID_WIDTH``.
 
 .. table:: Interface parameters
   :name: Interface parameters
@@ -44,29 +49,32 @@ The CV-X-IF specification contains the following parameters:
   +==============================+========================+===============+====================================================================+
   | ``X_NUM_RS``                 | int unsigned (2..3)    | 2             | Number of register file read ports that can be used by the         |
   |                              |                        |               | eXtension interface.                                               |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_ID_WIDTH``               | int unsigned (3..32)   | 4             | Identification (``id``) width for the eXtension interface.         |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_RFR_WIDTH``              | int unsigned (32, 64)  | 32            | Register file read access width for the eXtension interface.       |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
   |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
   |                              |                        |               | and 64 (e.g. for RV32P). If XLEN = 64, then the legal value is     |
   |                              |                        |               | (only) 64.                                                         |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_RFW_WIDTH``              | int unsigned (32, 64)  | 32            | Register file write access width for the eXtension interface.      |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
   |                              |                        |               | Must be at least XLEN. If XLEN = 32, then the legal values are 32  |
   |                              |                        |               | and 64 (e.g. for RV32D). If XLEN = 64, then the legal value is     |
   |                              |                        |               | (only) 64.                                                         |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_NUM_HARTS``              | int unsigned           | 1             | Number of harts (hardware threads) associated with the interface.  |
-  |                              | (1..2^MXLEN)           |               | The |processor| determines the legal values for this parameter.    |
+  |                              | (1..2^MXLEN)           |               | Legal values are determined by the |processor|.                    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_HARTID_WIDTH``           | int unsigned           | 1             | Width of ``hartid`` signals.                                       |
   |                              | (1..MXLEN)             |               | Must be at least 1. Limited by the RISC-V privileged specification |
   |                              |                        |               | to MXLEN.                                                          |
-  |                              |                        |               | The |processor| determines the legal values for this parameter.    |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_MISA``                   | logic [25:0]           | 32'b0         | MISA extensions implemented on the eXtension interface.            |
-  |                              |                        |               | The |processor| determines the legal values for this parameter.    |
+  |                              |                        |               | Legal values are determined by the |processor|.                    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
   | ``X_DUALREAD``               | int unsigned (0..3)    | 0             | Is dual read supported? 0: No, 1: Yes, for ``rs1``,                |
   |                              |                        |               | 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``.      |
@@ -97,7 +105,7 @@ Not all bits of ``misa.Extensions`` will be legal for a coprocessor to set, e.g.
     | Name                         | Type/Range             | Default       | Description                                                        |
     +==============================+========================+===============+====================================================================+
     | ``X_MEM_WIDTH``              | int unsigned (32, 64,  | 32            | Memory access width for loads/stores via the eXtension interface.  |
-    |                              | 128, 256)              |               |                                                                    |
+    |                              | 128, 256)              |               | Legal values are determined by the |processor|.                    |
     +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
 
 .. note::
