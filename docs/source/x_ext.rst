@@ -202,8 +202,7 @@ The major features of CV-X-IF are:
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
   CV-X-IF optionally supports implementation of (custom or standardized) :term:`ISA` extensions mandating dual register file reads. Dual read
-  is supported for even-odd register pairs (``Xn`` and ``Xn+1``, with ``n`` being an even number extracted from instruction bits ``[19:15]``),
-  ``[24:20]`` and ``[31:27]`` (i.e. ``rs1``, ``rs2`` and ``rs3``). Dual read can therefore provide up to six 32-bit operands
+  is supported for even-odd register pairs. Dual read can therefore provide up to six 32-bit operands
   per instruction.
 
   When a dual read is performed with ``n`` = 0, the entire operand is 0, i.e. ``x1`` shall not need to be accessed by the |processor|.
@@ -213,7 +212,7 @@ The major features of CV-X-IF are:
 * Support for ternary operations.
 
   CV-X-IF optionally supports :term:`ISA` extensions implementing instructions which use three source operands.
-  Ternary instructions must be encoded in the R4-type instruction format defined by [RISC-V-UNPRIV]_.
+  RISC-V [RISC-V-UNPRIV]_ can implement ternary operations using the R-type instruction format (using ``rd`` as ``rs3``) or with the R4-type instruction format.
 
 * Support for instruction speculation.
 
@@ -255,9 +254,17 @@ Offloading of the (non-compressed, 32-bit) instructions happens via the issue in
 The external |coprocessor| can decide to accept or reject the instruction offload. In case of acceptation the |coprocessor|
 will further handle the instruction. In case of rejection the |processor| will raise an illegal instruction exception.
 The |processor| provides the required register file operand(s) to the |coprocessor| via the register interface.
-If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
-``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
-The |coprocessor| informs the |processor| to which register(s) in the register file it will write-back.
+If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2``, then these are always encoded in instruction bits ``[19:15]`` and
+``[24:20]``, respectively.
+If an offloaded instruction uses the register file source ``rs3``, then these are encoded in instruction bits ``[31:27]`` if the instruction uses one of the major opcodes instruction uses the major opcodes MADD, MSUB, NMSUB, or NMADD (R4-type).
+Otherwise, ``rs3`` is expected to be encoded in bits ``[11:7]``.
+
+.. note::
+  The fused multiply add instructions of the floating point unit make use of the R4 instruction format.
+  As this format consumes significant encoding space, other standard and custom extensions are expected to follow the R-type encoding, multiplexing ``rd`` and ``rs3``.
+
+The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
+The |coprocessor| informs the core to which register(s) in the register file it will write-back.
 The |processor| uses this information to track data dependencies between instructions.
 
 .. only:: MemoryIf
