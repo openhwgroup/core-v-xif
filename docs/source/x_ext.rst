@@ -481,11 +481,11 @@ Issue interface
   |                        |                                        |                                                                                                                 |
   +------------------------+----------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
-An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1 and the ``hartid`` remains unchanged.
+An issue request transaction is defined as the combination of all ``issue_req`` signals during which ``issue_valid`` is 1, and the ``id`` and ``hartid`` remain unchanged.
 A |processor| is allowed to retract its issue request transaction before it is accepted with ``issue_ready`` = 1 and it can do so in the following ways:
 
 * Set ``issue_valid`` = 0.
-* Keep ``issue_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``issue_req``).
+* Keep ``issue_valid`` = 1, but change the ``id`` or ``hartid`` signal (and if desired change the other signals in ``issue_req``).
 
 The ``instr``, ``hartid``, and ``id`` signals are valid when ``issue_valid`` is 1.
 The ``instr`` signal remains stable during an issue request transaction.
@@ -520,7 +520,7 @@ The ``instr`` signal remains stable during an issue request transaction.
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | Signal                 | Type                   | Description                                                                                                      |
   +========================+========================+==================================================================================================================+
-  | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted (1) by the |coprocessor| or rejected (0)?                         |
+  | ``accept``             | logic                  | Is the offloaded instruction (``id`` and ``hartid``) accepted (1) by the |coprocessor| or rejected (0)?          |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a write-back in the |processor| to ``rd``?                                        |
   |                        | <writeregflags>`       | Write-back to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                 |
