@@ -8,7 +8,7 @@ Extensions implemented on the interface are unprivileged, i.e. implementing priv
 
 The goal of ``CV-X-IF`` is to enable the design and verification of instruction extensions in a |coprocessor| in a standardized manner without the need to modify the |processor| itself.
 Having a common interface allows designers of RISC-V :term:`CPUs<CPU>` to reuse existing co-processor and vice versa.
-Please note that the |processor| and |coprocessor| can have different license models. Example, the |coprocessor| could be closed source, connected to an open-source |processor|.
+Please note that the |processor| and |coprocessor| can have different license models. For example, the |coprocessor| could be closed source, connected to an open-source |processor|.
 
 History
 -------
@@ -43,9 +43,9 @@ Standards Compliance
 The ``CV-X-IF`` specification depends on the unprivileged [RISC-V-UNPRIV]_ and privileged [RISC-V-PRIV]_ RISC-V specification.
 
 .. [RISC-V-UNPRIV] The RISC-V Instruction Set Manual, Volume I: User-Level ISA,
-   Document Version 20191213”, Editors Andrew Waterman and Krste Asanovíc, RISC-V Foundation, December 2019.
+   Document Version 20191213, Editors Andrew Waterman and Krste Asanovíc, RISC-V Foundation, December 2019.
 .. [RISC-V-PRIV] The RISC-V Instruction Set Manual, Volume II: Privileged Architecture,
-   Document Version 20211203”, Editors Andrew Waterman, Krste Asanovíc, and John Hauser, RISC-V International, December 2021.
+   Document Version 20211203, Editors Andrew Waterman, Krste Asanovíc, and John Hauser, RISC-V International, December 2021.
 
 Glossary
 --------

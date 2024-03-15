@@ -41,7 +41,7 @@ interface core_v_xif
 
   typedef logic [X_NUM_RS+X_DUALREAD-1:0] readregflags_t;
   typedef logic [X_DUALWRITE:0] writeregflags_t;
-  typedef logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0] mode_t;
+  typedef logic [1:0] mode_t;
   typedef logic [X_ID_WIDTH-1:0] id_t;
   typedef logic [X_HARTID_WIDTH-1:0] hartid_t;
 

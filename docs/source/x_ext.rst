@@ -3,15 +3,15 @@
 eXtension Interface
 ===================
 
-The eXtension interface enables extending |processor| with (custom or standardized) instructions without the need to change the  :term:`RTL`
-of |processor| itself. Extensions can be provided in separate modules external to |processor| and are integrated
-at system level by connecting them to the eXtension interface.
+The eXtension interface enables extending the |processor| with (custom or standardized) instructions without the need to change the :term:`RTL`
+of the |processor| itself. An extension can be provided in a separate module external to the |processor| and is integrated
+at system level by connecting it to the eXtension interface.
 
 The eXtension interface provides low latency (tightly integrated) read and write access to the |processor| register file.
-All opcodes which are not used (i.e. considered to be invalid) by |processor| can be used for extensions. It is recommended
+All opcodes which are not used (i.e. considered to be invalid) by the |processor| can be used for extensions. It is recommended
 however that custom instructions do not use opcodes that are reserved/used by RISC-V International.
 
-The eXtension interface enables extension of |processor| with:
+The eXtension interface enables extension of the |processor| with:
 
 * Custom :term:`ALU` type instructions.
 * Custom :term:`CSRs<CSR>` and related instructions.
@@ -83,8 +83,8 @@ This includes ``X_ID_WIDTH`` and ``X_HARTID_WIDTH``.
   | ``X_DUALWRITE``              | int unsigned (0..1)    | 0             | Is dual write supported? 0: No, 1: Yes.                            |
   |                              |                        |               | Legal values are determined by the |processor|.                    |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
-  | ``X_ISSUE_REGISTER_SPLIT``   | int unsigned (0..1)    | 0             | Does the interface pipeline register interface? 0: No, 1: Yes.     |
-  |                              |                        |               | Legal values are determined by the |processor|.                    |
+  | ``X_ISSUE_REGISTER_SPLIT``   | int unsigned (0..1)    | 0             | Are the issue interface and register interface split?              |
+  |                              |                        |               | 0: No, 1: Yes. Legal values are determined by the |processor|.     |
   |                              |                        |               | If 1, registers are provided after the issue of the instruction.   |
   |                              |                        |               | If 0, registers are provided at the same time as issue.            |
   +------------------------------+------------------------+---------------+--------------------------------------------------------------------+
@@ -143,17 +143,13 @@ Additionally, the following type definitions are defined to improve readability 
   | ``readregflags_t``                       |                                        | read ports and their ability to read register pairs.               |
   |                                          |                                        | The bit positions map to registers as follows:                     |
   |                                          |                                        | Low indices correspond to low operand numbers, and the even part   |
-  |                                          |                                        | of the pair has the lower index than the odd one.                  |
+  |                                          |                                        | of the pair has a lower index than the odd one.                    |
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
   | .. _writeregflags:                       | logic [X_DUALWRITE:0]                  | Bit vector indicating destination registers for write back.        |
   |                                          |                                        | The width depends on the ability to perform dual write.            |
   | ``writeregflags_t``                      |                                        | If ``X_DUALWRITE`` = 0, this signal is a single bit.               |
   |                                          |                                        | Bit 1 may only be set when bit 0 is also set.                      |
   |                                          |                                        | In this case, the vector indicates that a register pair is used.   |
-  +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
-  | .. _mode:                                | logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0]  | Privilege level                                                    |
-  |                                          |                                        | (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved,               |
-  | ``mode_t``                               |                                        | 2'b11 = Machine).                                                  |
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
   | .. _id:                                  | logic [X_ID_WIDTH-1:0]                 | Identification of the offloaded instruction.                       |
   |                                          |                                        | See `Identification`_ for details on the identifiers               |
@@ -166,6 +162,23 @@ Additionally, the following type definitions are defined to improve readability 
   |                                          |                                        | required to do so.                                                 |
   +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
 
+.. only:: MemoryIf
+
+  The memory interface introduces the following type definitions:
+  
+  .. table:: MemoryInterface type definitions
+    :name: Memory Interface type definitions
+    :class: no-scrollbar-table
+    :widths: 20 30 50
+
+    +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+    | Name                                     | Definition                             | Description                                                        |
+    +==========================================+========================================+====================================================================+
+    | .. _mode:                                | logic [1:0]                            | Privilege level                                                    |
+    |                                          |                                        | (2'b00 = User, 2'b01 = Supervisor, 2'b10 = Reserved,               |
+    | ``mode_t``                               |                                        | 2'b11 = Machine).                                                  |
+    +------------------------------------------+----------------------------------------+--------------------------------------------------------------------+
+
 Major features
 --------------
 
@@ -173,18 +186,18 @@ The major features of CV-X-IF are:
 
 * Minimal requirements on extension instruction encoding.
 
-  If an extension instruction relies on reading from or writing to the core's general purpose register file, then the standard
+  If an extension instruction relies on reading from or writing to the |processor|'s general purpose register file, then the standard
   RISC-V bitfield locations for rs1, rs2, rs3, rd as used for non-compressed instructions ([RISC-V-UNPRIV]_) must be used.
   Bitfields for unused read or write operands can be fully repurposed. Extension instructions can either use the compressed
-  or uncompressed instruction format. For offloading compressed instructions the |coprocessor| must provide the core with
+  or uncompressed instruction format. For offloading compressed instructions the |coprocessor| must provide the |processor| with
   the related non-compressed instructions.
 
-* Support for dual writeback instructions (optional, based on ``X_DUALWRITE``).
+* Support for dual write-back instructions (optional, based on ``X_DUALWRITE``).
 
-  CV-X-IF optionally supports implementation of (custom or standardized) :term:`ISA` extensions mandating dual register file writebacks. Dual writeback
+  CV-X-IF optionally supports implementation of (custom or standardized) :term:`ISA` extensions mandating dual register file write-backs. Dual write-back
   is supported for even-odd register pairs (``Xn`` and ``Xn+1`` with ``n`` being an even number extracted from instruction bits ``[11:7]``).
 
-  Dual register file writeback is only supported for ``XLEN`` = 32.
+  Dual register file write-back is only supported for ``XLEN`` = 32.
 
 * Support for dual read instructions (per source operand) (optional, based on ``X_DUALREAD``).
 
@@ -235,26 +248,26 @@ Operating principle
 -------------------
 
 |processor| will attempt to offload every (compressed or non-compressed) instruction that it does not recognize as a legal instruction itself.
-In case of a compressed instruction the |coprocessor| must first provide the core with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
+In case of a compressed instruction the |coprocessor| must first provide the |processor| with a matching uncompressed (i.e. 32-bit) instruction using the compressed interface.
 This non-compressed instruction is then attempted for offload via the issue interface.
 
 Offloading of the (non-compressed, 32-bit) instructions happens via the issue interface.
 The external |coprocessor| can decide to accept or reject the instruction offload. In case of acceptation the |coprocessor|
-will further handle the instruction. In case of rejection the core will raise an illegal instruction exception.
-The core provides the required register file operand(s) to the |coprocessor| via the register interface.
+will further handle the instruction. In case of rejection the |processor| will raise an illegal instruction exception.
+The |processor| provides the required register file operand(s) to the |coprocessor| via the register interface.
 If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2`` or ``rs3``, then these are always encoded in instruction bits ``[19:15]``,
 ``[24:20]`` and ``[31:27]`` respectively. The |coprocessor| only needs to wait for the register file operands that a specific instruction actually uses.
-The |coprocessor| informs the core to which register(s) in the register file it will writeback.
+The |coprocessor| informs the |processor| to which register(s) in the register file it will write-back.
 The |processor| uses this information to track data dependencies between instructions.
 
 .. only:: MemoryIf
 
-  The |coprocessor| informs the core whether an accepted offloaded instruction is a load/store.
+  The |coprocessor| informs the |processor| whether an accepted offloaded instruction is a load/store.
   |processor| uses this information to reserve the load/store unit for that instruction.
 
 Offloaded instructions are speculative; |processor| has not necessarily committed to them yet and might decide to kill them (e.g.
 because they are in the shadow of a taken branch or because they are flushed due to an exception in an earlier instruction). Via the commit interface the
-core will inform the |coprocessor| about whether an offloaded instruction will either need to be killed or whether the core will guarantee that the instruction
+|processor| will inform the |coprocessor| about whether an offloaded instruction will either need to be killed or whether the |processor| will guarantee that the instruction
 is no longer speculative and is allowed to be committed.
 
 .. only:: MemoryIf
@@ -265,8 +278,8 @@ is no longer speculative and is allowed to be committed.
   provide the result (e.g. load data and/or fault status) back to the |coprocessor| via the memory result interface.
 
 The final result of an accepted offloaded instruction can be written back into the |coprocessor| itself or into the |processor|'s register file. Either way, the
-result interface is used to signal to the |processor| that the instruction has completed. Apart from a possible writeback into the register file, the result
-interface transaction is for example used in the core to increment the ``minstret`` :term:`CSR`, to implement the fence instructions and to judge if instructions
+result interface is used to signal to the |processor| that the instruction has completed. Apart from a possible write-back into the register file, the result
+interface transaction is for example used in the |processor| to increment the ``minstret`` :term:`CSR`, to implement the fence instructions and to judge if instructions
 before a ``WFI`` instruction have fully completed (so that sleep mode can be entered if needed).
 
 In short: From a functional perspective it should not matter whether an instruction is handled inside the |processor| or inside a |coprocessor|. In both cases
@@ -282,7 +295,7 @@ Stated signals names are not mandatory, but it is highly recommended to at least
 Identification
 ~~~~~~~~~~~~~~
 
-Most interfaces of CV-X-IF all use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
+Most interfaces of CV-X-IF use a signal called ``id``, which serves as a unique identification number for offloaded instructions.
 The same ``id`` value shall be used for all transaction packets on all interfaces that logically relate to the same instruction.
 An ``id`` value can be reused after an earlier instruction related to the same ``id`` value is no longer consider in-flight.
 The ``id`` values for in-flight offloaded instructions are required to be unique.
@@ -407,7 +420,7 @@ then a new compressed request transaction started).
 
 The signals in ``compressed_resp`` are valid when ``compressed_valid`` and ``compressed_ready`` are both 1. There are no stability requirements.
 
-The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. |processor| might also attempt to offload
+The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. A |processor| might also attempt to offload
 compressed instructions that it does recognize as legal instructions itself.
 
 The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
@@ -509,11 +522,11 @@ The ``instr`` signal remains stable during an issue request transaction.
   +========================+========================+==================================================================================================================+
   | ``accept``             | logic                  | Is the offloaded instruction (``id``) accepted (1) by the |coprocessor| or rejected (0)?                         |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a writeback in the core to ``rd``?                                                |
-  |                        | <writeregflags>`       | Writeback to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                  |
+  | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a write-back in the |processor| to ``rd``?                                        |
+  |                        | <writeregflags>`       | Write-back to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                 |
   |                        |                        | but will be ignored by the |processor|.                                                                          |
   |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for rejected instructions.                                        |
-  |                        |                        | Writeback to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.    |
+  |                        |                        | Write-back to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.   |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
@@ -530,11 +543,12 @@ The ``instr`` signal remains stable during an issue request transaction.
     +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
     | Signal                 | Type                   | Description                                                                                                      |
     +========================+========================+==================================================================================================================+  
-    | ``ecswrite``           | logic                  | Will the |coprocessor| perform a writeback in the core to ``mstatus.xs``, ``mstatus.fs``, or ``mstatus.vs``?     |
+    | ``ecswrite``           | logic                  | Will the |coprocessor| perform a write-back in the |processor| to ``mstatus.xs``, ``mstatus.fs``, or             |
+    |                        |                        | ``mstatus.vs``?                                                                                                  |
     |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for rejected instructions.                                         |
     +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
-The core shall attempt to offload instructions via the issue interface for the following two main scenarios:
+The |processor| shall attempt to offload instructions via the issue interface for the following two main scenarios:
 
 * The instruction is originally non-compressed and it is not recognized as a valid instruction by the |processor|'s non-compressed instruction decoder.
 * The instruction is originally compressed and the |coprocessor| accepted the compressed instruction and provided a 32-bit uncompressed instruction.
@@ -548,6 +562,8 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 
 * is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
 * is considered neither to be valid by the |processor| nor accepted by the |coprocessor| (``accept`` = 0).
+
+A |coprocessor| can delay accept accepting an instruction via ``issue_ready`` in the presence of structural hazards that would prevent execution.
 
 A |coprocessor| can (only) accept an offloaded instruction when:
 
@@ -713,8 +729,8 @@ Commit interface
   +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``id``             | :ref:`id_t <id>`         | Identification of the offloaded instruction. Valid when ``commit_valid`` is 1.                                               |
   +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``commit_kill``    | logic                    | If ``commit_valid`` is 1 and ``commit_kill`` is 0,  then the core guarantees that the offloaded instruction (``id``) and any |
-  |                    |                          | older (i.e. preceding) instructions are no longer speculative, will not get killed (e.g. due to misspeculation or an         |
+  | ``commit_kill``    | logic                    | If ``commit_valid`` is 1 and ``commit_kill`` is 0,  then the |processor| guarantees that the offloaded instruction (``id``)  |
+  |                    |                          | and any older (i.e. preceding) instructions are no longer speculative, will not get killed (e.g. due to misspeculation or an |
   |                    |                          | exception in a preceding instruction), and are allowed to be committed.                                                      |
   |                    |                          | If ``commit_valid`` is 1 and ``commit_kill`` is 1, then the offloaded instruction (``id``) and any newer (i.e. succeeding)   |
   |                    |                          | instructions shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the related instructions do/did  |
@@ -1041,14 +1057,14 @@ Result interface
   | ``result_valid``          | logic           | input           | Result request valid. Indicates that the |coprocessor| has a valid result (write data or exception) for an offloaded         |
   |                           |                 |                 | instruction.                                                                                                                 |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
-  | ``result_ready``          | logic           | output          | Result request ready. The result signaled via ``result`` is accepted by the core when                                        |
+  | ``result_ready``          | logic           | output          | Result request ready. The result signaled via ``result`` is accepted by the |processor| when                                 |
   |                           |                 |                 | ``result_valid`` and  ``result_ready`` are both 1.                                                                           |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
   | ``result``                | x_result_t      | input           | Result packet.                                                                                                               |
   +---------------------------+-----------------+-----------------+------------------------------------------------------------------------------------------------------------------------------+
 
-The |coprocessor| shall provide results to the core via the result interface. A |coprocessor| is allowed to provide results to the core in an out of order fashion. A |coprocessor| is only
-allowed to provide a result for an instruction once the core has indicated (via the commit interface) that this instruction is allowed to be committed. Each accepted offloaded (committed and not killed) instruction shall
+The |coprocessor| shall provide results to the |processor| via the result interface. A |coprocessor| is allowed to provide results to the |processor| in an out of order fashion. A |coprocessor| is only
+allowed to provide a result for an instruction once the |processor| has indicated (via the commit interface) that this instruction is allowed to be committed. Each accepted offloaded (committed and not killed) instruction shall
 have exactly one result transaction (even if no data needs to be written back to the |processor|'s register file). No result transaction shall be performed for instructions which have not been accepted for offload or
 for instructions that have been killed.
 
@@ -1128,19 +1144,19 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
   The trigger match shall lead to a debug entry  in the |processor|.
   The |processor| shall kill potentially already offloaded instructions to guarantee precise debug entry behavior.
 
-``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore writeback to ``x0``.
-When a dual writeback is performed to the ``x0``, ``x1`` pair, the entire write shall be ignored, i.e. neither ``x0`` nor ``x1`` shall be written by the |processor|.
-For an instruction instance, the ``we`` signal must be the same as ``issue_resp.writeback``.
+``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore write-back to ``x0``.
+When a dual write-back is performed to the ``x0``, ``x1`` pair, the entire write shall be ignored, i.e. neither ``x0`` nor ``x1`` shall be written by the |processor|.
+For an instruction instance, the ``we`` signal must be the same as ``issue_resp.write-back``.
 The |processor| is not required to check that these signals match.
 
 .. note::
-  ``issue_resp.writeback`` and ``result.we`` carry the same information.
+  ``issue_resp.write-back`` and ``result.we`` carry the same information.
   Nevertheless, ``result.we`` is provided to simplify the |processor| logic.
   Without this signal, the |processor| would have to look this information up based on the instruction ``id``.
 
 .. only:: ECS
 
-  If ``ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is aggreagated by the |processor| with other extension states and written to ``mstatus.xs``.
+  If ``ecswe[2]`` is 1, then the value in ``ecsdata[5:4]`` is aggregated by the |processor| with other extension states and written to ``mstatus.xs``.
   If ``ecswe[1]`` is 1, then the value in ``ecsdata[3:2]`` is written to ``mstatus.fs``.
   If ``ecswe[0]`` is 1, then the value in ``ecsdata[1:0]`` is written to ``mstatus.vs``.
   The writes to the stated ``mstatus`` bitfields will take into account any WARL rules that might exist for these bitfields in the |processor|.
@@ -1150,12 +1166,12 @@ Interface dependencies
 
 The following rules apply to the relative ordering of the interface handshakes:
 
-* The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
+* The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload compressed instructions that it does not consider to be valid itself.
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
 * Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
 * Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
-  if no writeback needs to happen to the core's register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
+  if no write-back needs to happen to the |processor|'s register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
   on the issue interface.
 * A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
 
@@ -1234,7 +1250,7 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
 
 .. note::
    As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
-   depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``id``).
+   depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``hartid`` and ``id``).
 
 Handshake dependencies
 ----------------------
@@ -1242,7 +1258,7 @@ Handshake dependencies
 In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
 
 * The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
-* Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows:
+* Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``hartid`` and ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows:
 
   * compressed transaction
   * issue transaction
@@ -1255,7 +1271,7 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
     * memory result transaction
 
   * result transaction.
-* Transactions with an earlier issued ``id`` shall not depend on transactions with a later issued ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
+* Transactions with an earlier issued ``hartid`` and ``id`` shall not depend on transactions with a later issued ``hartid`` and ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
   because it first wants to see ``commit_valid`` = 1 for a newer instruction).
 
 .. note::
