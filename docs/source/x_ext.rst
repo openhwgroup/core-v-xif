@@ -423,6 +423,8 @@ The signals in ``compressed_resp`` are valid when ``compressed_valid`` and ``com
 The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. A |processor| might also attempt to offload
 compressed instructions that it does recognize as legal instructions itself.
 
+A |coprocessor| may only accept valid 16-bit instructions, i.e. bits ``[1:0]`` must not be binary 11.
+
 The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
 
 * is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
