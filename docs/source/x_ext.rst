@@ -564,11 +564,7 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 * is considered neither to be valid by the |processor| nor accepted by the |coprocessor| (``accept`` = 0).
 
 A |coprocessor| can delay accept accepting an instruction via ``issue_ready`` in the presence of structural hazards that would prevent execution.
-
-A |coprocessor| can (only) accept an offloaded instruction when:
-
-* It can handle the instruction (based on decoding ``instr``).
-* There are no structural hazards that would prevent execution.
+A |coprocessor| can (only) accept an offloaded instruction when it can handle the instruction (based on decoding ``instr``).
 
 A transaction is considered offloaded/accepted on the positive edge of ``clk`` when ``issue_valid``, ``issue_ready`` are asserted and ``accept`` is 1.
 A transaction is considered not offloaded/rejected on the positive edge of ``clk`` when ``issue_valid`` and ``issue_ready`` are asserted while ``accept`` is 0.
