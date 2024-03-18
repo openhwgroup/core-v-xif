@@ -1178,7 +1178,13 @@ The following rules apply to the relative ordering of the interface handshakes:
 
 * The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload compressed instructions that it does not consider to be valid itself.
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
-* Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
+* Every issue interface transaction has an associated register interface transaction, if the instruction is not killed before the register transaction.
+  It is not required for register transactions to be in the same order as the issue transactions.
+* A register interface transaction cannot be initiated before the corresponding issue interface handshake is initiated.
+
+   * If ``X_ISSUE_REGISTER_SPLIT`` = 0, it must be initiated a the same time.
+   * If ``X_ISSUE_REGISTER_SPLIT`` = 1, it can only be initiated after the corresponding issue interface handshake is completed.
+
 * Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
   if no write-back needs to happen to the |processor|'s register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
@@ -1196,7 +1202,7 @@ The following rules apply to the relative ordering of the interface handshakes:
   * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
   * A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
 
-* A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+* A result interface handshake cannot be initiated before the corresponding register interface handshake is initiated. It is allowed to be initiated at the same time or later.
 * A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.
 
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
