@@ -1221,16 +1221,20 @@ The following handshake pairs exist on the eXtension interface:
 
 * ``result_valid`` with ``result_ready``.
 
-The only rule related to valid and ready signals is that:
+The only rule related to ``*_valid`` and ``*_ready`` signals is that:
 
 * A transaction is considered accepted on the positive ``clk`` edge when both valid and (implicit or explicit) ready are 1.
 
-Specifically note the following:
+.. note::
 
-* The valid signals are allowed to be retracted by a |processor| (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ready is signaled).
-* A new transaction can be started by a |processor| by changing the ``id`` signal and keeping the valid signal asserted (thereby possibly terminating a previous transaction before it completed).
-* The valid signals are not allowed to be retracted by a |coprocessor| (e.g. once ``result_valid`` is asserted it must remain asserted until the handshake with ``result_ready`` has been performed). A new transaction can therefore not be started by a |coprocessor| by just changing the ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction. The cycle after receiving the ready signal, a next (back-to-back) transaction is allowed to be started by just keeping the valid signal high and changing the ``id`` to that of the next transaction.
-* The ready signals is allowed to be 1 when the corresponding valid signal is not asserted.
+  * The ``*_valid`` signals are allowed to be retracted by a |processor| (e.g. in case that the related instruction is killed in the |processor|'s pipeline before the corresponding ``*_ready`` is signaled).
+  * It is defined per interface, if and how the |processor| can start a new transaction while a transaction is ongoing (``*_valid`` = 1).
+    In most interfaces, it can be started by changing the ``hartid`` and/or ``id`` signal and keeping the ``*_valid`` signal asserted (thereby possibly terminating a previous transaction before it completed).
+  * The ``*_valid`` signals are not allowed to be retracted by a |coprocessor| (e.g. once ``result_valid`` is asserted it must remain asserted until the handshake with ``result_ready`` has been performed).
+    A new transaction can therefore not be started by a |coprocessor| by just changing the ``hartid`` and/or ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction.
+    The cycle after receiving the ``*_ready`` signal, a next (back-to-back) transaction is allowed to be started by just keeping the ``*_valid`` signal high and changing the ``hartid`` and/or ``id`` to that of the next transaction.
+  * The ``*_ready`` signals are allowed to be 1 when the corresponding ``*_valid`` signal is 0.
+  * The ``*_valid`` signals are allowed to transition from 0 to 1 independent of the ``*_ready`` signals' states.
 
 Signal dependencies
 -------------------
