@@ -1331,7 +1331,7 @@ This applies to the compressed interface, the issue interface, and the result in
   Each |coprocessor| drives its ``issue_ready`` and ``issue_resp`` signals.
   It is recommended that |coprocessors| provide the response within the same cycle.
   In this case, both will be driving ``issue_ready`` the same way.
-  The ``compressed_resp`` signals need to be de-multiplexed based on the ``issue_resp.accept`` signals. 
+  The ``issue_resp`` signals need to be de-multiplexed based on the ``issue_resp.accept`` signals. 
   More than one |coprocessor| accepting an instruction must be prevented by design. 
 
 * Register interface
