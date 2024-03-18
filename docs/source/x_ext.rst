@@ -1303,8 +1303,8 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 
   * compressed transaction
   * issue transaction
-  * register transaction
   * commit transaction
+  * register transaction
 
   .. only:: MemoryIf
 
