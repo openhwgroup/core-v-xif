@@ -299,6 +299,16 @@ This section describes the interfaces of CV-X-IF. Port directions are described 
 The |coprocessor| will have opposite pin directions.
 Stated signals names are not mandatory, but it is highly recommended to at least include the stated names as part of actual signal names. It is for example allowed to add prefixes and/or postfixes (e.g. ``x_`` prefix or ``_i``, ``_o`` postfixes) or to use different capitalization. A name mapping should be provided if non obvious renaming is applied.
 
+Clocking and Signal Stability
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The interfaces are required to be synchronous to a common clock (``clk``).
+The signals of the interface are sampled on the positive edge of ``clk``.
+
+When stability of signal is referred to in the specification of the interface transactions the following definition is followed.
+A signal is considered stable, if to consecutive samples of the signal have the same value.
+A signal's value may change between the samples and still be considered stable.
+
 Identification
 ~~~~~~~~~~~~~~
 
