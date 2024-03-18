@@ -1362,7 +1362,7 @@ This applies to the compressed interface, the issue interface, and the result in
 
   The ``result_ready`` signal can be broadcasted to all |coprocessors|.
   Each |coprocessor| drives its ``result_valid`` signal.
-  If all instructions in all |coprocessors| complete execution in a fixed number of |processor| clock cycles after their register interface transaction completed, and writeback is never stalled (i.e. ``result_ready`` is 1 at that time), it is possible to provide de-multiplex the ``result`` based on the ``result_valid`` signals.
+  If all instructions in all |coprocessors| complete execution in a fixed number of |processor| clock cycles after their register interface transaction completed, and writeback is never stalled (i.e. ``result_ready`` is 1 at that time), it is possible to de-multiplex the ``result`` based on the ``result_valid`` signals.
   If this cannot be guaranteed, e.g. because a |coprocessor| implements long executing instructions, out-of-order completion etc., it is necessary to arbitrate and multiplex the result transactions requested by each |coprocessor|.
 
 Timing recommendations
