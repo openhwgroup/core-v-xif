@@ -702,6 +702,13 @@ There are two main scenarios, in how the register interface will be used. They a
     - The same applies to the ``ecs`` and ``ecs_valid`` signals.
 
 In both scenarios, the following applies:
+
+A register transaction is defined as the combination of all ``register`` signals during which ``register_valid`` is 1, and the ``id`` and ``hartid`` remain unchanged.
+A |processor| is allowed to retract its register transaction before it is accepted with ``register_ready`` = 1 and it can do so in the following ways:
+
+* Set ``register_valid`` = 0.
+* Keep ``register_valid`` = 1, but change the ``id`` or ``hartid`` signal (and if desired change the other signals in ``register``).
+
 The ``hartid``, ``id``, and ``rs_valid`` signals are valid when ``register_valid`` is 1.
 The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
 
@@ -1278,7 +1285,7 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
    the separation between decode stage and execute stage found in many :term:`CPUs<CPU>`).
 
 .. note::
-   As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
+   As a |processor| is allowed to retract transactions on its compressed, issue, and register interfaces, the ``compressed_ready``, ``issue_ready``, and ``register_ready`` signals will have to
    depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``hartid`` and ``id``).
 
 Handshake dependencies
