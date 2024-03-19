@@ -1231,7 +1231,7 @@ The only rule related to ``*_valid`` and ``*_ready`` signals is that:
   * It is defined per interface, if and how the |processor| can start a new transaction while a transaction is ongoing (``*_valid`` = 1).
     In most interfaces, it can be started by changing the ``hartid`` and/or ``id`` signal and keeping the ``*_valid`` signal asserted (thereby possibly terminating a previous transaction before it completed).
   * The ``*_valid`` signals are not allowed to be retracted by a |coprocessor| (e.g. once ``result_valid`` is asserted it must remain asserted until the handshake with ``result_ready`` has been performed).
-    A new transaction can therefore not be started by a |coprocessor| by just changing the ``hartid`` and/or ``id`` signal and keeping the valid signal asserted if no ready has been received yet for the original transaction.
+    A new transaction can therefore not be started by a |coprocessor| by just changing the ``hartid`` and/or ``id`` signal and keeping the valid signal asserted if no ``*_ready`` has been received yet for the original transaction.
     The cycle after receiving the ``*_ready`` signal, a next (back-to-back) transaction is allowed to be started by just keeping the ``*_valid`` signal high and changing the ``hartid`` and/or ``id`` to that of the next transaction.
   * The ``*_ready`` signals are allowed to be 1 when the corresponding ``*_valid`` signal is 0.
   * The ``*_valid`` signals are allowed to transition from 0 to 1 independent of the ``*_ready`` signals' states.
