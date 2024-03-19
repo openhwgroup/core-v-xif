@@ -411,6 +411,10 @@ Compressed interface
 The ``instr[15:0]`` signal is used to signal compressed instructions that are considered illegal by |processor| itself. A |coprocessor| can provide an uncompressed instruction
 in response to receiving this.
 
+.. note::
+
+  It is not required for a |processor| to ensure that the offloaded instruction is a valid 16-bit encoding.
+
 A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``hartid`` remains unchanged.
 A |processor| is allowed to retract its compressed request transaction before it is accepted with ``compressed_ready`` = 1 and it can do so in the following ways:
 
@@ -439,6 +443,8 @@ The signals in ``compressed_resp`` are valid when ``compressed_valid`` and ``com
 
 The |processor| will attempt to offload every compressed instruction that it does not recognize as a legal instruction itself. A |processor| might also attempt to offload
 compressed instructions that it does recognize as legal instructions itself.
+
+A |coprocessor| may only accept valid 16-bit instructions, i.e. bits ``[1:0]`` must not be binary 11.
 
 The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
 
