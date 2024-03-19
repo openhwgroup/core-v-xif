@@ -697,6 +697,13 @@ There are two main scenarios, in how the register interface will be used. They a
     - The same applies to the ``ecs`` and ``ecs_valid`` signals.
 
 In both scenarios, the following applies:
+
+A register transaction is defined as the combination of all ``register`` signals during which ``register_valid`` is 1, and the ``id`` and ``hartid`` remain unchanged.
+A |processor| is allowed to retract its register transaction before it is accepted with ``register_ready`` = 1 and it can do so in the following ways:
+
+* Set ``register_valid`` = 0.
+* Keep ``register_valid`` = 1, but change the ``id`` or ``hartid`` signal (and if desired change the other signals in ``register``).
+
 The ``hartid``, ``id``, and ``rs_valid`` signals are valid when ``register_valid`` is 1.
 The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
 
@@ -1187,7 +1194,13 @@ The following rules apply to the relative ordering of the interface handshakes:
 
 * The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload compressed instructions that it does not consider to be valid itself.
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
-* Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
+* Every issue interface transaction has an associated register interface transaction, if the instruction is not killed before the register transaction.
+  It is not required for register transactions to be in the same order as the issue transactions.
+* A register interface transaction cannot be initiated before the corresponding issue interface handshake is initiated.
+
+   * If ``X_ISSUE_REGISTER_SPLIT`` = 0, it must be initiated a the same time.
+   * If ``X_ISSUE_REGISTER_SPLIT`` = 1, it can only be initiated after the corresponding issue interface handshake is completed.
+
 * Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
   if no write-back needs to happen to the |processor|'s register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
@@ -1205,7 +1218,7 @@ The following rules apply to the relative ordering of the interface handshakes:
   * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
   * A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
 
-* A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+* A result interface handshake cannot be initiated before the corresponding register interface handshake is initiated. It is allowed to be initiated at the same time or later.
 * A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.
 
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
@@ -1272,7 +1285,7 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
    the separation between decode stage and execute stage found in many :term:`CPUs<CPU>`).
 
 .. note::
-   As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
+   As a |processor| is allowed to retract transactions on its compressed, issue, and register interfaces, the ``compressed_ready``, ``issue_ready``, and ``register_ready`` signals will have to
    depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``hartid`` and ``id``).
 
 Handshake dependencies
@@ -1285,8 +1298,8 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 
   * compressed transaction
   * issue transaction
-  * register transaction
   * commit transaction
+  * register transaction
 
   .. only:: MemoryIf
 
