@@ -415,14 +415,13 @@ in response to receiving this.
 
   It is not required for a |processor| to ensure that the offloaded instruction is a valid 16-bit encoding.
 
-A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and the ``hartid`` remains unchanged.
+A compressed request transaction is defined as the combination of all ``compressed_req`` signals during which ``compressed_valid`` is 1 and ``compressed_req``` remains unchanged.
 A |processor| is allowed to retract its compressed request transaction before it is accepted with ``compressed_ready`` = 1 and it can do so in the following ways:
 
 * Set ``compressed_valid`` = 0.
-* Keep ``compressed_valid`` = 1, but change the ``hartid`` signal (and if desired change the other signals in ``compressed_req``).
+* Keep ``compressed_valid`` = 1, but change any of the signals in ``compressed_req``.
 
-The signals in ``compressed_req`` are valid when ``compressed_valid`` is 1. These signals remain stable during a compressed request transaction (if ``hartid`` changes while ``compressed_valid`` remains 1,
-then a new compressed request transaction started).
+The signals in ``compressed_req`` are valid when ``compressed_valid`` is 1. These signals remain stable during a compressed request transaction.
 
 :numref:`Compressed response type` describes the ``x_compressed_resp_t`` type.
 
