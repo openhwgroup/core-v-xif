@@ -758,6 +758,7 @@ Commit interface
   |                    |                          | If ``commit_valid`` is 1 and ``commit_kill`` is 1, then the offloaded instruction (``id``) and any newer (i.e. succeeding)   |
   |                    |                          | instructions shall be killed in the |coprocessor| and the |coprocessor| must guarantee that the related instructions do/did  |
   |                    |                          | not change architectural state.                                                                                              |
+  |                    |                          | The taken action only applies to instructions offloaded with the specified ``hartid``.                                       |
   +--------------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------+
 
 The ``commit_valid`` signal will be 1 exactly one ``clk`` cycle.
@@ -1192,7 +1193,7 @@ The following rules apply to the relative ordering of the interface handshakes:
 * The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload compressed instructions that it does not consider to be valid itself.
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
 * Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
-* Every issue interface transaction (whether accepted or not) has an associated commit interface transaction and both interfaces use a matching transaction ordering.
+* Every issue interface transaction (whether accepted or not) must be marked as non-speculative or to be killed by a commit interface transaction.
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
   if no write-back needs to happen to the |processor|'s register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
   on the issue interface.
@@ -1210,7 +1211,7 @@ The following rules apply to the relative ordering of the interface handshakes:
   * A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
 
 * A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
-* A result interface handshake cannot be initiated before the corresponding commit interface handshake is initiated (and the instruction is allowed to commit). It is allowed to be initiated at the same time or later.
+* A result interface handshake cannot be initiated before the corresponding instruction has been marked as non-speculative by a commit transaction. It is allowed to be initiated at the same time or later.
 
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
 
