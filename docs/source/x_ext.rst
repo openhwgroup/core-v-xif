@@ -585,6 +585,7 @@ Apart from the above two main scenarios a |processor| may also attempt to offloa
 (compressed/uncompressed) instructions that it does recognize as legal instructions itself. In case that both the |processor| and the |coprocessor| accept the same instruction as being valid,
 the instruction will cause an illegal instruction fault upon execution.
 
+In all cases, the |processor| must decode the instruction.
 The |processor| shall cause an illegal instruction fault when attempting to execute (commit) an instruction that:
 
 * is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
