@@ -354,6 +354,14 @@ An ``id`` ends being in-flight when one of the following scenarios apply:
 For the purpose of relative identification, an instruction is considered to be preceding another instruction, if it was accepted in an issue transaction at an earlier time.
 The other instruction is thus succeeding the earlier one.
 
+Multiple |coprocessors|
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This specification defines a point-to-point connection between a |processor| and a |coprocessor|, that is defined in a way that facilitates the integration of multiple |coprocessors|.
+The combined interface of the |coprocessors| must adhere to this specification and thus must behave like a single |coprocessor| from the |processor| point of view.
+Any implementation is correct, if the |processor| is not able to determine that multiple |coprocessors| are connected.
+For recommendations, please refer to `Recommendations for implementing multiple coprocessors on a shared interface`_
+
 Multiple Harts
 ~~~~~~~~~~~~~~
 
@@ -548,12 +556,10 @@ The ``instr`` signal remains stable during an issue request transaction.
   | ``writeback``          | :ref:`writeregflags_t  | Will the |coprocessor| perform a write-back in the |processor| to ``rd``?                                        |
   |                        | <writeregflags>`       | Write-back to ``x0`` or the ``x0``, ``x1`` pair is allowed by the |coprocessor|,                                 |
   |                        |                        | but will be ignored by the |processor|.                                                                          |
-  |                        |                        | A |coprocessor| must signal ``writeback`` as 0 for rejected instructions.                                        |
   |                        |                        | Write-back to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.   |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
   | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
-  |                        |                        | A |coprocessor| must signal ``register_read`` as 0 for rejected instructions.                                    |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
 .. only:: ECS
@@ -568,7 +574,6 @@ The ``instr`` signal remains stable during an issue request transaction.
     +========================+========================+==================================================================================================================+  
     | ``ecswrite``           | logic                  | Will the |coprocessor| perform a write-back in the |processor| to ``mstatus.xs``, ``mstatus.fs``, or             |
     |                        |                        | ``mstatus.vs``?                                                                                                  |
-    |                        |                        | A |coprocessor| must signal ``ecswrite`` as 0 for rejected instructions.                                         |
     +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
 The |processor| shall attempt to offload instructions via the issue interface for the following two main scenarios:
@@ -605,7 +610,7 @@ The signals in ``issue_resp`` are valid when ``issue_valid`` and ``issue_ready``
     | Signal                 | Type                   | Description                                                                                                      |
     +========================+========================+==================================================================================================================+
     | ``loadstore``          | logic                  | Is the offloaded instruction a load/store instruction?                                                           |
-    |                        |                        | A |coprocessor| must signal ``loadstore`` as 0 for rejected instructions. (Only) if an instruction is            |
+    |                        |                        | (Only) if an instruction is                                                                                      |
     |                        |                        | accepted with ``loadstore`` is 1 and the instruction is not killed, then the |coprocessor| must perform one or   |
     |                        |                        | more transactions via the memory group interface.                                                                |
     +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
@@ -774,7 +779,7 @@ is at earliest an instruction with successful issue transaction starting at leas
   This behavior supports scenarios in which more than one |coprocessor| is connected to an issue interface.
 
 A |processor| is required to mark every instruction that has completed the issue transaction as either killed or non-speculative.
-This includes accepted (`issue_resp.accept` = 1) and rejected instructions (`issue_resp.accept` = 0).
+This includes accepted (``issue_resp.accept`` = 1) and rejected instructions (``issue_resp.accept`` = 0).
 
 A |coprocessor| does not have to wait for ``commit_valid`` to
 become asserted. It can speculate that an offloaded accepted instruction will not get killed, but in case this speculation turns out to be wrong because the instruction actually did get killed,
@@ -1322,6 +1327,66 @@ A |coprocessor| is recommended (but not required) to follow the following sugges
 .. only:: MemoryIf
 
   * Clearly document the supported and required interfaces.
+
+Recommendations for implementing multiple coprocessors on a shared interface
+----------------------------------------------------------------------------
+
+It is possible to implement multiple |coprocessors|, which connect to a single |processor|.
+There is no required implementation to do this, but the specification is written with the intention of enabling this scenario.
+This section provides details per interface on a possible path of integration.
+
+In general, the combination of multiple |coprocessors| will require de-multiplexing of their signals.
+The de-multiplexing logic can be reduced to a simple OR combination, if the output signals of the |coprocessors| not mapped to the instruction are 0.
+This applies to the compressed interface, the issue interface, and the result interface.
+
+* Compressed interface
+
+  The ``compressed_valid`` and ``compressed_req`` signals can be broadcasted to all |coprocessors|.
+  Each |coprocessor| drives its ``compressed_ready`` and ``compressed_resp`` signals.
+  It is recommended that |coprocessors| provide the response within the same cycle.
+  In this case, both will be driving ``compressed_ready`` the same way.
+  The ``compressed_resp`` signals need to be de-multiplexed based on the ``compressed_resp.accept`` signals. 
+  More than one |coprocessor| accepting an instruction must be prevented by design. 
+
+* Issue interface
+
+  The ``issue_valid`` and ``issue_req`` signals can be broadcasted to all |coprocessors|.
+  Each |coprocessor| drives its ``issue_ready`` and ``issue_resp`` signals.
+  It is recommended that |coprocessors| provide the response within the same cycle.
+  In this case, both will be driving ``issue_ready`` the same way.
+  The ``issue_resp`` signals need to be de-multiplexed based on the ``issue_resp.accept`` signals. 
+  More than one |coprocessor| accepting an instruction must be prevented by design. 
+
+* Register interface
+
+  The ``register_valid`` and ``register_req`` signals can be broadcasted to all |coprocessors|.
+  Each |coprocessor| drives its ``register_ready`` signal.
+  The transition of a coprocessors ``register_ready`` signal to 1 should only occur when it is clear that the next transaction is targeting an instruction accepted by it.
+  This can be the case, if there is a clear sequence from issue to register interface, or when ``register_valid`` = 1 and ``id`` is matching an instruction accepted by the |coprocessor|.
+  It is possible to provide an OR combination of the ``register_ready`` signals as a combined signal to the |processor|.
+
+* Commit interface
+
+  The commit transaction is unidirectional from the |processor| to the |coprocessor|.
+  All signals will be broadcasted to all |coprocessors|.
+  The definition of the commit interface requires the |coprocessors| to be functional if faced with ``id`` values it did not accept.
+
+.. only:: MemoryIf
+
+  * Memory (request/response) interface
+
+  At time of writing, there are no recommendation for the Memory (request/response) interface yet.
+
+  * Memory result interface
+
+  At time of writing, there are no recommendation for the Memory result interface interface yet.
+
+* Result interface
+
+  The ``result_ready`` signal can be broadcasted to all |coprocessors|.
+  Each |coprocessor| drives its ``result_valid`` signal.
+  If all instructions in all |coprocessors| complete execution in a fixed number of |processor| clock cycles after their register interface transaction completed, and writeback is never stalled (i.e. ``result_ready`` is 1 at that time), it is possible to de-multiplex the ``result`` based on the ``result_valid`` signals.
+  If this cannot be guaranteed, e.g. because a |coprocessor| implements long executing instructions, out-of-order completion etc., it is necessary to arbitrate and multiplex the result transactions requested by each |coprocessor|.
 
 Timing recommendations
 ----------------------
