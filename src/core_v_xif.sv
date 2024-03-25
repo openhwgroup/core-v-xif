@@ -73,7 +73,7 @@ interface core_v_xif
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     /* verilator lint_off UNPACKED */
-    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS+X_DUALREAD-1:0];  // Register file source operands for the offloaded instruction.
+    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS+X_DUALREAD-1:0];  // Register file source operands for the offloaded instruction. If  X_DUALREAD is different from 0, the rs in register interface is increase by the X_DUALREAD value.
     readregflags_t rs_valid; // Validity of the register file source operand(s).
   } x_register_t;
 
@@ -114,7 +114,7 @@ interface core_v_xif
   typedef struct packed {
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
-    logic [X_RFW_WIDTH     -1:0] data [X_DUALWRITE:0];  // Register file write data value(s)
+    logic [X_RFW_WIDTH     -1:0] data [X_DUALWRITE:0];  // Register file write data value(s). If X_DUALWRITE is not 1, the data values are 2 to enable dualwrite.
     logic [4:0] rd;  // Register file destination address(es)
     writeregflags_t we;  // Register file write enable(s)
     logic exc;  // Did the instruction cause a synchronous exception?
