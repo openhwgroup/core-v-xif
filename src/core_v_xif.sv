@@ -39,7 +39,7 @@ interface core_v_xif
   parameter int unsigned X_MEM_WIDTH            = 32  // Memory access width for loads/stores via the eXtension interface
 );
 
-  typedef logic [X_NUM_RS+X_NUM_RS*X_DUALREAD-1:0] readregflags_t;
+  typedef logic [X_NUM_RS+X_DUALREAD-1:0] readregflags_t;
   typedef logic [X_DUALWRITE:0] writeregflags_t;
   typedef logic [1:0] mode_t;
   typedef logic [X_ID_WIDTH-1:0] id_t;
@@ -73,7 +73,7 @@ interface core_v_xif
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     /* verilator lint_off UNPACKED */
-    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS+X_NUM_RS*X_DUALREAD-1:0];  // Register file source operands for the offloaded instruction.
+    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS+X_DUALREAD-1:0];  // Register file source operands for the offloaded instruction.
     readregflags_t rs_valid; // Validity of the register file source operand(s).
   } x_register_t;
 
