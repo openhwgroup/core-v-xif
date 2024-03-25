@@ -32,8 +32,7 @@ interface core_v_xif
   parameter int unsigned X_RFW_WIDTH            = 32, // Register file write access width for the eXtension interface
   parameter int unsigned X_NUM_HARTS            = 1,  // Number of harts (hardware threads) associated with the interface
   parameter int unsigned X_HARTID_WIDTH         = 1,  // Width of ``hartid`` signals.
-  parameter logic [31:0] X_MISA                 = '0, // MISA extensions implemented on the eXtension interface
-  parameter logic [ 1:0] X_ECS_XS               = '0, // Initial value for mstatus.XS
+  parameter logic [25:0] X_MISA                 = '0, // MISA extensions implemented on the eXtension interface
   parameter int unsigned X_DUALREAD             = 0,  // Is dual read supported? 0: No, 1: Yes, for ``rs1``, 2: Yes, for ``rs1`` - ``rs2``, 3: Yes, for ``rs1`` - ``rs3``
   parameter int unsigned X_DUALWRITE            = 0,  // Is dual write supported? 0: No, 1: Yes.
   parameter int unsigned X_ISSUE_REGISTER_SPLIT = 0,  // Does the interface pipeline register interface? 0: No, 1: Yes.
@@ -42,7 +41,7 @@ interface core_v_xif
 
   typedef logic [X_NUM_RS+X_NUM_RS*X_DUALREAD-1:0] readregflags_t;
   typedef logic [X_DUALWRITE:0] writeregflags_t;
-  typedef logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0] mode_t;
+  typedef logic [1:0] mode_t;
   typedef logic [X_ID_WIDTH-1:0] id_t;
   typedef logic [X_HARTID_WIDTH-1:0] hartid_t;
 
@@ -67,7 +66,6 @@ interface core_v_xif
     logic accept;  // Is the offloaded instruction (id) accepted by the coprocessor?
     writeregflags_t writeback;  // Will the coprocessor perform a writeback in the core to rd?
     readregflags_t register_read;   // Will the coprocessor perform require specific registers to be read?
-    logic ecswrite;  // Will the coprocessor perform a writeback in the core to mstatus.xs, mstatus.fs, mstatus.vs
     logic loadstore;  // Is the offloaded instruction a load/store instruction?
   } x_issue_resp_t;
 
@@ -77,8 +75,6 @@ interface core_v_xif
     /* verilator lint_off UNPACKED */
     logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS+X_NUM_RS*X_DUALREAD-1:0];  // Register file source operands for the offloaded instruction.
     readregflags_t rs_valid; // Validity of the register file source operand(s).
-    logic [5:0] ecs; // Extension Context Status ({mstatus.xs, mstatus.fs, mstatus.vs})
-    logic ecs_valid; // Validity of the Extension Context Status.
   } x_register_t;
 
   typedef struct packed {
@@ -121,8 +117,6 @@ interface core_v_xif
     logic [X_RFW_WIDTH     -1:0] data [X_DUALWRITE:0];  // Register file write data value(s)
     logic [4:0] rd;  // Register file destination address(es)
     writeregflags_t we;  // Register file write enable(s)
-    logic [2:0] ecswe;  // Write enables for {mstatus.xs, mstatus.fs, mstatus.vs}
-    logic [5:0] ecsdata;  // Write data value for {mstatus.xs, mstatus.fs, mstatus.vs}
     logic exc;  // Did the instruction cause a synchronous exception?
     logic [5:0] exccode;  // Exception code
     logic dbg;  // Did the instruction cause a debug trigger match with ``mcontrol.timing`` = 0?

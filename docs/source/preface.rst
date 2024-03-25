@@ -10,6 +10,15 @@ The TRISTAN project, nr. 101095947 is supported by Chips Joint Undertaking (CHIP
 .. image:: ../images/logo_chipsJU.png
     :alt: Chips-JU Logo
 
+Contributors
+============
+
+The specification and its repository have received contributions from several authors:
+
+.. contributors:: openhwgroup/core-v-xif
+    :contributions:
+    :order: DESC
+
 Changelog
 =========
 

@@ -13,6 +13,25 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+# -- pyproject integration ---------------------------------------------------
+
+from sphinx_pyproject import SphinxConfig
+#config = SphinxConfig("../../pyproject.toml", globalns=globals())
+
+from setuptools_scm import get_version
+version = get_version(root='../../',
+                         relative_to=__file__,
+                         normalize=False,
+                         # https://setuptools-scm.readthedocs.io/en/latest/extending/#available-implementations
+                         local_scheme="no-local-version",
+                         )
+
+# enforcing non-normalized notation for dev
+version = '-dev.'.join(version.split('.dev'))
+
+# Load settings from pyproject.toml, but override the version
+config = SphinxConfig("../../pyproject.toml", globalns=globals(), config_overrides = {"version": version})
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -23,52 +42,30 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-# -- Specification Process Data -----------------------------------------------
-
-states = (
-          'Development',
-          'Review',
-          'Release Candidate',
-          'Release',
-          )
-state_postfix = [
-                '-dev',
-                '-dev',
-                '-rc',
-                '',
-                ]
-
 title_prefix = 'OpenHW Group Specification'
 
 # -- Project information -----------------------------------------------------
 
-project = u'Core-V eXtension interface (CV-X-IF)'
-copyright = u'2021-2024 OpenHW Group'
-author = u'OpenHW Group'
-# State must be one of Development, Release Candidate, or Release
-state = 'Development' 
-
-# The short vX.Y.Z version
-version = u'v0.9.0'
-# If release candidate, provide release candidate version (integer)
-rc_version = 1
+project = name
 
 # -- Derived Project Information - Do not modify ------------------------------
+# split on first - separator
+version_elements = version.split('-', 1)
+if len(version_elements) > 1:
+    # dev needs to be checked first, as vX.Y.Z-rc.1-dev.4 would be considered development
+    if 'dev' in version_elements[1]:
+        state = 'Development'
+    elif version_elements[1].startswith('rc'):
+        state = 'Release Candidate'
+else:
+    state = 'Release'
 
 if state == 'Release Candidate' or state == 'Release':
     if version[0] == '0':
         raise ValueError(f'Version {version} not allowed for state {state}.')
 
-postfix = state_postfix[states.index(state)]
-if state == 'Release Candidate':
-    postfix += f'.{rc_version}'
-
-# The full version, including alpha/beta/rc tags
-release = f'{version}{postfix}'
-version = release
-
 title = f'{title_prefix}: {project} - {state}'
-filename = f'{title_prefix}_{project}_{release}'.replace(' ', '_')
+filename = f'{title_prefix}_{project}_{version}'.replace(' ', '_')
 
 
 # -- General configuration ---------------------------------------------------
@@ -76,17 +73,6 @@ filename = f'{title_prefix}_{project}_{release}'.replace(' ', '_')
 # If your documentation needs a minimal Sphinx version, state it here.
 #
 # needs_sphinx = '1.0'
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.todo',
-    'recommonmark',
-    'sphinxcontrib.inkscapeconverter',
-    'sphinx_github_changelog',
-]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['ytemplates']
@@ -123,9 +109,10 @@ pygments_style = None
 rst_epilog = f"""
 .. |title| replace:: {title}
 .. |copyright| replace:: {copyright}
-.. |processor| replace:: CPU
-.. |processors| replace:: CPUs
+.. |processor| replace:: :term:`CPU`
+.. |processors| replace:: :term:`CPUs<CPU>`
 .. |coprocessor| replace:: coprocessor
+.. |coprocessors| replace:: coprocessors
 """
 
 # Tags for conditional text

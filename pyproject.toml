@@ -1,0 +1,18 @@
+[project]
+name = "Core-V eXtension interface (CV-X-IF)"
+readme = "README.md"
+description = "RISC-V extension interface"
+requires-python = ">=3.9"
+version = "dynamic"
+
+[[project.authors]]
+name = "OpenHW Group"
+
+[tool.sphinx-pyproject]
+copyright = "2021-2024 OpenHW Group"
+extensions = [
+    'sphinxcontrib.inkscapeconverter',
+    'sphinx_github_changelog',
+    'sphinx_contributors',
+]
+package_root = "docs"

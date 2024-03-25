@@ -1,5 +1,7 @@
 sphinx
 sphinx-rtd-theme
-recommonmark
 sphinxcontrib-svg2pdfconverter
 sphinx_github_changelog
+sphinx-contributors
+sphinx-pyproject>=0.3.0
+setuptools_scm==8.0.4
