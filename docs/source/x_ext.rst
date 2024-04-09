@@ -1309,7 +1309,7 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
   .. only:: MemoryIf
 
     * ``mem_req`` may depend on ``issue_req``, ``register``, and ``commit``
-    * ``mem_resp`` may depend on ``mem_req``
+    * ``mem_result`` may depend on ``mem_req``
     * ``result`` may depend on ``mem_resp`` and ``mem_result``
 
 * Transactions with an earlier issued ``hartid`` and ``id`` shall not depend on transactions with a later issued ``hartid`` and ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
