@@ -1302,15 +1302,19 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 * The only allowed dependencies between interfaces for transactions with the same ``hartid`` and ``id``are:
 
   * ``issue_req`` may depend on ``compressed_resp``
-  * ``register`` may depend on ``compressed_resp``, ``issue_resp``, and ``commit``
+  * ``register`` may depend on ``compressed_resp``, ``issue_resp``
   * ``commit`` may depend on ``issue_resp``
-  * ``result`` may depend on ``issue_resp``, ``register``, and ``commit``
+  * ``result`` may depend on ``issue_req``, ``register``, and ``commit``
 
   .. only:: MemoryIf
 
     * ``mem_req`` may depend on ``issue_req``, ``register``, and ``commit``
     * ``mem_result`` may depend on ``mem_req``
     * ``result`` may depend on ``mem_resp`` and ``mem_result``
+
+.. note::
+  In case of ``X_ISSUE_REGISTER_SPLIT`` = 0, the issue and register interfaces are coupled.
+  Because issue may not depend on commit, this implies that register 
 
 * Transactions with an earlier issued ``hartid`` and ``id`` shall not depend on transactions with a later issued ``hartid`` and ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
   because it first wants to see ``commit_valid`` = 1 for a newer instruction).
