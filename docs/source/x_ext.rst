@@ -1265,7 +1265,7 @@ Signal dependencies
 
 A |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
-* paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``.
+* paths from ``result_valid``, ``result`` to ``register_valid``, ``rs``, ``rs_valid``.
 
 .. only:: MemoryIf
 
@@ -1278,7 +1278,7 @@ A |processor| shall not have combinatorial paths from its eXtension interface in
 
 A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
 
-* paths from ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
+* paths from ``register_valid``, ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
 
 .. only:: MemoryIf
 
