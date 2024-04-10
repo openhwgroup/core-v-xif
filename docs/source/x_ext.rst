@@ -1293,7 +1293,7 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
    As a |processor| is allowed to retract transactions on its compressed, issue, and register interfaces, the ``compressed_ready``, ``issue_ready``, and ``register_ready`` signals will have to
    depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``hartid`` and ``id``).
 
-Handshake dependencies
+System level deadlock avoidance
 ----------------------
 
 In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
