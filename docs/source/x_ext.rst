@@ -1308,18 +1308,18 @@ System level deadlock avoidance
 In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
 
 * The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
-* The only allowed dependencies between interfaces for transactions with the same ``hartid`` and ``id``are:
+* The only allowed dependencies between interfaces for transactions with the same ``hartid`` and ``id`` are:
 
-  * ``issue_req`` may depend on ``compressed_resp``
-  * ``register`` may depend on ``compressed_resp``, ``issue_resp``
-  * ``commit`` may depend on ``issue_resp``
-  * ``result`` may depend on ``issue_req``, ``register``, and ``commit``
+  * Issue may depend on Compressed (e.g. ``issue_req.instr`` depends on  ``compressed_resp.instr``)
+  * Register may depend Issue (e.g. ``register.rs`` may depend on ``issue_resp.register_read``) and Compressed
+  * Commit may depend on Issue and Compressed
+  * Result may depend on Commit, Register (e.g. ``result.data`` may depend on ``register.rs``), Issue (e.g. ``result.we`` depends on ``issue_resp.writeback``), and Compressed
 
   .. only:: MemoryIf
 
-    * ``mem_req`` may depend on ``issue_req``, ``register``, and ``commit``
-    * ``mem_result`` may depend on ``mem_req``
-    * ``result`` may depend on ``mem_resp`` and ``mem_result``
+    * Memory (Request/Response) may depend on Commit, Register, Issue, and Compressed
+    * Memory Result may depend on Commit, Register, Issue, Compressed, Memory (Request/Response)
+    * Result may additionally depend on Memory (Request/Response) (e.g. ``result.exc`` depends on ``mem_resp.exc``) and Memory Result (``result.data`` may depend on ``mem_result.rdata``)
 
 .. note::
   In case of ``X_ISSUE_REGISTER_SPLIT`` = 0, the issue and register interfaces are coupled.
