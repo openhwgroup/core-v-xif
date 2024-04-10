@@ -1213,6 +1213,10 @@ The following rules apply to the relative ordering of the interface handshakes:
   on the issue interface.
 * A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
 
+.. note:: 
+  There is no required ordering between commit and register in case of ``X_ISSUE_REGISTER_SPLIT`` = 1.
+  In this case, implementations must be tolerant to commit before register and register before commit transaction.
+
 .. only:: MemoryIf
 
   * If an offloaded instruction is accepted as a ``loadstore`` instruction and not killed, then for each such instruction one or more memory transaction must occur
@@ -1223,6 +1227,11 @@ The following rules apply to the relative ordering of the interface handshakes:
     memory request handshake itself.
   * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
   * A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
+
+  .. note:: 
+    There is no required ordering between memory (request/respons)/memory result and commit.
+    In this case, implementations must be tolerant to any ordering.
+
 
 * A result interface handshake cannot be initiated before the corresponding register interface handshake is initiated. It is allowed to be initiated at the same time or later.
 * A result interface handshake cannot be initiated before the corresponding instruction has been marked as non-speculative by a commit transaction. It is allowed to be initiated at the same time or later.
@@ -1294,7 +1303,7 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
    depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``hartid`` and ``id``).
 
 System level deadlock avoidance
-----------------------
+-------------------------------
 
 In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
 
