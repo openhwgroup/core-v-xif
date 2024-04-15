@@ -1311,7 +1311,7 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 * The only allowed dependencies between interfaces for transactions with the same ``hartid`` and ``id`` are:
 
   * Issue may depend on Compressed (e.g. ``issue_req.instr`` depends on  ``compressed_resp.instr``)
-  * Register may depend Issue (e.g. ``register.rs`` may depend on ``issue_resp.register_read``) and Compressed
+  * Register may depend on Issue (e.g. ``register.rs`` may depend on ``issue_resp.register_read``) and Compressed
   * Commit may depend on Issue and Compressed
   * Result may depend on Commit, Register (e.g. ``result.data`` may depend on ``register.rs``), Issue (e.g. ``result.we`` depends on ``issue_resp.writeback``), and Compressed
 
@@ -1323,7 +1323,7 @@ In order to avoid system level deadlock both the |processor| and the |coprocesso
 
 .. note::
   In case of ``X_ISSUE_REGISTER_SPLIT`` = 0, the issue and register interfaces are coupled.
-  Because issue may not depend on commit, this implies that register 
+  Because commit depends on issue, it is implied that register also cannot depend on commit.
 
 * Transactions with an earlier issued ``hartid`` and ``id`` shall not depend on transactions with a later issued ``hartid`` and ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
   because it first wants to see ``commit_valid`` = 1 for a newer instruction).
