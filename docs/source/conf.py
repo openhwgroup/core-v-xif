@@ -66,7 +66,7 @@ if state == 'Release Candidate' or state == 'Release':
 
 title = f'{title_prefix}: {project} - {state}'
 filename = f'{title_prefix}_{project}_{version}'.replace(' ', '_')
-
+release = version
 
 # -- General configuration ---------------------------------------------------
 
