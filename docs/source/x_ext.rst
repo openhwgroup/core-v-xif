@@ -702,6 +702,13 @@ There are two main scenarios, in how the register interface will be used. They a
     - The same applies to the ``ecs`` and ``ecs_valid`` signals.
 
 In both scenarios, the following applies:
+
+A register transaction is defined as the combination of all ``register`` signals during which ``register_valid`` is 1, and the ``id`` and ``hartid`` remain unchanged.
+A |processor| is allowed to retract its register transaction before it is accepted with ``register_ready`` = 1 and it can do so in the following ways:
+
+* Set ``register_valid`` = 0.
+* Keep ``register_valid`` = 1, but change the ``id`` or ``hartid`` signal (and if desired change the other signals in ``register``).
+
 The ``hartid``, ``id``, and ``rs_valid`` signals are valid when ``register_valid`` is 1.
 The ``rs`` signal is only considered valid when ``register_valid`` is 1 and the corresponding bit in ``rs_valid`` is 1 as well.
 
@@ -1193,12 +1200,22 @@ The following rules apply to the relative ordering of the interface handshakes:
 
 * The compressed interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload compressed instructions that it does not consider to be valid itself.
 * The issue interface transactions are in program order (possibly a subset) and the |processor| will at least attempt to offload instructions that it does not consider to be valid itself.
-* Every issue interface transaction has an associated register interface transaction. It is not required for register transactions to be in the same order as the issue transactions.
+* Every issue interface transaction has an associated register interface transaction, if the instruction is not killed before the register transaction.
+  It is not required for register transactions to be in the same order as the issue transactions.
+* A register interface transaction cannot be initiated before the corresponding issue interface handshake is initiated.
+
+   * If ``X_ISSUE_REGISTER_SPLIT`` = 0, it must be initiated a the same time.
+   * If ``X_ISSUE_REGISTER_SPLIT`` = 1, it can only be initiated after the corresponding issue interface handshake is completed.
+
 * Every issue interface transaction (whether accepted or not) must be marked as non-speculative or to be killed by a commit interface transaction.
 * If an offloaded instruction is accepted and allowed to commit, then for each such instruction one result transaction must occur via the result interface (even
   if no write-back needs to happen to the |processor|'s register file). The transaction ordering on the result interface does not have to correspond to the transaction ordering
   on the issue interface.
 * A commit interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
+
+.. note:: 
+  There is no required ordering between commit and register in case of ``X_ISSUE_REGISTER_SPLIT`` = 1.
+  In this case, implementations must be tolerant to commit before register and register before commit transaction.
 
 .. only:: MemoryIf
 
@@ -1211,9 +1228,13 @@ The following rules apply to the relative ordering of the interface handshakes:
   * A memory (request/response) interface handshake cannot be initiated for instructions that were killed in an earlier cycle.
   * A memory result interface handshake shall occur for every memory (request/response) interface handshake unless the response has ``exc`` = 1 or ``dbg`` = 1.
 
-* A result interface handshake cannot be initiated before the corresponding issue interface handshake is initiated. It is allowed to be initiated at the same time or later.
-* A result interface handshake cannot be initiated before the corresponding instruction has been marked as non-speculative by a commit transaction. It is allowed to be initiated at the same time or later.
+  .. note:: 
+    There is no required ordering between memory (request/respons)/memory result and commit.
+    In this case, implementations must be tolerant to any ordering.
 
+
+* A result interface handshake cannot be initiated before the corresponding register interface handshake is initiated. It is allowed to be initiated at the same time or later.
+* A result interface handshake cannot be initiated before the corresponding instruction has been marked as non-speculative by a commit transaction. It is allowed to be initiated at the same time or later.
 * A result interface handshake cannot be (or have been) initiated for killed instructions.
 
 Handshake rules
@@ -1253,7 +1274,7 @@ Signal dependencies
 
 A |processor| shall not have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals, except for the following allowed paths:
 
-* paths from ``result_valid``, ``result`` to ``rs``, ``rs_valid``.
+* paths from ``result_valid``, ``result`` to ``register_valid``, ``rs``, ``rs_valid``.
 
 .. only:: MemoryIf
 
@@ -1266,7 +1287,7 @@ A |processor| shall not have combinatorial paths from its eXtension interface in
 
 A |coprocessor| is allowed (and expected) to have combinatorial paths from its eXtension interface input signals to its eXtension interface output signals. In order to prevent combinatorial loops the following combinatorial paths are not allowed in a |coprocessor|:
 
-* paths from ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
+* paths from ``register_valid``, ``rs``, ``rs_valid`` to ``result_valid``, ``result``.
 
 .. only:: MemoryIf
 
@@ -1278,28 +1299,32 @@ A |coprocessor| is allowed (and expected) to have combinatorial paths from its e
    the separation between decode stage and execute stage found in many :term:`CPUs<CPU>`).
 
 .. note::
-   As a |processor| is allowed to retract transactions on its compressed and issue interfaces, the ``compressed_ready`` and ``issue_ready`` signals will have to
+   As a |processor| is allowed to retract transactions on its compressed, issue, and register interfaces, the ``compressed_ready``, ``issue_ready``, and ``register_ready`` signals will have to
    depend on signals received from the |processor| in a combinatorial manner (otherwise these ready signals might be signaled for the wrong ``hartid`` and ``id``).
 
-Handshake dependencies
-----------------------
+System level deadlock avoidance
+-------------------------------
 
 In order to avoid system level deadlock both the |processor| and the |coprocessor| shall obey the following rules:
 
 * The ``valid`` signal of a transaction shall not be dependent on the corresponding ``ready`` signal.
-* Transactions related to an earlier part of the instruction flow shall not depend on transactions with the same ``hartid`` and ``id`` related to a later part of the instruction flow. The instruction flow is defined from earlier to later as follows:
+* The only allowed dependencies between interfaces for transactions with the same ``hartid`` and ``id`` are:
 
-  * compressed transaction
-  * issue transaction
-  * register transaction
-  * commit transaction
+  * Issue may depend on Compressed (e.g. ``issue_req.instr`` depends on  ``compressed_resp.instr``)
+  * Register may depend Issue (e.g. ``register.rs`` may depend on ``issue_resp.register_read``) and Compressed
+  * Commit may depend on Issue and Compressed
+  * Result may depend on Commit, Register (e.g. ``result.data`` may depend on ``register.rs``), Issue (e.g. ``result.we`` depends on ``issue_resp.writeback``), and Compressed
 
   .. only:: MemoryIf
 
-    * memory (request/response) transaction
-    * memory result transaction
+    * Memory (Request/Response) may depend on Commit, Register, Issue, and Compressed
+    * Memory Result may depend on Commit, Register, Issue, Compressed, Memory (Request/Response)
+    * Result may additionally depend on Memory (Request/Response) (e.g. ``result.exc`` depends on ``mem_resp.exc``) and Memory Result (``result.data`` may depend on ``mem_result.rdata``)
 
-  * result transaction.
+.. note::
+  In case of ``X_ISSUE_REGISTER_SPLIT`` = 0, the issue and register interfaces are coupled.
+  Because issue may not depend on commit, this implies that register 
+
 * Transactions with an earlier issued ``hartid`` and ``id`` shall not depend on transactions with a later issued ``hartid`` and ``id`` (e.g. a |coprocessor| is not allowed to delay generating ``result_valid`` = 1
   because it first wants to see ``commit_valid`` = 1 for a newer instruction).
 
