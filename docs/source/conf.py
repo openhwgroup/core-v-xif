@@ -235,6 +235,13 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+extensions = [
+    "sphinx_github_changelog",
+]
+sphinx_github_changelog_token = os.environ.get("CHANGELOG_GITHUB_TOKEN")
+
+
+
 
 # -- Options for todo extension ----------------------------------------------
 
