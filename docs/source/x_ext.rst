@@ -256,7 +256,7 @@ will further handle the instruction. In case of rejection the |processor| will r
 The |processor| provides the required register file operand(s) to the |coprocessor| via the register interface.
 If an offloaded instruction uses any of the register file sources ``rs1``, ``rs2``, then these are always encoded in instruction bits ``[19:15]`` and
 ``[24:20]``, respectively.
-If an offloaded instruction uses the register file source ``rs3``, then these are encoded in instruction bits ``[31:27]`` if the instruction uses one of the major opcodes instruction uses the major opcodes MADD, MSUB, NMSUB, or NMADD (R4-type).
+If an offloaded instruction uses the register file source ``rs3``, then these are encoded in instruction bits ``[31:27]`` if the instruction uses one of the major opcodes MADD, MSUB, NMSUB, or NMADD (R4-type).
 Otherwise, ``rs3`` is expected to be encoded in bits ``[11:7]``.
 
 .. note::
