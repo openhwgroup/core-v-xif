@@ -811,7 +811,7 @@ Memory (request/response) interface
 
 .. only:: not MemoryIf
 
-  The memory (request/response) interface is not included in this version of the specification
+  The memory (request/response) interface is not included in this version of the specification.
 
 .. only:: MemoryIf
 
@@ -997,7 +997,7 @@ Memory result interface
 
 .. only:: not MemoryIf
 
-  The memory (request/response) interface is not included in this version of the specification
+  The memory (request/response) interface is not included in this version of the specification.
 
 .. only:: MemoryIf
 
