@@ -1178,11 +1178,11 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore write-back to ``x0``.
 When a dual write-back is performed to the ``x0``, ``x1`` pair, the entire write shall be ignored, i.e. neither ``x0`` nor ``x1`` shall be written by the |processor|.
-For an instruction instance, the ``we`` signal must be the same as ``issue_resp.write-back``.
+For an instruction instance, the ``we`` signal must be the same as ``issue_resp.writeback``.
 The |processor| is not required to check that these signals match.
 
 .. note::
-  ``issue_resp.write-back`` and ``result.we`` carry the same information.
+  ``issue_resp.writeback`` and ``result.we`` carry the same information.
   Nevertheless, ``result.we`` is provided to simplify the |processor| logic.
   Without this signal, the |processor| would have to look this information up based on the instruction ``id``.
 
