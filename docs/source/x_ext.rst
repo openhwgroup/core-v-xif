@@ -695,7 +695,7 @@ There are two main scenarios, in how the register interface will be used. They a
    The |coprocessor| is always expected to be ready to retrieve its operands via the register interface after accepting the issue of an instruction.
    Therefore, ``register_ready`` is tied to 1.
    The ``register_valid`` signal will be 1 for one cycle, and ``rs_valid`` is guaranteed to be equal to the corresponding ``issue_resp.register_read``.
-   Thus, a |coprocessor| can ignore ``rs_valid`` in this case and a |processor| may chose to not implement the signal.
+   Thus, a |coprocessor| can ignore ``rs_valid`` in this case and a |processor| may choose to not implement the signal.
 
 .. only:: ECS
 
