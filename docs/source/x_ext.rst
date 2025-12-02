@@ -557,7 +557,7 @@ The ``instr`` signal remains stable during an issue request transaction.
   |                        |                        | but will be ignored by the |processor|.                                                                          |
   |                        |                        | Write-back to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.   |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
+  | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| require specific registers to be read?                                            |
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
