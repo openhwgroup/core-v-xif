@@ -73,7 +73,7 @@ interface core_v_xif
     hartid_t hartid;  // Identification of the hart offloading the instruction
     id_t id;  // Identification of the offloaded instruction
     /* verilator lint_off UNPACKED */
-    logic [X_RFR_WIDTH-1:0] rs[X_NUM_RS-1:0];  // Register file source operands for the offloaded instruction.
+    logic [X_NUM_RS-1:0][X_RFR_WIDTH-1:0] rs;  // Register file source operands for the offloaded instruction.
     readregflags_t rs_valid; // Validity of the register file source operand(s).
   } x_register_t;
 
