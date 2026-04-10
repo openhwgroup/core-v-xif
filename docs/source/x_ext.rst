@@ -557,7 +557,7 @@ The ``instr`` signal remains stable during an issue request transaction.
   |                        |                        | but will be ignored by the |processor|.                                                                          |
   |                        |                        | Write-back to a register pair is only allowed if ``X_DUALWRITE`` = 1 and instruction bits ``[11:7]`` are even.   |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
-  | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| perform require specific registers to be read?                                            |
+  | ``register_read``      | :ref:`readregflags_t   | Will the |coprocessor| require specific registers to be read?                                            |
   |                        | <readregflags>`        | A |coprocessor| may only request an odd register of a pair, if it also requests the even register of a pair.     |
   +------------------------+------------------------+------------------------------------------------------------------------------------------------------------------+
 
@@ -591,7 +591,7 @@ The |processor| shall cause an illegal instruction fault when attempting to exec
 * is considered to be valid by the |processor| and accepted by the |coprocessor| (``accept`` = 1).
 * is considered neither to be valid by the |processor| nor accepted by the |coprocessor| (``accept`` = 0).
 
-A |coprocessor| can delay accept accepting an instruction via ``issue_ready`` in the presence of structural hazards that would prevent execution.
+A |coprocessor| can delay accepting an instruction via ``issue_ready`` in the presence of structural hazards that would prevent execution.
 A |coprocessor| can (only) accept an offloaded instruction when it can handle the instruction (based on decoding ``instr``).
 
 A transaction is considered offloaded/accepted on the positive edge of ``clk`` when ``issue_valid``, ``issue_ready`` are asserted and ``accept`` is 1.
@@ -695,7 +695,7 @@ There are two main scenarios, in how the register interface will be used. They a
    The |coprocessor| is always expected to be ready to retrieve its operands via the register interface after accepting the issue of an instruction.
    Therefore, ``register_ready`` is tied to 1.
    The ``register_valid`` signal will be 1 for one cycle, and ``rs_valid`` is guaranteed to be equal to the corresponding ``issue_resp.register_read``.
-   Thus, a |coprocessor| can ignore ``rs_valid`` in this case and a |processor| may chose to not implement the signal.
+   Thus, a |coprocessor| can ignore ``rs_valid`` in this case and a |processor| may choose to not implement the signal.
 
 .. only:: ECS
 
@@ -811,7 +811,7 @@ Memory (request/response) interface
 
 .. only:: not MemoryIf
 
-  The memory (request/response) interface is not included in this version of the specification
+  The memory (request/response) interface is not included in this version of the specification.
 
 .. only:: MemoryIf
 
@@ -997,7 +997,7 @@ Memory result interface
 
 .. only:: not MemoryIf
 
-  The memory (request/response) interface is not included in this version of the specification
+  The memory (request/response) interface is not included in this version of the specification.
 
 .. only:: MemoryIf
 
@@ -1178,11 +1178,11 @@ valid when ``result_valid`` is 1. The signals in ``result`` shall remain stable 
 
 ``we`` is 2 bits wide when ``XLEN`` = 32 and ``X_RFW_WIDTH`` = 64, and 1 bit wide otherwise. The |processor| shall ignore write-back to ``x0``.
 When a dual write-back is performed to the ``x0``, ``x1`` pair, the entire write shall be ignored, i.e. neither ``x0`` nor ``x1`` shall be written by the |processor|.
-For an instruction instance, the ``we`` signal must be the same as ``issue_resp.write-back``.
+For an instruction instance, the ``we`` signal must be the same as ``issue_resp.writeback``.
 The |processor| is not required to check that these signals match.
 
 .. note::
-  ``issue_resp.write-back`` and ``result.we`` carry the same information.
+  ``issue_resp.writeback`` and ``result.we`` carry the same information.
   Nevertheless, ``result.we`` is provided to simplify the |processor| logic.
   Without this signal, the |processor| would have to look this information up based on the instruction ``id``.
 
